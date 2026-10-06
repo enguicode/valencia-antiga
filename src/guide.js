@@ -33,6 +33,7 @@ export function createGuide(points, layout, path, card) {
     if (nearest === current) return;
     current = nearest;
     card.classList.toggle('visible', Boolean(nearest));
+    document.body.classList.toggle('has-card', Boolean(nearest));
     if (!nearest) return;
     title.textContent = nearest.title;
     text.textContent = nearest.text;

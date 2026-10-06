@@ -107,14 +107,20 @@
       padding: 0;
     }
 
+    /* A history card takes the place of the title panel while it shows, so it
+       covers a corner that was already covered. */
     #card {
+      top: max(14px, env(safe-area-inset-top));
       left: max(14px, env(safe-area-inset-left));
-      bottom: max(22px, env(safe-area-inset-bottom));
       width: min(360px, calc(100% - 28px));
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(-8px);
       transition: opacity 0.5s ease, transform 0.5s ease;
     }
+
+    #title { transition: opacity 0.5s ease; }
+
+    body.has-card #title { opacity: 0; }
 
     #card.visible {
       opacity: 1;
@@ -198,6 +204,32 @@
     #intro p {
       margin: 0 0 14px;
       line-height: 1.5;
+    }
+
+    #intro .moments {
+      display: inline-flex;
+      margin-bottom: 14px;
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    #intro .moments button {
+      padding: 7px 14px;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--ink);
+      background: transparent;
+      border: 0;
+      border-left: 1px solid var(--rule);
+      cursor: pointer;
+    }
+
+    #intro .moments button:first-child { border-left: 0; }
+
+    #intro .moments button[aria-pressed="true"] {
+      background: var(--ink);
+      color: #f4e9d2;
     }
 
     #intro .actions {
@@ -334,7 +366,9 @@
 
     @media (max-width: 640px) {
       #minimap { width: 104px; height: 104px; }
-      #card { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px); }
+      /* leave the minimap's column free */
+      #card { width: calc(100% - 146px); }
+      #card p { font-size: 0.82rem; line-height: 1.35; }
       #help { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px); }
     }
 
@@ -421,6 +455,11 @@
       <p class="eyebrow">El Turia hacia 1700</p>
       <h1>València Antiga</h1>
       <p>Baja en barca por el viejo cauce del Turia y mira la ciudad amurallada desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios.</p>
+      <div class="moments" role="group" aria-label="Momento del día">
+        <button type="button" data-hour="18">Día</button>
+        <button type="button" data-hour="20">Atardecer</button>
+        <button type="button" data-hour="23.5">Noche</button>
+      </div>
       <div class="actions">
         <button id="start" type="button" disabled>Cargando…</button>
         <button id="start-tour" type="button" disabled>Recorrido guiado</button>

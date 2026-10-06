@@ -145,6 +145,24 @@ function start(withTour) {
   orbit.idle = ORBIT.holdSeconds;
   if (withTour) document.getElementById('tour').click();
 }
+// The start screen offers the three moments of the day; they drive the same
+// setting as the sky button and the hour in the settings.
+const hourSelect = document.getElementById('hour');
+const momentButtons = [...document.querySelectorAll('#intro .moments button')];
+const showMoment = () => {
+  for (const button of momentButtons) {
+    button.setAttribute('aria-pressed', String(button.dataset.hour === hourSelect.value));
+  }
+};
+for (const button of momentButtons) {
+  button.addEventListener('click', () => {
+    hourSelect.value = button.dataset.hour;
+    hourSelect.dispatchEvent(new Event('change'));
+  });
+}
+hourSelect.addEventListener('change', showMoment);
+showMoment();
+
 startButton.addEventListener('click', () => start(false));
 startTourButton.addEventListener('click', () => start(true));
 for (const opener of document.querySelectorAll('[data-open]')) {

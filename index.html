@@ -310,14 +310,14 @@
       white-space: nowrap;
     }
 
-    #sky {
+    #controls .icon {
       display: grid;
       place-items: center;
       width: 40px;
-      padding: 0 !important;
+      padding: 0;
     }
 
-    #sky svg {
+    #controls .icon svg {
       width: 22px;
       height: 22px;
       fill: none;
@@ -407,8 +407,8 @@
   </article>
 
   <div id="controls">
-    <button id="sky" type="button"></button>
-    <button id="sound" type="button">Sonido: no</button>
+    <button id="sky" class="icon" type="button"></button>
+    <button id="sound" class="icon" type="button"></button>
     <button id="tour" type="button">Recorrido guiado</button>
     <button type="button" data-open="settings-section">Ajustes</button>
     <button type="button" data-open="help-section" aria-label="Ayuda y créditos">?</button>

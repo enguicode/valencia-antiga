@@ -12,12 +12,28 @@ const BELL_PARTIALS = [
   [2.74, 0.2, 1.2],
 ];
 
+const SPEAKER = '<path d="M4 9.5v5h3.5l4.5 4v-13l-4.5 4z"/>';
+const ICONS = {
+  on: `${SPEAKER}<path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11"/>`,
+  off: `${SPEAKER}<path d="M16 9.5l5 5M21 9.5l-5 5"/>`,
+};
+const LABELS = { on: 'Sonido activado. Silenciar', off: 'Sonido apagado. Activar' };
+
 export function createSound(button) {
   let context = null;
   let master = null;
   let waterGain = null;
   let enabled = false;
   let sinceBell = BELL_EVERY_SECONDS - 12; // the first one comes soon after switching on
+
+  const showState = () => {
+    const key = enabled ? 'on' : 'off';
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[key]}</svg>`;
+    button.setAttribute('aria-label', LABELS[key]);
+    button.title = LABELS[key];
+    button.classList.toggle('active', enabled);
+  };
+  showState();
 
   function build() {
     context = new AudioContext();
@@ -86,8 +102,7 @@ export function createSound(button) {
     if (enabled && !context) build();
     if (enabled) context.resume();
     master.gain.setTargetAtTime(enabled ? 1 : 0, context.currentTime, 0.3);
-    button.textContent = enabled ? 'Sonido: sí' : 'Sonido: no';
-    button.classList.toggle('active', enabled);
+    showState();
   });
 
   document.addEventListener('visibilitychange', () => {

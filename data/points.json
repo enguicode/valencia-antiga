@@ -133,6 +133,26 @@
     "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
   },
   {
+    "id": "portal-trinitat",
+    "at": {
+      "type": "gate",
+      "id": "trinitat",
+      "offset": -15
+    },
+    "title": {
+      "es": "Portal de la Trinitat",
+      "ca": "Portal de la Trinitat",
+      "en": "Portal de la Trinitat"
+    },
+    "text": {
+      "es": "También llamado Portal dels Catalans, frente al Pont de la Trinitat. En el siglo XVI lo formaban dos torres cuadradas gemelas, rematadas por almenas, unidas por un cuerpo central más bajo donde se abría un arco de medio punto. Más tarde se redujo a un simple arco con frontón.",
+      "ca": "També anomenat Portal dels Catalans, davant del Pont de la Trinitat. Al segle XVI el formaven dues torres quadrades bessones, rematades per merlets, unides per un cos central més baix on s'obria un arc de mig punt. Més tard es va reduir a un simple arc amb frontó.",
+      "en": "Also known as the Portal dels Catalans, facing the Pont de la Trinitat. In the sixteenth century it was two twin square towers topped with battlements, joined by a lower central body with a round arch. Later it was reduced to a plain arch with a pediment."
+    },
+    "source": "https://castillosricsol.es/murallas-cristianas-de-valencia/",
+    "sourceName": "castillosricsol.es"
+  },
+  {
     "id": "monestir-trinitat",
     "at": {
       "type": "landmark",
@@ -190,6 +210,26 @@
     "source": "https://es.wikipedia.org/wiki/Puente_del_Real_(Valencia)"
   },
   {
+    "id": "portal-real",
+    "at": {
+      "type": "gate",
+      "id": "real",
+      "offset": 8
+    },
+    "title": {
+      "es": "Portal del Real",
+      "ca": "Portal del Real",
+      "en": "Portal del Real"
+    },
+    "text": {
+      "es": "La puerta que llevaba al Palau del Real, al otro lado del río. En origen era un simple arco abierto en el muro; en 1599 se trasladó unos metros para alinearla con el puente, con motivo de las bodas de Felipe III. Hacia 1700 seguía siendo un hueco sencillo, de arco algo apuntado; la puerta monumental de tres vanos es de 1801.",
+      "ca": "El portal que portava al Palau del Real, a l'altra banda del riu. En origen era un simple arc obert en el mur; el 1599 es va traslladar uns metres per a alinear-lo amb el pont, amb motiu de les noces de Felip III. Cap al 1700 continuava sent una obertura senzilla, d'arc lleugerament apuntat; la porta monumental de tres obertures és de 1801.",
+      "en": "The gate that led to the royal palace across the river. It began as a plain arch in the wall; in 1599 it was moved a few metres to line it up with the bridge, for the wedding of Philip III. Around 1700 it was still a simple opening with a slightly pointed arch; the monumental three-bay gate dates from 1801."
+    },
+    "source": "https://passejantvalenciaambullscuriosos.blogspot.com/2017/07/lenderrocament-de-les-portes-de-la.html",
+    "sourceName": "Passejant València amb ulls curiosos"
+  },
+  {
     "id": "palau-real",
     "at": {
       "type": "landmark",
@@ -244,5 +284,25 @@
       "en": "The flood of 1589 swept away the earlier bridge. The stone one, designed by Francesc Figuerola, was finished in 1596 with ten arches."
     },
     "source": "https://es.wikipedia.org/wiki/Puente_de_la_Mar_(Valencia)"
+  },
+  {
+    "id": "lluna",
+    "bonus": "night",
+    "at": {
+      "type": "start",
+      "offset": 500
+    },
+    "title": {
+      "es": "La luna de València",
+      "ca": "La lluna de València",
+      "en": "The moon of Valencia"
+    },
+    "text": {
+      "es": "«Quedarse a la luna de València» es no conseguir lo que uno esperaba. La explicación más repetida es que las puertas de la muralla se cerraban de noche y quien llegaba tarde dormía fuera, al raso, bajo la luna. Hay otras: un banco en forma de media luna ante la muralla, o los barcos que no podían arrimarse a la playa. Ninguna es segura.",
+      "ca": "«Quedar-se a la lluna de València» és no aconseguir el que u esperava. L'explicació més repetida és que els portals de la muralla es tancaven de nit i qui arribava tard dormia fora, al ras, davall la lluna. N'hi ha d'altres: un banc en forma de mitja lluna davant de la muralla, o els vaixells que no podien acostar-se a la platja. Cap és segura.",
+      "en": "In Spanish, to be left “a la luna de Valencia”, under the moon of Valencia, is to miss out on what you hoped for. The most repeated explanation is that the city gates were shut at night, and anyone who arrived late slept outside under the moon. There are others: a crescent-shaped bench before the wall, or ships unable to land on the beach. None is certain."
+    },
+    "source": "https://billiken.lat/entretenimiento/luna-de-valencia-de-donde-viene-esa-expresion/",
+    "sourceName": "Billiken"
   }
 ]

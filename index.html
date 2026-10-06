@@ -134,6 +134,36 @@
       opacity: 0.8;
     }
 
+    #journal li { position: relative; }
+
+    #journal li h3 { padding-right: 40px; }
+
+    #journal .view {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      color: var(--ink);
+      background: var(--parchment);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #journal .view svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     #journal li.unknown {
       color: rgba(46, 36, 24, 0.55);
       background: repeating-linear-gradient(135deg, rgba(46, 36, 24, 0.05) 0 8px, transparent 8px 16px);
@@ -645,7 +675,7 @@
 
   <button id="status" class="panel" type="button" title="Ver los puntos de interés" data-i18n-label="status.title">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-    <span><strong id="found">0 de 13</strong> <span data-i18n="status.points">puntos</span> · <span id="distance">0</span> <span data-i18n="status.of">m de</span> <span id="total">…</span></span>
+    <span><strong id="found">0 de 15</strong> <span data-i18n="status.points">puntos</span> · <span id="distance">0</span> <span data-i18n="status.of">m de</span> <span id="total">…</span></span>
   </button>
 
   <canvas id="minimap" class="panel"></canvas>
@@ -674,14 +704,14 @@
       <span class="label" data-i18n="tour">Recorrido guiado</span>
     </button>
     <button id="sound" type="button"></button>
+    <button class="reset-found" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4.5v4.2h4.2"/></svg>
+      <span class="label" data-i18n="reset.short">Reiniciar puntos</span>
+    </button>
     <!-- gear outline adapted from Feather Icons (MIT) -->
     <button type="button" data-open="settings-section">
       <svg viewBox="0 0 24 24" aria-hidden="true"><g transform="translate(1.8 1.8) scale(0.85)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></svg>
       <span class="label" data-i18n="menu.settings">Ajustes</span>
-    </button>
-    <button class="reset-found" type="button">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4.5v4.2h4.2"/></svg>
-      <span class="label" data-i18n="reset.short">Reiniciar puntos</span>
     </button>
     <button type="button" data-open="help-section">
       <span class="glyph">?</span>

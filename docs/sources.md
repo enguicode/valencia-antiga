@@ -37,7 +37,7 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 
 ## Fichas de historia (v0.4)
 
-Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las trece es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
+Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las quince es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
 
 | Ficha | Datos que afirma | Artículo |
 | --- | --- | --- |
@@ -59,7 +59,8 @@ Discrepancias vistas y cómo se han resuelto:
 
 - El artículo del puente de Serranos lo llama «el más antiguo de los existentes» y a la vez fecha el de la Trinitat en 1356-1402. Las fichas no dicen cuál es el más antiguo.
 - El Portal Nou tiene ficha desde la revisión de monumentos. Sus dos fuentes son blogs y no coinciden del todo: una da el final de la obra en 1471 y la otra en 1474, y el derribo en 1864 o 1868; la ficha dice «década de 1470» y «siglo XIX».
-- El Portal de la Trinitat y el del Real siguen sin ficha: lo poco que se sabe de ellos viene de una sola fuente cada uno.
+- **Punto extra de la noche, «la luna de València»:** el origen del dicho no está establecido. La ficha da la explicación más repetida (las puertas cerradas de noche) y avisa de que hay otras y de que ninguna es segura. La fuente es un artículo de divulgación (Billiken), no un estudio.
+- El Portal de la Trinitat y el del Real tienen ficha desde la v1.18. La de la Trinitat se apoya en una sola fuente (castillosricsol.es) y describe la puerta «en el siglo XVI»; no hay dato de cómo era exactamente en 1700. La del Real coincide en dos blogs (traslado en 1599, puerta de tres vanos en 1801).
 
 El minimapa se dibuja con el mismo trazado que la escena; no reproduce el plano de Tosca.
 

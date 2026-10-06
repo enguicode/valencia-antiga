@@ -21,9 +21,11 @@ const SUBJECTS = {
   bridge: { aim: 4, span: 150, fly: true, standOff: 0.8, above: 8 },
   gate: { aim: 12, span: 52 },
   start: { aim: 2, span: 60 },
-  micalet: { aim: 34, span: 110 },
+  // Seen from the west, where the cathedral stands behind it and not in front.
+  micalet: { aim: 34, span: 110, facing: [-0.94, 0.34] },
   palace: { aim: 14, span: 150 },
-  convent: { aim: 14, span: 110 },
+  // Convents stand back from the bank: the camera goes over to them.
+  convent: { aim: 9, span: 90, fly: true, standOff: 0.8, above: 9 },
 };
 
 const PALE = 0xf4e9d2; // the parchment of the panels, so the rings do not shout
@@ -77,7 +79,7 @@ export const sourceLabel = (point) =>
   point.sourceName ? t('card.sourceNamed', { name: point.sourceName }) : t('card.source');
 
 export function createGuide(points, layout, path, camera, elements) {
-  const { card, counter, pointer, onEnter } = elements;
+  const { card, counter, pointer, onEnter, isShowing } = elements;
   const found = readFound();
   const pins = {
     pending: new THREE.SpriteMaterial({ map: drawPin(false), sizeAttenuation: false, fog: false }),
@@ -128,6 +130,7 @@ export function createGuide(points, layout, path, camera, elements) {
       kind = landmark.kind;
     }
     const { s, lateral, sample } = path.project(x, z);
+    facing = SUBJECTS[kind]?.facing ?? facing;
     // Buildings are shown from the river, which is the side they are seen from.
     if (!facing) {
       const reach = Math.hypot(sample.x - x, sample.z - z) || 1;
@@ -143,6 +146,8 @@ export function createGuide(points, layout, path, camera, elements) {
   const group = new THREE.Group();
   const markers = points.map((point, i) => {
     const { s, side, subject } = locate(point.at);
+    // The night-only point is about the moon: that is what the camera turns to.
+    if (point.bonus) subject.moon = true;
     subject.y = (point.at.type === 'bridge' || point.at.type === 'start' ? 0 : BANK.height) + subject.aim;
     const centre = path.pointAt(s);
     const x = centre.x + centre.rx * side * RING_OFFSET;
@@ -164,8 +169,11 @@ export function createGuide(points, layout, path, camera, elements) {
     return { ...point, x, z, subject, ring, edge, fill, pin, phase: i * 1.7 };
   });
 
+  // The tally counts the ordinary points; the night-only one is an extra.
+  const regular = markers.filter((marker) => !marker.bonus);
+  const tally = () => ({ found: regular.filter((marker) => found.has(marker.id)).length, total: regular.length });
   const showCount = () => {
-    counter.textContent = t('count', { found: found.size, total: markers.length });
+    counter.textContent = t('count', tally());
   };
   showCount();
 
@@ -178,7 +186,9 @@ export function createGuide(points, layout, path, camera, elements) {
 
   let shown = null;
 
-  function show(marker) {
+  // `requested` is set when the visitor asks to see a place from the logbook
+  // rather than sailing into its ring.
+  function show(marker, requested = false) {
     shown = marker;
     card.classList.toggle('visible', Boolean(marker));
     if (!marker) return;
@@ -193,7 +203,7 @@ export function createGuide(points, layout, path, camera, elements) {
       }
       showCount();
     }
-    onEnter?.(marker);
+    onEnter?.(marker, requested);
     marker.repeat = !first;
     write(marker);
   }
@@ -203,11 +213,12 @@ export function createGuide(points, layout, path, camera, elements) {
     card.querySelector('.text').textContent = localized(marker.text);
     card.querySelector('a').href = marker.source;
     card.querySelector('a').textContent = sourceLabel(marker);
-    const total = markers.length;
-    card.querySelector('.tally').textContent =
-      found.size === total
-        ? t('card.all', { total })
-        : t('count', { found: found.size, total }) + (marker.repeat ? t('card.again') : '');
+    const count = tally();
+    card.querySelector('.tally').textContent = marker.bonus
+      ? t('card.bonus')
+      : count.found === count.total
+        ? t('card.all', count)
+        : t('count', count) + (marker.repeat ? t('card.again') : '');
   }
   onLanguageChange(() => {
     showCount();
@@ -229,20 +240,22 @@ export function createGuide(points, layout, path, camera, elements) {
   const projected = new THREE.Vector3();
   const cameraSpace = new THREE.Vector3();
 
-  function update(time, boatState) {
+  function update(time, boatState, night) {
     let nearest = null;
     let nearestDistance = Infinity;
     let entered = null;
     for (const marker of markers) {
       const distance = Math.hypot(marker.x - boatState.x, marker.z - boatState.z);
       marker.distance = distance;
-      const visible = distance < VISIBLE_WITHIN;
+      // The extra point only exists after dark, unless it has been found already.
+      marker.available = !marker.bonus || night > 0.5;
+      const visible = distance < VISIBLE_WITHIN && (marker.available || found.has(marker.id));
       marker.ring.visible = visible;
       marker.pin.visible = visible;
       marker.ring.scale.setScalar(1 + Math.sin(time * 2 + marker.phase) * 0.035);
       marker.pin.position.set(marker.x, 5 + Math.sin(time * 1.6 + marker.phase) * 0.6, marker.z);
-      if (distance < RING_RADIUS) entered = marker;
-      if (!found.has(marker.id) && distance < nearestDistance) {
+      if (distance < RING_RADIUS && marker.available) entered = marker;
+      if (!found.has(marker.id) && marker.available && distance < nearestDistance) {
         nearest = marker;
         nearestDistance = distance;
       }
@@ -251,7 +264,7 @@ export function createGuide(points, layout, path, camera, elements) {
     // The card comes up on entering a ring and stays a while after leaving
     // it, so there is time to read it without stopping.
     if (entered && entered !== shown) show(entered);
-    else if (shown && !entered && shown.distance > CARD_STAYS_WITHIN) show(null);
+    else if (shown && !entered && shown.distance > CARD_STAYS_WITHIN && !isShowing?.()) show(null);
 
     // An arrow at the edge of the screen points to the nearest ring still to
     // be found whenever it is out of view.
@@ -290,10 +303,16 @@ export function createGuide(points, layout, path, camera, elements) {
   // The points in the order the river reaches them, for the logbook.
   const entries = () =>
     [...markers]
-      .sort((a, b) => path.project(a.x, a.z).s - path.project(b.x, b.z).s)
+      .sort((a, b) => Boolean(a.bonus) - Boolean(b.bonus) || path.project(a.x, a.z).s - path.project(b.x, b.z).s)
       .map((marker) => ({ ...marker, found: found.has(marker.id) }));
 
-  return { group, markers, found, update, reset, entries };
+  // Shows a place that has already been found, from wherever the boat is.
+  const visit = (id) => {
+    const marker = markers.find((item) => item.id === id);
+    if (marker && found.has(id)) show(marker, true);
+  };
+
+  return { group, markers, found, update, reset, entries, visit, tally };
 }
 
 // Autopilot for the guided tour: holds a steady speed down the middle of the

@@ -97,14 +97,29 @@ const guide = createGuide(points, layout, path, camera, {
   counter: document.getElementById('found'),
   pointer: document.getElementById('pointer'),
   // On entering a ring the camera turns to the place it is about.
-  onEnter: (marker) => {
-    const { subject } = marker;
+  onEnter: (marker, requested) => {
+    let { subject } = marker;
+    // The moon is not a place: look up at it from wherever the boat is.
+    if (subject.moon) {
+      subject = {
+        x: boat.state.x + MOON_DIRECTION.x * 700,
+        y: MOON_DIRECTION.y * 700,
+        z: boat.state.z + MOON_DIRECTION.z * 700,
+        span: 90, // narrow, so the lens closes in on it
+        moon: true,
+      };
+    }
     focus.subject = subject;
-    // Places close to the river get a zoom from the boat; far ones, a flight.
-    focus.flight = subject.fly || Math.hypot(subject.x - boat.state.x, subject.z - boat.state.z) > FLIGHT.beyond;
-    focus.total = focus.flight ? FLIGHT.out + FLIGHT.hold + FLIGHT.back : FOCUS.seconds;
+    // Places close to the river get a zoom from the boat; far ones, and any
+    // asked for from the logbook, a flight, with a longer look when asked for.
+    focus.flight =
+      !subject.moon &&
+      (requested || subject.fly || Math.hypot(subject.x - boat.state.x, subject.z - boat.state.z) > FLIGHT.beyond);
+    focus.hold = requested ? FLIGHT.hold * 2 : FLIGHT.hold;
+    focus.total = focus.flight ? FLIGHT.out + focus.hold + FLIGHT.back : FOCUS.seconds;
     focus.left = focus.total;
   },
+  isShowing: () => focus.left > 0,
 });
 scene.add(guide.group);
 for (const button of document.querySelectorAll('.reset-found')) button.addEventListener('click', () => guide.reset());
@@ -114,11 +129,8 @@ for (const button of document.querySelectorAll('.reset-found')) button.addEventL
 const journal = document.getElementById('journal');
 document.getElementById('status').addEventListener('click', () => {
   const entries = guide.entries();
-  const foundCount = entries.filter((entry) => entry.found).length;
-  journal.querySelector('.tally').textContent = t(foundCount === entries.length ? 'journal.all' : 'journal.some', {
-    found: foundCount,
-    total: entries.length,
-  });
+  const count = guide.tally();
+  journal.querySelector('.tally').textContent = t(count.found === count.total ? 'journal.all' : 'journal.some', count);
   journal.querySelector('ol').replaceChildren(
     ...entries.map((entry) => {
       const item = document.createElement('li');
@@ -128,7 +140,7 @@ document.getElementById('status').addEventListener('click', () => {
       if (!entry.found) {
         item.className = 'unknown';
         title.textContent = '? ? ?';
-        text.textContent = t('journal.unknown');
+        text.textContent = t(entry.bonus ? 'journal.night' : 'journal.unknown');
         return item;
       }
       title.textContent = localized(entry.title);
@@ -138,7 +150,19 @@ document.getElementById('status').addEventListener('click', () => {
       source.target = '_blank';
       source.rel = 'noopener';
       source.textContent = sourceLabel(entry);
-      item.append(source);
+      // An eye: fly over to the place and look at it again
+      const view = document.createElement('button');
+      view.type = 'button';
+      view.className = 'view';
+      view.title = t('journal.view');
+      view.setAttribute('aria-label', t('journal.view'));
+      view.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+      view.addEventListener('click', () => {
+        journal.close();
+        guide.visit(entry.id);
+      });
+      item.append(source, view);
       return item;
     }),
   );
@@ -321,7 +345,8 @@ const UNDER_BRIDGE = { back: 8.5, up: 2.9 };
 // A place too far to zoom in on is visited instead: the camera flies out to
 // a spot in front of it, hovers, and flies back to the boat.
 const FLIGHT = { beyond: 200, out: 3.5, hold: 3.5, back: 3, standOff: 1.25, above: 20 };
-const focus = { subject: null, left: 0, total: 0, flight: false };
+const focus = { subject: null, left: 0, total: 0, hold: 0, flight: false };
+const MOON_DIRECTION = new THREE.Vector3(-0.4, 0.8, -0.3).normalize(); // where the moon hangs in the sky
 const flightSpot = new THREE.Vector3();
 const chasePosition = new THREE.Vector3();
 const chaseLook = new THREE.Vector3();
@@ -345,7 +370,7 @@ function updateCamera(dt, snap = false) {
     const { subject } = focus;
     const elapsed = focus.total - focus.left;
     const going = THREE.MathUtils.smoothstep(elapsed, 0, FLIGHT.out);
-    const returning = THREE.MathUtils.smoothstep(elapsed, FLIGHT.out + FLIGHT.hold, focus.total);
+    const returning = THREE.MathUtils.smoothstep(elapsed, FLIGHT.out + focus.hold, focus.total);
     const away = going - returning; // 0 at the boat, 1 at the place
     // Hover in front of the place if it has a front, otherwise on the boat's side of it.
     let [dx, dz] = subject.facing ?? [boat.mesh.position.x - subject.x, boat.mesh.position.z - subject.z];
@@ -434,7 +459,9 @@ function frame() {
   boat.update(dt, axes, time, focus.left > 0 ? FOCUS.speed : Infinity);
   sun.target.position.copy(boat.mesh.position);
   sun.position.copy(boat.mesh.position).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
-  water.update(time, boat.state.row);
+  // On a flight the water is animated and drawn around the camera, not the boat.
+  const flying = focus.left > 0 && focus.flight;
+  water.update(time, flying ? path.project(camera.position.x, camera.position.z).index : boat.state.row);
   life.update(dt, time, boat.state, atmosphere.state);
   sound.update(dt, boat.state.speed);
   nightLights.update(time, atmosphere.state.night);
@@ -445,7 +472,7 @@ function frame() {
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
   renderer.render(scene, camera);
-  if (started) guide.update(time, boat.state);
+  if (started) guide.update(time, boat.state, atmosphere.state.night);
   minimap.update(boat.state);
 
   const distance = Math.round(boat.state.s - path.start);
@@ -480,5 +507,5 @@ window.__valenciaReady = true;
 
 if (debug) {
   debugPanel.hidden = false;
-  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound };
+  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus };
 }

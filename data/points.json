@@ -3,7 +3,7 @@
     "id": "pretils",
     "at": {
       "type": "start",
-      "offset": 150
+      "offset": 105
     },
     "title": {
       "es": "Los pretiles del río",
@@ -99,7 +99,7 @@
     "at": {
       "type": "landmark",
       "id": "micalet",
-      "offset": -150
+      "offset": -190
     },
     "title": {
       "es": "El Micalet y la Seu",

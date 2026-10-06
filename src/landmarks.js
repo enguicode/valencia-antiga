@@ -175,49 +175,65 @@ const MODELS = {
     add('box', [-30, 0, 0], [22, 16, 19], STONE);
   },
 
-  // The Palau del Real, pulled down in 1810. What is documented: a long main
-  // front towards the river with a gate between two strong towers, a
-  // ground-floor arcade under a balconied gallery, and at one end the older
-  // palace, a square with four corner towers, one of them spired. The sizes
-  // are estimates. +Z looks at the river and -X is upstream.
+  // The Palau del Real, pulled down in 1810, as it stood around 1700. From
+  // Arciniega's studies of the building accounts and of the surviving plans
+  // (see docs/sources.md): the main front, from west to east, was the Torre
+  // Cremada, the gallery of stone and brick built about 1640 with its
+  // balconies, the Torre dels Àngels beside the entrance, and the corner of
+  // the older palace, the Real Vell, with a small bell gable. The towers ended
+  // in parapets and merlons; their spires came after 1713. Lengths are
+  // estimates. +Z looks at the river and +X is east.
   palace(add) {
-    const front = 15; // z of the main facade
-    // The Real Nou
-    add('box', [12, 0, 0], [84, 15, 30], RENDER);
-    add('gable', [12, 15, 0], [30, 5, 84], ROOF, RIDGE_ALONG_X);
-    add('box', [12, 6.6, front + 0.3], [84, 0.5, 0.9], PALE);
-    add('box', [12, 14.6, 0], [85, 0.6, 31], STONE);
-    windowRow(add, { from: -27, to: 51, step: 4.3, y: 0.4, z: front + 0.05, width: 2.6, height: 4.6 });
-    windowRow(add, { from: -27, to: 51, step: 4.3, y: 8, z: front + 0.05, width: 1.5, height: 3.4 });
-    windowRow(add, { from: -27, to: 51, step: 4.3, y: 12.4, z: front + 0.05, width: 1.1, height: 1.2 });
-    windowRow(add, { from: -27, to: 51, step: 6, y: 8, z: -front - 0.05, width: 1.5, height: 3.2 });
-    // The gate between its two towers; the royal arms on one of them
-    for (const x of [4.5, 19.5]) {
-      add('box', [x, 0, front + 2], [8.5, 26, 8.5], STONE);
-      add('box', [x, 19, front + 2], [9.1, 0.6, 9.1], PALE);
-      add('pyramid', [x, 26, front + 2], [9.4, 6, 9.4], ROOF);
-      ringOfOpenings(add, { x, y: 21, z: front + 2, sides: 4, apothem: 4.3, width: 1.6, height: 3.4 });
-    }
-    add('box', [12, 0, front + 0.2], [0.5, 8, 5.2], DARK, FACING_Z);
-    add('box', [12, 0, front + 0.8], [0.5, 10, 7], STONE, FACING_Z);
-    add('box', [19.5, 11, front + 6.3], [0.3, 3, 2.6], PALE, FACING_Z);
-    // The Real Vell at the upstream end
-    add('box', [-52, 0, 2], [34, 13, 34], RENDER);
-    add('gable', [-52, 13, 2], [34, 4.5, 34], ROOF, RIDGE_ALONG_X);
-    windowRow(add, { from: -63, to: -41, step: 5.5, y: 6, z: 19.05, width: 1.4, height: 3 });
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => {
-      const x = -52 + sx * 15;
-      const z = 2 + sz * 15;
-      add('box', [x, 0, z], [7, 21, 7], STONE);
-      ringOfOpenings(add, { x, y: 16, z, sides: 4, apothem: 3.55, width: 1.3, height: 2.8 });
-      if (i === 2) {
-        add('cone', [x, 21, z], [5, 13, 5], ROOF); // the spired tower
-      } else {
-        add('pyramid', [x, 21, z], [7.8, 4.5, 7.8], ROOF);
+    const front = 20; // z of the main facade
+    const merlons = (x, z, half, y) => {
+      for (const [dx, dz] of [[-1, -1], [0, -1], [1, -1], [-1, 1], [0, 1], [1, 1], [-1, 0], [1, 0]]) {
+        add('box', [x + dx * (half - 0.6), y, z + dz * (half - 0.6)], [1.1, 1.3, 1.1], STONE);
       }
-    });
-    // Garden walls behind
-    for (const [x, z, sx, sz] of [[-8, -95, 150, 1], [-83, -55, 1, 80], [67, -55, 1, 80]]) {
+    };
+    // The Real Nou, round its two courtyards, to the west
+    add('box', [-27, 0, -2], [70, 13, 44], RENDER);
+    add('box', [-27, 13, -2], [70.8, 1, 44.8], STONE);
+    add('box', [-40, 13.4, -2], [22, 0.3, 22], DARK); // the great courtyard, seen from above
+    add('box', [-12, 13.4, -4], [12, 0.3, 14], DARK); // the small one
+    windowRow(add, { from: -58, to: 4, step: 6.2, y: 7.5, z: -24.05, width: 1.5, height: 3.2 });
+    // The gallery between the two towers: an arcade of round arches on
+    // pillars, and over it a gallery of windows with iron balconies
+    add('box', [-27, 0, front + 1.5], [46, 12.5, 5], PALE);
+    add('box', [-27, 12.5, front + 1.5], [46.6, 0.8, 5.6], STONE);
+    windowRow(add, { from: -46.5, to: -7.5, step: 3.9, y: 0.3, z: front + 4.05, width: 2.5, height: 4.7 });
+    add('box', [-27, 6, front + 4.3], [46, 0.45, 1.1], STONE);
+    windowRow(add, { from: -46.5, to: -7.5, step: 3.9, y: 7.2, z: front + 4.05, width: 1.6, height: 3.4 });
+    for (let x = -48.4; x <= -5.5; x += 3.9) add('box', [x, 6.4, front + 4.7], [0.35, 0.9, 0.35], DARK);
+    // Torre Cremada at the west end, with its three windows
+    add('box', [-55, 0, front + 1], [10, 20, 10], STONE);
+    add('box', [-55, 20, front + 1], [10.8, 0.7, 10.8], STONE);
+    merlons(-55, front + 1, 5.4, 20.7);
+    for (const y of [4, 9.5, 15]) add('box', [-55, y, front + 6.05], [0.35, 2.8, 1.5], DARK, FACING_Z);
+    // Torre dels Àngels by the entrance: balcony, and the royal arms painted on it
+    add('box', [1, 0, front + 1], [10, 23, 10], STONE);
+    add('box', [1, 23, front + 1], [10.8, 0.7, 10.8], STONE);
+    merlons(1, front + 1, 5.4, 23.7);
+    add('box', [1, 9, front + 6.05], [0.35, 3.2, 1.8], DARK, FACING_Z);
+    add('box', [1, 8.6, front + 6.5], [0.5, 0.35, 3.4], STONE, FACING_Z);
+    add('box', [1, 14.5, front + 6.1], [0.3, 4.2, 3.6], PALE, FACING_Z);
+    // The main entrance, between the gallery and the tower
+    add('box', [-6, 0, front + 4.1], [0.5, 6.4, 4.2], DARK, FACING_Z);
+    // The Real Vell at the east corner, with the lower church and its bell gable
+    add('box', [27, 0, -2], [38, 12, 40], RENDER);
+    add('box', [27, 12, -2], [38.8, 0.9, 40.8], STONE);
+    add('box', [27, 12.3, -2], [16, 0.3, 16], DARK); // its courtyard
+    windowRow(add, { from: 13, to: 41, step: 5.6, y: 6, z: 18.05, width: 1.4, height: 3 });
+    add('box', [10, 12.9, 17.5], [3.4, 4, 0.7], STONE);
+    add('box', [10, 14.2, 17.5], [1.3, 1.6, 0.9], DARK);
+    // Its corner towers: lower at the back, and the one nearest the bridge
+    // (the Torre de la Reina) the tallest
+    for (const [x, z, tall] of [[44, 16, 19], [44, -20, 14], [10, -20, 14]]) {
+      add('box', [x, 0, z], [7.5, tall, 7.5], STONE);
+      merlons(x, z, 4.1, tall);
+      ringOfOpenings(add, { x, y: tall - 5, z, sides: 4, apothem: 3.8, width: 1.3, height: 2.6 });
+    }
+    // Garden walls to the north and west, where the gardens lay
+    for (const [x, z, sx, sz] of [[-20, -100, 140, 1], [-90, -40, 1, 120], [50, -62, 1, 76], [-76, 22, 28, 1]]) {
       add('box', [x, 0, z], [sx, 3.6, sz], RENDER);
     }
   },

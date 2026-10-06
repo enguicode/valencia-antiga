@@ -79,7 +79,8 @@ export function createMinimap(canvas, layout, path, guide) {
       if (marker.bonus && !marker.available && !guide.found.has(marker.id)) continue;
       context.beginPath();
       context.arc(px(marker.x), py(marker.z), 2.4 * detail * ratio, 0, Math.PI * 2);
-      context.fillStyle = guide.found.has(marker.id) ? '#4a7a4e' : '#f4e9d2';
+      // The night-only point shows in moonlight yellow until it is found.
+      context.fillStyle = guide.found.has(marker.id) ? '#4a7a4e' : marker.bonus ? '#e8c860' : '#f4e9d2';
       context.fill();
       context.lineWidth = 0.8 * ratio;
       context.strokeStyle = '#2e2418';

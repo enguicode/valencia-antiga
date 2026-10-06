@@ -139,7 +139,7 @@ document.getElementById('status').addEventListener('click', () => {
       item.append(title, text);
       if (!entry.found) {
         item.className = 'unknown';
-        title.textContent = '? ? ?';
+        title.textContent = entry.bonus ? '☾ ? ? ?' : '? ? ?'; // a moon, as a clue
         text.textContent = t(entry.bonus ? 'journal.night' : 'journal.unknown');
         return item;
       }

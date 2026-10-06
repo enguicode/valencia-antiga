@@ -31,7 +31,8 @@ const SUBJECTS = {
 const PALE = 0xf4e9d2; // the parchment of the panels, so the rings do not shout
 const GREEN = 0x4a7a4e;
 
-function drawPin(found) {
+// `moon` swaps the i of a pending pin for a crescent: the night-only point.
+function drawPin(found, moon = false) {
   const canvas = document.createElement('canvas');
   canvas.width = 96;
   canvas.height = 128;
@@ -55,6 +56,12 @@ function drawPin(found) {
     context.lineTo(43, 60);
     context.lineTo(67, 33);
     context.stroke();
+  } else if (moon) {
+    context.beginPath();
+    context.arc(48, 46, 21, Math.PI * 0.5, Math.PI * 1.5);
+    context.arc(60, 46, 23, Math.PI * 1.36, Math.PI * 0.64, true);
+    context.closePath();
+    context.fill();
   } else {
     context.beginPath();
     context.arc(48, 27, 6.5, 0, Math.PI * 2);
@@ -83,6 +90,7 @@ export function createGuide(points, layout, path, camera, elements) {
   const found = readFound();
   const pins = {
     pending: new THREE.SpriteMaterial({ map: drawPin(false), sizeAttenuation: false, fog: false }),
+    moon: new THREE.SpriteMaterial({ map: drawPin(false, true), sizeAttenuation: false, fog: false }),
     found: new THREE.SpriteMaterial({ map: drawPin(true), sizeAttenuation: false, fog: false, opacity: 0.7 }),
   };
   const flat = (color, opacity) =>
@@ -161,7 +169,7 @@ export function createGuide(points, layout, path, camera, elements) {
     edge.renderOrder = fill.renderOrder = 3; // over the water
     ring.add(fill, edge);
 
-    const pin = new THREE.Sprite(pins[state]);
+    const pin = new THREE.Sprite(pins[state === 'pending' && point.bonus ? 'moon' : state]);
     pin.center.set(0.5, 0); // the tip of the pin is the anchor
     pin.scale.set(PIN_SIZE * 0.75, PIN_SIZE, 1);
     pin.renderOrder = 4;
@@ -184,7 +192,7 @@ export function createGuide(points, layout, path, camera, elements) {
     const state = found.has(marker.id) ? 'found' : 'pending';
     marker.edge.material = rings[state].edge;
     marker.fill.material = rings[state].fill;
-    marker.pin.material = pins[state];
+    marker.pin.material = pins[state === 'pending' && marker.bonus ? 'moon' : state];
   };
 
   let shown = null;

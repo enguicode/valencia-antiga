@@ -43,7 +43,7 @@ La interfaz deja la pantalla casi libre: arriba a la izquierda, la cuenta de pun
 
 ## Cómo está hecho
 
-Una página estática con [three.js](https://threejs.org/), cargado desde una CDN. No hay backend ni paso de compilación, ni ficheros de imagen o de sonido: las texturas se pintan por código al arrancar y el sonido se sintetiza en el navegador.
+Una página estática con [three.js](https://threejs.org/), cargado desde una CDN. La portada usa dos tipografías de Google Fonts (Cinzel y Cormorant Garamond); si no cargan, se ve con la letra con serifa del sistema. No hay backend ni paso de compilación, ni ficheros de imagen o de sonido: las texturas se pintan por código al arrancar y el sonido se sintetiza en el navegador.
 
 ```
 valencia-antiga/

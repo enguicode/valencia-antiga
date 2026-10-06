@@ -443,8 +443,8 @@
 
     /* Above the stick's left corner, well clear of its ring. */
     body.touch #tour {
-      left: max(4px, env(safe-area-inset-left) - 10px);
-      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 100px + 5vh);
+      left: calc(max(4px, env(safe-area-inset-left) - 10px) + 1vw);
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 100px + 2.5vh);
     }
 
     /* Nothing of the cockpit shows until the visitor sets off. */

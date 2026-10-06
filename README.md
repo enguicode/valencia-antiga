@@ -72,6 +72,8 @@ La ciudad pasa de decorado genérico a tener la forma de València.
 
 ### Ideas para después
 
+- Un barco por cada persona conectada: plan detallado en [docs/multiplayer-plan.md](docs/multiplayer-plan.md), sin empezar.
+
 - Bajar de la barca y entrar andando por una puerta.
 - Comparar épocas: València musulmana, la de 1700 y la actual.
 - La riada de 1957 y el desvío del río.

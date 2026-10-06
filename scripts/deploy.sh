@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 
 dist="$(mktemp -d)"
 trap 'rm -rf "$dist"' EXIT
-cp -r index.html src data "$dist/"
+cp -r index.html og.jpg src data "$dist/"
 
 npx --yes wrangler pages deploy "$dist" --project-name=valencia-antiga --branch=main --commit-dirty=true
 echo "Publicado: https://valencia-antiga.pages.dev/"

@@ -105,7 +105,7 @@ La página está en Cloudflare Pages:
 bash scripts/deploy.sh
 ```
 
-El script sube solo `index.html`, `src/` y `data/`. El proyecto de Pages se creó con `wrangler pages project create valencia-antiga --force`; sin `--force`, wrangler crea un Worker en vez de un proyecto de Pages.
+El script sube solo `index.html`, `og.jpg`, `src/` y `data/`. El proyecto de Pages se creó con `wrangler pages project create valencia-antiga --force`; sin `--force`, wrangler crea un Worker en vez de un proyecto de Pages.
 
 ## Rigor histórico
 

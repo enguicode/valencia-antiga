@@ -6,7 +6,7 @@ Paseo en barca, en el navegador, por el viejo cauce del Turia y la València amu
 
 **[Entrar al paseo](https://valencia-antiga.pages.dev/)** · castellano, valenciano e inglés · no hay nada que instalar
 
-El río hacía entonces de foso. Desde el agua se ven la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Hay quince puntos de interés que descubrir, cada uno con su ficha, y uno más que solo sale de noche: «quedarse a la luna de València».
+El río hacía entonces de foso. Desde el agua se ven la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Hay quince puntos de interés que descubrir, cada uno con su ficha, y uno más: al entrar en su aro se hace de noche. Es «quedarse a la luna de València».
 
 Es una reconstrucción aproximada. Los sitios están donde estaban; las formas son un esbozo. Qué es fiable y qué no está en [docs/sources.md](docs/sources.md).
 
@@ -16,7 +16,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 | --- | --- |
 | **Navegar** | 2,4 km de río, desde antes del Pont de Sant Josep hasta pasado el de la Mar. La barca frena contra las orillas y, al llegar a un puente, se encauza sola por un arco y abate la vela. |
 | **Encontrar los puntos** | Junto a cada sitio flota un aro claro. Al entrar sale la ficha, la cámara mira el lugar (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Una flecha en el borde lleva al más cercano que falte. |
-| **La luna** | De día ese punto no se completa: la ficha avisa y ofrece hacer de noche ahí mismo. En el listado se ve una luna, no el nombre, hasta que se consigue. |
+| **La luna** | Al entrar en el aro anochece solo, sin botón: la cámara mira al cielo y sale la ficha. Al alejarte vuelve la hora que había, salvo que la cambies tú. En el listado se ve una luna, no el nombre, hasta que se consigue. |
 | **Repasar** | La cuenta de arriba a la izquierda abre el cuaderno. Lo no descubierto sale en blanco. Lo encontrado lleva un ojo que lleva la cámara hasta ese sitio. El ojo de la luna, si es de día, deja el cielo de noche mientras dura la ficha y luego devuelve la hora que había. |
 | **Recorrido guiado** | La barca baja sola por el centro y pasa por los quince aros. Arrastrar solo mueve la cámara. |
 | **La hora** | Al entrar, la portada premarca día, atardecer o noche según el reloj del visitante, con su huso horario. Desde ahí solo cambia a mano. De noche se encienden ventanas, faroles y luciérnagas, y los carteles de la interfaz pasan a un tono oscuro. |

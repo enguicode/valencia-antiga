@@ -60,6 +60,11 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
   };
   let chosenHour = state.hour;
   let environmentHour = null;
+  // A borrowed night covers its gap on the wall clock, not on frame time:
+  // a slow frame must not stretch the dusk.
+  let easeFrom = null;
+  let easeStart = 0;
+  let easeSeconds = 0;
   const waterBase = new THREE.Color(COLORS.water);
 
   const showPhase = () => {
@@ -84,13 +89,32 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
     showPhase();
   });
 
+  // Cover the change of hour in about `seconds`, so a borrowed night can
+  // fall and lift instead of blinking. Starts from whatever light is showing.
+  function easeOver(seconds) {
+    easeFrom = state.hour;
+    easeStart = performance.now();
+    easeSeconds = Math.max(seconds, 0.05);
+  }
+
+  function cancelEase() {
+    easeFrom = null;
+  }
+
   function update(dt) {
     // Ease towards the chosen hour the short way round the clock, so a change
     // in the settings is a brief dusk or dawn rather than a jump.
-    const gap = ((chosenHour - state.hour + 36) % 24) - 12;
-    // At least two hours a second, so the last stretch does not drag.
-    const step = Math.sign(gap) * Math.min(Math.abs(gap), Math.max(Math.abs(gap) * SETTLE_RATE, 2) * dt);
-    state.hour = Math.abs(gap) < 0.01 ? chosenHour : (state.hour + step + 24) % 24;
+    if (easeFrom !== null) {
+      const gap0 = ((chosenHour - easeFrom + 36) % 24) - 12;
+      const u = Math.min(1, (performance.now() - easeStart) / (easeSeconds * 1000));
+      state.hour = u >= 1 ? chosenHour : (easeFrom + gap0 * u + 24) % 24;
+      if (u >= 1) easeFrom = null;
+    } else {
+      const gap = ((chosenHour - state.hour + 36) % 24) - 12;
+      // At least two hours a second, so the last stretch does not drag.
+      const step = Math.sign(gap) * Math.min(Math.abs(gap), Math.max(Math.abs(gap) * SETTLE_RATE, 2) * dt);
+      state.hour = Math.abs(gap) < 0.01 ? chosenHour : (state.hour + step + 24) % 24;
+    }
 
     const next = KEYS.findIndex((key) => key.hour > state.hour);
     const a = KEYS[next - 1];
@@ -142,5 +166,5 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
   }
 
   update(0);
-  return { state, update };
+  return { state, update, easeOver, cancelEase };
 }

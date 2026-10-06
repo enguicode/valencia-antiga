@@ -86,7 +86,7 @@ export const sourceLabel = (point) =>
   point.sourceName ? t('card.sourceNamed', { name: point.sourceName }) : t('card.source');
 
 export function createGuide(points, layout, path, camera, elements) {
-  const { card, counter, pointer, onEnter, isShowing } = elements;
+  const { card, counter, pointer, onEnter, onLeave, isShowing } = elements;
   const found = readFound();
   const pins = {
     pending: new THREE.SpriteMaterial({ map: drawPin(false), sizeAttenuation: false, fog: false }),
@@ -196,16 +196,19 @@ export function createGuide(points, layout, path, camera, elements) {
   };
 
   let shown = null;
-  let hinting = false; // the card on show is the daytime hint of the moon's point
 
   // `requested` is set when the visitor asks to see a place from the logbook
   // rather than sailing into its ring.
   function show(marker, requested = false) {
+    const leaving = shown && shown !== marker ? shown : null;
     shown = marker;
-    hinting = false;
     card.classList.toggle('visible', Boolean(marker));
-    card.classList.remove('hint');
-    if (!marker) return;
+    if (!marker) {
+      if (leaving) onLeave?.();
+      return;
+    }
+    // Leaving the moon's ring is what brings the daylight back.
+    if (leaving?.bonus) onLeave?.();
     const first = !found.has(marker.id);
     if (first) {
       found.add(marker.id);
@@ -222,21 +225,7 @@ export function createGuide(points, layout, path, camera, elements) {
     write(marker);
   }
 
-  // By day the moon's point cannot be found: its card only says to come
-  // back after dark, and offers to bring the night there and then.
-  function hint(marker) {
-    shown = marker;
-    hinting = true;
-    card.classList.add('visible', 'hint');
-    write(marker);
-  }
-
   function write(marker) {
-    if (hinting) {
-      card.querySelector('h2').textContent = t('moon.title');
-      card.querySelector('.text').textContent = t('moon.text');
-      return;
-    }
     card.querySelector('h2').textContent = localized(marker.title);
     card.querySelector('.text').textContent = localized(marker.text);
     card.querySelector('a').href = marker.source;
@@ -270,15 +259,13 @@ export function createGuide(points, layout, path, camera, elements) {
   const projected = new THREE.Vector3();
   const cameraSpace = new THREE.Vector3();
 
-  function update(time, boatState, night) {
+  function update(time, boatState) {
     let nearest = null;
     let nearestDistance = Infinity;
     let entered = null;
     for (const marker of markers) {
       const distance = Math.hypot(marker.x - boatState.x, marker.z - boatState.z);
       marker.distance = distance;
-      // The extra point shows all day, but can only be found after dark.
-      marker.available = !marker.bonus || night > 0.5 || found.has(marker.id);
       const visible = distance < VISIBLE_WITHIN;
       marker.ring.visible = visible;
       marker.pin.visible = visible;
@@ -292,10 +279,9 @@ export function createGuide(points, layout, path, camera, elements) {
     }
 
     // The card comes up on entering a ring and stays a while after leaving
-    // it, so there is time to read it without stopping.
-    if (entered && !entered.available) {
-      if (entered !== shown) hint(entered);
-    } else if (entered && (entered !== shown || hinting)) show(entered);
+    // it, so there is time to read it without stopping. The moon's ring
+    // is the same: arriving is what brings the night.
+    if (entered && entered !== shown) show(entered);
     else if (shown && !entered && shown.distance > CARD_STAYS_WITHIN && !isShowing?.()) show(null);
 
     // An arrow at the edge of the screen points to the nearest ring still to

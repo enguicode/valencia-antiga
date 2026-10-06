@@ -52,9 +52,93 @@
       top: max(10px, env(safe-area-inset-top));
       left: max(10px, env(safe-area-inset-left));
       padding: 6px 10px;
+      font: inherit;
       font-size: 0.82rem;
       font-variant-numeric: tabular-nums;
+      color: var(--ink);
       white-space: nowrap;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    /* The logbook: every point of interest, the ones not yet found as blanks. */
+    #journal {
+      width: min(480px, calc(100% - 28px));
+      max-height: calc(100% - 40px);
+      padding: 20px 22px;
+      color: var(--ink);
+      font: inherit;
+      line-height: 1.45;
+      background: #f4e9d2;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    #journal::backdrop { background: rgba(46, 36, 24, 0.5); }
+
+    #journal h2 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    #journal .tally {
+      margin: 2px 0 12px;
+      font-size: 0.85rem;
+      font-style: italic;
+      opacity: 0.8;
+    }
+
+    #journal ol {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    #journal li {
+      padding: 9px 12px;
+      background: rgba(255, 250, 240, 0.6);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+    }
+
+    #journal li h3 {
+      margin: 0 0 3px;
+      font-size: 0.98rem;
+    }
+
+    #journal li p {
+      margin: 0 0 4px;
+      font-size: 0.86rem;
+    }
+
+    #journal li a {
+      font-size: 0.76rem;
+      color: inherit;
+      opacity: 0.8;
+    }
+
+    #journal li.unknown {
+      color: rgba(46, 36, 24, 0.55);
+      background: repeating-linear-gradient(135deg, rgba(46, 36, 24, 0.05) 0 8px, transparent 8px 16px);
+      border-style: dashed;
+    }
+
+    #journal li.unknown h3 { letter-spacing: 0.25em; }
+
+    #journal .close {
+      display: block;
+      margin: 14px 0 0 auto;
+      padding: 8px 16px;
+      font: inherit;
+      color: #f4e9d2;
+      background: var(--ink);
+      border: 0;
+      border-radius: 3px;
+      cursor: pointer;
     }
 
     #help {
@@ -525,7 +609,7 @@
 <body>
   <canvas id="scene"></canvas>
 
-  <div id="status" class="panel"><strong id="found">0 de 12</strong> puntos · <span id="distance">0</span> m de <span id="total">…</span></div>
+  <button id="status" class="panel" type="button" title="Ver los puntos de interés"><strong id="found">0 de 12</strong> puntos · <span id="distance">0</span> m de <span id="total">…</span></button>
 
   <canvas id="minimap" class="panel"></canvas>
 
@@ -571,6 +655,13 @@
     <span></span>
   </div>
 
+  <dialog id="journal">
+    <h2>Puntos de interés</h2>
+    <p class="tally"></p>
+    <ol></ol>
+    <button id="close-journal" class="close" type="button">Seguir navegando</button>
+  </dialog>
+
   <div id="debug" class="panel" hidden></div>
 
   <section id="intro">
@@ -598,7 +689,7 @@
       <li><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
       <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
       <li><strong>Pantalla táctil:</strong> el mando de abajo a la izquierda lleva la barca (arriba para avanzar, a los lados para virar) y el de abajo a la derecha, el del ojo, gira la cámara. También puedes arrastrar en cualquier parte de la pantalla.</li>
-      <li><strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro claro sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha: la cámara se vuelve unos segundos hacia el sitio para enseñártelo de cerca, y regresa sola (o antes, si mueves tú la cámara); la flecha del borde de la pantalla lleva al más cercano que te falte. Hay doce.</li>
+      <li><strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro claro sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha: la cámara se vuelve unos segundos hacia el sitio para enseñártelo de cerca, y regresa sola (o antes, si mueves tú la cámara); la flecha del borde de la pantalla lleva al más cercano que te falte. Hay doce; toca la cuenta de arriba a la izquierda para repasarlos.</li>
       <li><strong>Puentes:</strong> al acercarte, la barca se encauza sola hacia el arco más cercano y abate la vela para pasar por debajo.</li>
       <li><strong>Menú:</strong> el botón que hay bajo el mapa despliega el momento del día, el sonido, el recorrido guiado, los ajustes y esta ayuda.</li>
       <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez «Recorrido guiado» en el menú.</li>

@@ -86,7 +86,7 @@ export function createCity(layout) {
     createSurface('mottle', 9, { color: 0xb8a67e, side: THREE.DoubleSide }),
   );
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = BANK.height;
+  floor.position.y = BANK.height + 0.04; // just over the river bank's ground, which it overlaps
 
   // House fronts use ordinary UVs: one drawing of windows and a door per wall.
   // A second drawing lights some of those windows; it is faded in at night.

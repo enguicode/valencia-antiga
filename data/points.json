@@ -15,7 +15,7 @@
   },
   {
     "id": "torres-serrans",
-    "at": { "type": "gate", "id": "serrans", "offset": -150 },
+    "at": { "type": "gate", "id": "serrans", "offset": 45 },
     "title": "Torres dels Serrans",
     "text": "La entrada principal de la ciudad, por donde llegaba el camino de Aragón y Cataluña. Las levantó Pere Balaguer entre 1392 y 1398. Desde 1586 eran, además, prisión de nobles y caballeros.",
     "source": "https://es.wikipedia.org/wiki/Torres_de_Serranos"

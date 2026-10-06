@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RIVER, createRandom, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
-import { createBoatModel, setSailLight, setLanternLight, lowerRig, rigFor } from './boat.js';
+import { createBoatModel, setSailLight, setLanternLight, animateBoat } from './boat.js';
 import { waveHeight } from './water.js';
 
 // Things that move or keep the place company: other boats, washerwomen at
@@ -28,7 +28,7 @@ function createTraffic(path, random, bridgeGuide) {
       if (boat.s > path.end - 20 || boat.s < path.start + 20) boat.direction *= -1;
       const point = path.pointAt(boat.s);
       const guided = bridgeGuide(boat.s, boat.lateral);
-      lowerRig(boat.model, rigFor(guided.closeness));
+      animateBoat(boat.model, dt, time, { closeness: guided.closeness, speed: boat.speed });
       const x = point.x + point.rx * guided.lateral;
       const z = point.z + point.rz * guided.lateral;
       boat.model.position.set(x, waveHeight(x, z, time), z);

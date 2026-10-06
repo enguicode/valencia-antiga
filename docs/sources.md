@@ -79,6 +79,7 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 
 - **Detalle de los edificios:** ventanas, puertas, contrafuertes, impostas, huecos de campanas y cornisas añadidos a ojo para que los sitios aguanten un plano cercano. No siguen ningún alzado. Lo mismo la galería volada, las aspilleras y las pilastras de las puertas de la muralla.
 - **Puentes:** tajamares en todos los pilares y bolas sobre el pretil, genéricos. Los casalicios del Pont de la Mar constan en Wikipedia; los del Pont del Real se han puesto de memoria. En ambos casos la forma es un esbozo.
+- **Barquero y vela:** en la barca de la Albufera el barquero mueve la percha y la vela va arriada cuando se navega despacio, y se iza al coger velocidad. Es una animación inventada.
 - **Paso bajo los arcos:** las barcas se encauzan solas hacia el arco más cercano y abaten el palo y la vela. Es un recurso del juego para que nada atraviese la piedra; no consta que se hiciera así.
 
 ## Pendiente

@@ -97,12 +97,53 @@ const guide = createGuide(points, layout, path, camera, {
   pointer: document.getElementById('pointer'),
   // On entering a ring the camera turns to the place it is about.
   onEnter: (marker) => {
-    focus.subject = marker.subject;
-    focus.left = FOCUS.seconds;
+    const { subject } = marker;
+    focus.subject = subject;
+    // Places close to the river get a zoom from the boat; far ones, a flight.
+    focus.flight = Math.hypot(subject.x - boat.state.x, subject.z - boat.state.z) > FLIGHT.beyond;
+    focus.total = focus.flight ? FLIGHT.out + FLIGHT.hold + FLIGHT.back : FOCUS.seconds;
+    focus.left = focus.total;
   },
 });
 scene.add(guide.group);
 document.getElementById('reset-found').addEventListener('click', () => guide.reset());
+
+// The logbook: tapping the tally lists every point. Those not yet found are
+// there too, as blanks: known to exist, not what they are.
+const journal = document.getElementById('journal');
+document.getElementById('status').addEventListener('click', () => {
+  const entries = guide.entries();
+  const foundCount = entries.filter((entry) => entry.found).length;
+  journal.querySelector('.tally').textContent =
+    foundCount === entries.length
+      ? `Los has encontrado todos: ${entries.length} de ${entries.length}.`
+      : `Llevas ${foundCount} de ${entries.length}. Los que faltan te esperan río abajo.`;
+  journal.querySelector('ol').replaceChildren(
+    ...entries.map((entry) => {
+      const item = document.createElement('li');
+      const title = document.createElement('h3');
+      const text = document.createElement('p');
+      item.append(title, text);
+      if (!entry.found) {
+        item.className = 'unknown';
+        title.textContent = '? ? ?';
+        text.textContent = 'Aún por descubrir.';
+        return item;
+      }
+      title.textContent = entry.title;
+      text.textContent = entry.text;
+      const source = document.createElement('a');
+      source.href = entry.source;
+      source.target = '_blank';
+      source.rel = 'noopener';
+      source.textContent = 'Fuente: Wikipedia';
+      item.append(source);
+      return item;
+    }),
+  );
+  journal.showModal();
+});
+document.getElementById('close-journal').addEventListener('click', () => journal.close());
 const tour = createTour(path, document.getElementById('tour'));
 const minimap = createMinimap(document.getElementById('minimap'), layout, path, guide);
 // Everything is lit by the sky as well as by the sun: the sky dome is
@@ -255,12 +296,45 @@ function updateOrbit(dt, axes) {
 const FOCUS = { seconds: 7, back: 13, aside: 8, up: 9, narrowest: 12, speed: 2.2 };
 // Going under a bridge the camera drops and closes up, to stay in the same arch as the boat.
 const UNDER_BRIDGE = { back: 8.5, up: 2.9 };
-const focus = { subject: null, left: 0 };
+// A place too far to zoom in on is visited instead: the camera flies out to
+// a spot in front of it, hovers, and flies back to the boat.
+const FLIGHT = { beyond: 200, out: 3.5, hold: 3.5, back: 3, standOff: 1.25, above: 20 };
+const focus = { subject: null, left: 0, total: 0, flight: false };
+const flightSpot = new THREE.Vector3();
+const chasePosition = new THREE.Vector3();
+const chaseLook = new THREE.Vector3();
 
 function updateCamera(dt, snap = false) {
   let wantedFov = baseFov;
   focus.left -= dt;
-  if (focus.left > 0) {
+
+  // Where the camera would be if it were simply following the boat.
+  const tucked = THREE.MathUtils.smoothstep(boat.state.underBridge, 0.3, 0.75);
+  const angle = boat.state.heading + orbit.yaw * (1 - tucked);
+  viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
+  chasePosition
+    .copy(boat.mesh.position)
+    .addScaledVector(viewDirection, -THREE.MathUtils.lerp(CAMERA_BACK, UNDER_BRIDGE.back, tucked));
+  chasePosition.y = THREE.MathUtils.lerp(CAMERA_UP + orbit.lift, UNDER_BRIDGE.up, tucked);
+  chaseLook.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
+  chaseLook.y = 2;
+
+  if (focus.left > 0 && focus.flight) {
+    const { subject } = focus;
+    const elapsed = focus.total - focus.left;
+    const going = THREE.MathUtils.smoothstep(elapsed, 0, FLIGHT.out);
+    const returning = THREE.MathUtils.smoothstep(elapsed, FLIGHT.out + FLIGHT.hold, focus.total);
+    const away = going - returning; // 0 at the boat, 1 at the place
+    const dx = boat.mesh.position.x - subject.x;
+    const dz = boat.mesh.position.z - subject.z;
+    const distance = Math.hypot(dx, dz) || 1;
+    const standOff = subject.span * FLIGHT.standOff;
+    flightSpot.set(subject.x + (dx / distance) * standOff, subject.y + FLIGHT.above, subject.z + (dz / distance) * standOff);
+    cameraGoal.lerpVectors(chasePosition, flightSpot, away);
+    // Rise over the roofs on the way there and back.
+    cameraGoal.y += Math.sin(away * Math.PI) * 18;
+    lookGoal.set(subject.x, subject.y, subject.z).lerp(chaseLook, 1 - Math.min(1, away * 2.5));
+  } else if (focus.left > 0) {
     const { subject } = focus;
     const dx = subject.x - boat.mesh.position.x;
     const dz = subject.z - boat.mesh.position.z;
@@ -278,18 +352,11 @@ function updateCamera(dt, snap = false) {
     const fitting = THREE.MathUtils.radToDeg(2 * Math.atan(subject.span / 2 / distance));
     wantedFov = THREE.MathUtils.clamp(fitting / Math.min(camera.aspect, 1), FOCUS.narrowest, baseFov);
   } else {
-    const tucked = THREE.MathUtils.smoothstep(boat.state.underBridge, 0.3, 0.75);
-    const angle = boat.state.heading + orbit.yaw * (1 - tucked);
-    viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
-    cameraGoal
-      .copy(boat.mesh.position)
-      .addScaledVector(viewDirection, -THREE.MathUtils.lerp(CAMERA_BACK, UNDER_BRIDGE.back, tucked));
-    cameraGoal.y = THREE.MathUtils.lerp(CAMERA_UP + orbit.lift, UNDER_BRIDGE.up, tucked);
-    lookGoal.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
-    lookGoal.y = 2;
+    cameraGoal.copy(chasePosition);
+    lookGoal.copy(chaseLook);
   }
 
-  const quick = orbit.idle < ORBIT.holdSeconds || boat.state.underBridge > 0.3;
+  const quick = orbit.idle < ORBIT.holdSeconds || boat.state.underBridge > 0.3 || (focus.left > 0 && focus.flight);
   const ease = snap ? 1 : 1 - Math.exp(-dt * (quick ? 9 : 3));
   camera.position.lerp(cameraGoal, ease);
   lookAt.lerp(lookGoal, ease);

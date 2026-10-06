@@ -266,6 +266,14 @@ function createParts(type) {
     piece.translate(-mastFoot.x, -mastFoot.y, -mastFoot.z);
     (rigPieces[material] ??= []).push(piece);
   };
+  // So are the boatman's arms and his pole, which swing from the shoulders.
+  const strokePieces = {};
+  let shoulders = null;
+  const addStroke = (material, geometry) => {
+    const piece = geometry.index ? geometry.toNonIndexed() : geometry;
+    piece.translate(-shoulders.x, -shoulders.y, -shoulders.z);
+    (strokePieces[material] ??= []).push(piece);
+  };
   const { halfBeam, sheer } = type;
   const z = (t) => stationZ(type, t);
 
@@ -322,10 +330,11 @@ function createParts(type) {
     add('skin', new THREE.SphereGeometry(0.14, 12, 10), 0, floor + 1.66, post);
     add('straw', new THREE.CylinderGeometry(0.3, 0.3, 0.025, 14), 0, floor + 1.77, post);
     add('straw', new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12), 0, floor + 1.84, post);
+    shoulders = v(0, floor + 1.35, post);
     const grip = v(-0.42, floor + 1.25, post - 0.15);
-    add('shirt', spar(v(-0.12, floor + 1.35, post), grip, 0.055));
-    add('shirt', spar(v(0.12, floor + 1.3, post), grip.clone().add(v(0.05, 0.35, 0.2)), 0.055));
-    add('deck', spar(v(-0.5, -1.6, post - 2.1), v(-0.36, floor + 2.5, post + 0.75), 0.03));
+    addStroke('shirt', spar(v(-0.12, floor + 1.35, post), grip, 0.055));
+    addStroke('shirt', spar(v(0.12, floor + 1.3, post), grip.clone().add(v(0.05, 0.35, 0.2)), 0.055));
+    addStroke('deck', spar(v(-0.5, -1.6, post - 2.1), v(-0.36, floor + 2.5, post + 0.75), 0.03));
   }
 
   // Cargo: sacks and a barrel
@@ -354,10 +363,16 @@ function createParts(type) {
     Object.entries(rigPieces).map(([material, list]) => [material, mergeGeometries(list)]),
   );
 
+  const strokeGeometries = Object.fromEntries(
+    Object.entries(strokePieces).map(([material, list]) => [material, mergeGeometries(list)]),
+  );
+
   return {
     geometries,
     rigGeometries,
     rigFoot: mastFoot.toArray(),
+    strokeGeometries,
+    shoulders: shoulders?.toArray() ?? null,
     rigging,
     lid: createLidGeometry(type),
     lantern: [0, sheer(1) + 0.75, z(1) - 0.05],
@@ -386,6 +401,20 @@ export function createBoatModel(typeName = DEFAULT_BOAT) {
   rig.add(new THREE.LineSegments(parts.rigging, MATERIALS.rope));
   model.add(rig);
   model.userData.rig = rig;
+  model.userData.rigDown = 0;
+
+  if (parts.shoulders) {
+    const stroke = new THREE.Group();
+    stroke.position.set(...parts.shoulders);
+    stroke.userData.rest = parts.shoulders[1];
+    for (const [material, geometry] of Object.entries(parts.strokeGeometries)) {
+      const mesh = new THREE.Mesh(geometry, MATERIALS[material]);
+      mesh.castShadow = true;
+      stroke.add(mesh);
+    }
+    model.add(stroke);
+    model.userData.stroke = stroke;
+  }
 
   const core = new THREE.Mesh(LANTERN.geometry, LANTERN.core);
   core.position.set(...parts.lantern);
@@ -400,13 +429,25 @@ export function createBoatModel(typeName = DEFAULT_BOAT) {
   return model;
 }
 
-// Lays the mast, yard and sail back over the stern: 0 is standing, 1 is down.
-export function lowerRig(model, amount) {
-  model.userData.rig.rotation.x = -amount;
-}
+// Below this speed a boat with a poling boatman goes under the pole, sail down.
+const SAILING_SPEED = 3.2;
 
-// How far down the rig should be for a given closeness to a bridge (0 to 1).
-export const rigFor = (closeness) => THREE.MathUtils.smoothstep(closeness, 0.12, 0.55);
+// Moves what moves on a boat. The rig is laid back over the stern near a
+// bridge and, where the boatman poles, whenever the boat is going too slowly
+// to sail; then he works the pole, the faster the boat the quicker.
+export function animateBoat(model, dt, time, { closeness, speed }) {
+  const data = model.userData;
+  const poling = Boolean(data.stroke) && Math.abs(speed) < SAILING_SPEED;
+  const wanted = Math.max(THREE.MathUtils.smoothstep(closeness, 0.12, 0.55), poling ? 1 : 0);
+  data.rigDown += (wanted - data.rigDown) * (1 - Math.exp(-dt * 2.2));
+  data.rig.rotation.x = -data.rigDown;
+
+  if (!data.stroke) return;
+  const effort = data.rigDown * Math.min(1, Math.abs(speed) / 1.2);
+  const beat = Math.sin(time * (1.6 + Math.abs(speed) * 0.35) + model.id);
+  data.stroke.rotation.x = beat * 0.3 * effort;
+  data.stroke.position.y = data.stroke.userData.rest + Math.max(0, -beat) * 0.12 * effort;
+}
 
 export function createBoat(path, bridgeGuide) {
   // The visitor's boat is a holder whose model can be swapped for another type.
@@ -467,7 +508,7 @@ export function createBoat(path, bridgeGuide) {
     state.x += sample.rx * (guided.lateral - held);
     state.z += sample.rz * (guided.lateral - held);
     state.underBridge = guided.closeness;
-    lowerRig(model, rigFor(guided.closeness));
+    animateBoat(model, dt, time, { closeness: guided.closeness, speed: state.speed });
 
     const overshoot = s < path.start ? s - path.start : s > path.end ? s - path.end : 0;
     if (overshoot !== 0) {

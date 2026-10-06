@@ -256,7 +256,13 @@ export function createGuide(points, layout, path, camera, elements) {
     pointer.querySelector('span').textContent = `${Math.round(nearestDistance / 10) * 10} m`;
   }
 
-  return { group, markers, found, update, reset };
+  // The points in the order the river reaches them, for the logbook.
+  const entries = () =>
+    [...markers]
+      .sort((a, b) => path.project(a.x, a.z).s - path.project(b.x, b.z).s)
+      .map((marker) => ({ ...marker, found: found.has(marker.id) }));
+
+  return { group, markers, found, update, reset, entries };
 }
 
 // Autopilot for the guided tour: holds a steady speed down the middle of the

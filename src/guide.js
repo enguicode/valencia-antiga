@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Points of interest. Each one has a golden ring floating on the river beside
+// Points of interest. Each one has a pale ring floating on the river beside
 // the place it talks about, with a pin over it so it can be seen from afar.
 // Sailing into the ring shows its history card and counts the point as
 // found. Finding them all is the visitor's errand.
@@ -10,8 +10,8 @@ const RING_RADIUS = 18;
 const RING_OFFSET = 14; // from the middle of the river, towards the place
 const CARD_STAYS_WITHIN = 75; // metres from the ring before the card goes
 const VISIBLE_WITHIN = 750;
-const PIN_SIZE = 0.06; // of the viewport's height
-const GOLD = 0xe2a52e;
+const PIN_SIZE = 0.05; // of the viewport's height
+const PALE = 0xf4e9d2; // the parchment of the panels, so the rings do not shout
 const GREEN = 0x4a7a4e;
 
 function drawPin(found) {
@@ -23,10 +23,10 @@ function drawPin(found) {
   context.arc(48, 46, 38, Math.PI * 0.82, Math.PI * 0.18);
   context.lineTo(48, 124);
   context.closePath();
-  context.fillStyle = found ? 'rgba(74, 122, 78, 0.9)' : '#e2a52e';
+  context.fillStyle = found ? 'rgba(74, 122, 78, 0.85)' : 'rgba(244, 233, 210, 0.92)';
   context.fill();
-  context.lineWidth = 6;
-  context.strokeStyle = found ? 'rgba(244, 233, 210, 0.9)' : '#2e2418';
+  context.lineWidth = 5;
+  context.strokeStyle = found ? 'rgba(244, 233, 210, 0.9)' : '#5a4a36';
   context.stroke();
   context.fillStyle = context.strokeStyle;
   context.lineCap = 'round';
@@ -62,13 +62,13 @@ export function createGuide(points, layout, path, camera, elements) {
   const found = readFound();
   const pins = {
     pending: new THREE.SpriteMaterial({ map: drawPin(false), sizeAttenuation: false, fog: false }),
-    found: new THREE.SpriteMaterial({ map: drawPin(true), sizeAttenuation: false, fog: false, opacity: 0.8 }),
+    found: new THREE.SpriteMaterial({ map: drawPin(true), sizeAttenuation: false, fog: false, opacity: 0.7 }),
   };
   const flat = (color, opacity) =>
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
   const rings = {
-    pending: { edge: flat(GOLD, 0.9), fill: flat(GOLD, 0.22) },
-    found: { edge: flat(GREEN, 0.55), fill: flat(GREEN, 0.08) },
+    pending: { edge: flat(PALE, 0.6), fill: flat(PALE, 0.1) },
+    found: { edge: flat(GREEN, 0.4), fill: flat(GREEN, 0.06) },
   };
   const edgeGeometry = new THREE.RingGeometry(RING_RADIUS - 2.4, RING_RADIUS, 48).rotateX(-Math.PI / 2);
   const fillGeometry = new THREE.CircleGeometry(RING_RADIUS - 2.4, 48).rotateX(-Math.PI / 2);

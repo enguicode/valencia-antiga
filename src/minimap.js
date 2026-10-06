@@ -63,11 +63,11 @@ export function createMinimap(canvas, layout, path, guide) {
   function update(state) {
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(base, 0, 0);
-    // Points of interest: gold while pending, green once found.
+    // Points of interest: pale while pending, green once found.
     for (const marker of guide.markers) {
       context.beginPath();
       context.arc(px(marker.x), py(marker.z), 2.4 * ratio, 0, Math.PI * 2);
-      context.fillStyle = guide.found.has(marker.id) ? '#4a7a4e' : '#e2a52e';
+      context.fillStyle = guide.found.has(marker.id) ? '#4a7a4e' : '#f4e9d2';
       context.fill();
       context.lineWidth = 0.8 * ratio;
       context.strokeStyle = '#2e2418';

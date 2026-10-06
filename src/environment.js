@@ -31,7 +31,34 @@ function createSky() {
       }
     `,
   });
-  return new THREE.Mesh(new THREE.SphereGeometry(1200, 24, 12), material);
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(1200, 24, 12), material);
+
+  // Stars ride on the sky dome and are faded in at night.
+  const random = createRandom(1238);
+  const points = [];
+  for (let i = 0; i < 350; i++) {
+    const azimuth = random() * Math.PI * 2;
+    const height = 0.08 + random() * 0.92;
+    const ring = Math.sqrt(1 - height * height);
+    points.push(Math.cos(azimuth) * ring * 1100, height * 1100, Math.sin(azimuth) * ring * 1100);
+  }
+  const starGeometry = new THREE.BufferGeometry();
+  starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  const stars = new THREE.Points(
+    starGeometry,
+    new THREE.PointsMaterial({
+      color: 0xfff6e0,
+      size: 2,
+      sizeAttenuation: false,
+      fog: false,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    }),
+  );
+  stars.frustumCulled = false;
+  sky.add(stars);
+  return { sky, stars };
 }
 
 // One bank: a shore rising out of the water up to the foot of the parapet
@@ -106,17 +133,17 @@ function createTrees(path, clearings) {
 export function createEnvironment(scene, path, clearings) {
   scene.fog = new THREE.Fog(COLORS.horizon, FOG.near, FOG.far);
 
-  const sky = createSky();
+  const { sky, stars } = createSky();
   scene.add(sky);
 
-  // Low sun from the north-west, as on a summer evening: it is the only time
-  // of day the north-facing river front of the city is lit.
-  scene.add(new THREE.HemisphereLight(0xd6e6f5, 0x8a7a55, 1.2));
+  // Colours, strengths and the sun's position are driven by the atmosphere.
+  const hemisphere = new THREE.HemisphereLight(0xd6e6f5, 0x8a7a55, 1.2);
+  scene.add(hemisphere);
   const sun = new THREE.DirectionalLight(0xfff1d6, 1.9);
   sun.position.set(-60, 55, -80);
   scene.add(sun);
 
   scene.add(createBank(path, 1), createBank(path, -1), createTrees(path, clearings));
 
-  return { sky };
+  return { sky, stars, sun, hemisphere, skyMaterial: sky.material };
 }

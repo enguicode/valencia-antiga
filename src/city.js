@@ -45,6 +45,7 @@ export function createCity(layout) {
   roofGeometry.rotateY(Math.PI / 4);
   const bodies = [];
   const roofs = [];
+  const chimneys = [];
 
   const clearings = landmarkClearings(layout);
   const random = createRandom(1356);
@@ -74,6 +75,7 @@ export function createCity(layout) {
     dummy.updateMatrix();
     roofs.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(pick(COLORS.roofs)) });
 
+    if (placed % 45 === 0) chimneys.push({ x, y: BANK.height + height + roofHeight, z });
     placed++;
   }
 
@@ -92,5 +94,6 @@ export function createCity(layout) {
     createInstances(new THREE.BoxGeometry(1, 1, 1), material, bodies),
     createInstances(roofGeometry, material, roofs),
   );
+  group.userData.chimneys = chimneys;
   return group;
 }

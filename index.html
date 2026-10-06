@@ -137,21 +137,27 @@
 
     #card.visible a { pointer-events: auto; }
 
-    #tour {
+    #controls {
       position: fixed;
       right: max(14px, env(safe-area-inset-right));
       bottom: max(22px, env(safe-area-inset-bottom));
-      padding: 9px 14px;
+      display: flex;
+      gap: 8px;
+    }
+
+    #controls button {
+      padding: 9px 12px;
       font: inherit;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: var(--ink);
       background: var(--parchment);
       border: 1px solid var(--rule);
       border-radius: 3px;
       cursor: pointer;
+      white-space: nowrap;
     }
 
-    #tour.active {
+    #controls button.active {
       background: var(--ink);
       color: #f4e9d2;
     }
@@ -207,7 +213,7 @@
 
   <header id="title" class="panel">
     <h1>València Antiga</h1>
-    <p>El Turia hacia 1700 · v0.4</p>
+    <p>El Turia hacia 1700 · v0.5</p>
   </header>
 
   <div id="progress" class="panel"><span id="distance">0</span> m de <span id="total">…</span></div>
@@ -225,7 +231,11 @@
     <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
   </article>
 
-  <button id="tour" type="button">Recorrido guiado</button>
+  <div id="controls">
+    <button id="clock" type="button">Hora: 18:00</button>
+    <button id="sound" type="button">Sonido: no</button>
+    <button id="tour" type="button">Recorrido guiado</button>
+  </div>
 
   <div id="debug" class="panel" hidden></div>
 

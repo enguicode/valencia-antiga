@@ -12,6 +12,9 @@ import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
 import { createGuide, createTour } from './guide.js';
 import { createMinimap } from './minimap.js';
+import { createAtmosphere } from './atmosphere.js';
+import { createLife } from './life.js';
+import { createSound } from './sound.js';
 
 const debug = new URLSearchParams(location.search).has('debug');
 
@@ -28,13 +31,17 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
 
-const { sky } = createEnvironment(scene, path, landmarkClearings(layout));
+const environment = createEnvironment(scene, path, landmarkClearings(layout));
+const { sky } = environment;
 const water = createWater(path);
 const boat = createBoat(path);
+const city = createCity(layout);
+const life = createLife(layout, path, city.userData.chimneys);
 scene.add(
   water.mesh,
   createWalls(layout),
-  createCity(layout),
+  city,
+  life.group,
   createBridges(layout, path),
   createLandmarks(layout, path),
   createRiverside(layout, path),
@@ -49,6 +56,8 @@ const debugPanel = document.getElementById('debug');
 const guide = createGuide(points, layout, path, document.getElementById('card'));
 const tour = createTour(path, document.getElementById('tour'));
 const minimap = createMinimap(document.getElementById('minimap'), layout, path, guide.stations);
+const atmosphere = createAtmosphere(scene, environment, water.material, document.getElementById('clock'));
+const sound = createSound(document.getElementById('sound'));
 
 function resize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -115,8 +124,11 @@ function frame() {
     else Object.assign(axes, tour.drive(boat.state));
   }
 
+  atmosphere.update(dt);
   boat.update(dt, axes, time);
   water.update(time, boat.state.row);
+  life.update(dt, time, boat.state, atmosphere.state);
+  sound.update(boat.state.speed, atmosphere.state.hour);
   updateOrbit(dt, axes);
   updateCamera(dt);
   cullInstances(camera);
@@ -150,5 +162,5 @@ renderer.setAnimationLoop(frame);
 
 if (debug) {
   debugPanel.hidden = false;
-  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour };
+  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound };
 }

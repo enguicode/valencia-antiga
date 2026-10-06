@@ -53,11 +53,30 @@ export function createRiverPath(layout) {
     return samples[THREE.MathUtils.clamp(Math.round(s / step), 0, count)];
   }
 
+  // Same as sampleAt, but interpolated: for things that move smoothly.
+  function pointAt(s) {
+    const position = THREE.MathUtils.clamp(s / step, 0, count - 0.001);
+    const a = samples[Math.floor(position)];
+    const b = samples[Math.floor(position) + 1];
+    const t = position % 1;
+    const tx = a.tx + (b.tx - a.tx) * t;
+    const tz = a.tz + (b.tz - a.tz) * t;
+    const norm = Math.hypot(tx, tz);
+    return {
+      x: a.x + (b.x - a.x) * t,
+      z: a.z + (b.z - a.z) * t,
+      tx: tx / norm,
+      tz: tz / norm,
+      rx: -tz / norm,
+      rz: tx / norm,
+    };
+  }
+
   const bridgeStations = layout.bridges.map((bridge) => project(bridge.x, bridge.z).s);
   const start = Math.min(...bridgeStations) - RIVER.upstreamRun;
   const end = Math.max(...bridgeStations) + RIVER.downstreamRun;
 
-  return { samples, length, step, project, sampleAt, start, end };
+  return { samples, length, step, project, sampleAt, pointAt, start, end };
 }
 
 const ribbons = [];

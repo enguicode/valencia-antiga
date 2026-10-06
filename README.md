@@ -4,7 +4,7 @@ Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700, he
 
 El visitante navega en barca por el río, que entonces hacía de foso natural, y ve la ciudad desde fuera: la muralla, sus puertas, los puentes y el perfil de torres y campanarios.
 
-> **Estado:** v0.4 hecha (fichas de historia, minimapa y recorrido guiado). El río, la muralla, las puertas, los puentes y los edificios singulares están donde les toca según el callejero actual, con formas esquemáticas; falta cotejarlos con el plano de Tosca y probar la fluidez en un móvil real. Detalle en [docs/sources.md](docs/sources.md).
+> **Estado:** v0.5 hecha (día y noche, otras barcas, lavanderas, humo, pájaros y sonido). El río, la muralla, las puertas, los puentes y los edificios singulares están donde les toca según el callejero actual, con formas esquemáticas; falta cotejarlos con el plano de Tosca y probar la fluidez en un móvil real. Detalle en [docs/sources.md](docs/sources.md).
 
 ## Enfoque
 
@@ -91,7 +91,7 @@ Datos de partida de la muralla, todavía de memoria salvo donde se indica (los d
 ```
 valencia-antiga/
 ├── index.html      # página y arranque de la escena
-├── src/            # módulos de la escena (path, water, walls, city, bridges, landmarks, riverside, boat…)
+├── src/            # módulos de la escena (path, water, walls, city, bridges, landmarks, riverside, atmosphere, life, sound, boat…)
 ├── data/           # layout.json (trazado en metros) y points.json (fichas de historia)
 ├── scripts/        # build-layout.py (genera el trazado) y deploy.sh
 └── docs/           # fuentes y notas históricas

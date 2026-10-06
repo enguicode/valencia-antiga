@@ -20,8 +20,8 @@ export function createWater(path) {
 
   const material = new THREE.MeshStandardMaterial({
     color: COLORS.water,
-    roughness: 0.45,
-    metalness: 0.15,
+    roughness: 0.28,
+    metalness: 0.3,
     flatShading: true,
   });
 
@@ -43,5 +43,5 @@ export function createWater(path) {
     setRibbonWindow(first, last);
   }
 
-  return { mesh, update };
+  return { mesh, material, update };
 }

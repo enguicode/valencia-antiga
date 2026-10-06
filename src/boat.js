@@ -8,6 +8,20 @@ const ACCELERATION = 6;
 const DRAG = 0.6;
 const TURN_RATE = 0.9;
 
+// Shared by every boat so the glow that keeps the sail readable in daylight
+// can be turned down at night.
+const SAIL_MATERIAL = new THREE.MeshStandardMaterial({
+  color: COLORS.sail,
+  emissive: COLORS.sail,
+  emissiveIntensity: 0.35,
+  roughness: 1,
+  side: THREE.DoubleSide,
+});
+
+export function setSailLight(light) {
+  SAIL_MATERIAL.emissiveIntensity = 0.35 * light;
+}
+
 function createHull(material) {
   // Top-down outline, bow towards +Y of the shape (which becomes +Z in the world).
   const outline = new THREE.Shape();
@@ -49,16 +63,7 @@ function createRigging(wood) {
 
   const sailGeometry = new THREE.BufferGeometry().setFromPoints([tack, peak, clew]);
   sailGeometry.computeVertexNormals();
-  const sail = new THREE.Mesh(
-    sailGeometry,
-    new THREE.MeshStandardMaterial({
-      color: COLORS.sail,
-      emissive: COLORS.sail,
-      emissiveIntensity: 0.35,
-      roughness: 1,
-      side: THREE.DoubleSide,
-    }),
-  );
+  const sail = new THREE.Mesh(sailGeometry, SAIL_MATERIAL);
   sail.position.x = 0.1;
   group.add(sail);
 
@@ -72,17 +77,22 @@ function createRigging(wood) {
   return group;
 }
 
-export function createBoat(path) {
+export function createBoatModel() {
   const wood = new THREE.MeshStandardMaterial({ color: COLORS.wood, roughness: 0.9, flatShading: true });
-  const mesh = new THREE.Group();
-  mesh.rotation.order = 'YXZ';
-  mesh.add(createHull(wood), createRigging(wood));
+  const model = new THREE.Group();
+  model.rotation.order = 'YXZ';
+  model.add(createHull(wood), createRigging(wood));
 
   for (const z of [-1.4, 1.0]) {
     const thwart = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.08, 0.3), wood);
     thwart.position.set(0, 0.56, z);
-    mesh.add(thwart);
+    model.add(thwart);
   }
+  return model;
+}
+
+export function createBoat(path) {
+  const mesh = createBoatModel();
 
   // Heading is measured so that forward = (sin h, cos h) on the (x, z) plane.
   const launch = path.sampleAt(path.start + 8);

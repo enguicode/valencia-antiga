@@ -171,6 +171,9 @@ export function createGuide(points, layout, path, camera, elements) {
 
   // The tally counts the ordinary points; the night-only one is an extra.
   const regular = markers.filter((marker) => !marker.bonus);
+  [...regular]
+    .sort((a, b) => path.project(a.x, a.z).s - path.project(b.x, b.z).s)
+    .forEach((marker, i) => (marker.number = i + 1));
   const tally = () => ({ found: regular.filter((marker) => found.has(marker.id)).length, total: regular.length });
   const showCount = () => {
     counter.textContent = t('count', tally());
@@ -214,11 +217,13 @@ export function createGuide(points, layout, path, camera, elements) {
     card.querySelector('a').href = marker.source;
     card.querySelector('a').textContent = sourceLabel(marker);
     const count = tally();
+    // The card says which point this is, going down the river; how many
+    // have been found is the counter's business.
     card.querySelector('.tally').textContent = marker.bonus
       ? t('card.bonus')
-      : count.found === count.total
+      : count.found === count.total && !marker.repeat
         ? t('card.all', count)
-        : t('count', count) + (marker.repeat ? t('card.again') : '');
+        : t('card.number', { number: marker.number, total: count.total }) + (marker.repeat ? t('card.again') : '');
   }
   onLanguageChange(() => {
     showCount();

@@ -1,5 +1,8 @@
 import * as THREE from 'three';
-import { RIVER, BANK, COLORS } from './config.js';
+import { RIVER, BANK, FOG, COLORS } from './config.js';
+import { buildRibbon } from './path.js';
+
+const COLUMNS = 13;
 
 // Shared by the water mesh and the boat, so the hull rides the same swell it floats on.
 export function waveHeight(x, z, time) {
@@ -10,12 +13,10 @@ export function waveHeight(x, z, time) {
   );
 }
 
-export function createWater() {
-  const width = RIVER.width + BANK.slopeRun * 2;
-  const length = RIVER.length + RIVER.overrun * 2;
-  const geometry = new THREE.PlaneGeometry(width, length, 12, Math.round(length / 3));
-  geometry.rotateX(-Math.PI / 2);
-  geometry.translate(0, 0, RIVER.length / 2);
+export function createWater(path) {
+  const half = RIVER.width / 2 + BANK.slopeRun;
+  const profile = Array.from({ length: COLUMNS }, (_, i) => [-half + (2 * half * i) / (COLUMNS - 1), 0]);
+  const geometry = buildRibbon(path.samples, profile);
 
   const material = new THREE.MeshStandardMaterial({
     color: COLORS.water,
@@ -25,13 +26,21 @@ export function createWater() {
   });
 
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
   const positions = geometry.attributes.position;
+  const reach = Math.ceil((FOG.far + 50) / path.step);
 
-  function update(time) {
-    for (let i = 0; i < positions.count; i++) {
+  // Only the rows that can be seen through the fog are animated.
+  function update(time, centreRow) {
+    const first = Math.max(0, centreRow - reach);
+    const last = Math.min(path.samples.length - 1, centreRow + reach);
+    for (let i = first * COLUMNS; i < (last + 1) * COLUMNS; i++) {
       positions.setY(i, waveHeight(positions.getX(i), positions.getZ(i), time));
     }
+    positions.clearUpdateRanges();
+    positions.addUpdateRange(first * COLUMNS * 3, (last - first + 1) * COLUMNS * 3);
     positions.needsUpdate = true;
+    geometry.setDrawRange(first * (COLUMNS - 1) * 6, (last - first) * (COLUMNS - 1) * 6);
   }
 
   return { mesh, update };

@@ -1,130 +1,149 @@
 import * as THREE from 'three';
-import { RIVER, BANK, WALL, CITY_SIDE, COLORS } from './config.js';
+import { BANK, WALL, COLORS, yawTowards } from './config.js';
+import { createInstances } from './instancing.js';
 
-// Placeholder city wall for v0.1: a straight curtain with repeated towers and a
-// single gate. It does not follow the real layout yet.
+// City wall along the perimeter in the layout: a curtain between vertices, a
+// tower on every vertex and a gate where the layout says so. Every piece is
+// described in a local frame whose +X points out of the city and whose origin
+// sits at the foot of the wall.
 
-const Z_START = -RIVER.overrun;
-const Z_END = RIVER.length + RIVER.overrun;
-const TOWARDS_RIVER = -CITY_SIDE;
-const WALL_X = CITY_SIDE * (RIVER.width / 2 + WALL.setback);
 const BASE_Y = BANK.height - 0.5;
-const GATE_Z = RIVER.length / 2;
-
-const TOWER = { size: 8, extraHeight: 5, offset: 2.5 };
-const GATE = { towerRadius: 5.5, towerGap: 7.5, extraHeight: 9, offset: 3 };
 const MERLON = { width: 1, height: 1.2, spacing: 2.4 };
+const TOWER = { size: 8, height: WALL.height + 5, offset: 2.5 };
 
-function fillInstances(mesh, matrices) {
-  matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
-  return mesh;
+// Proportions only: the two surviving gates are far taller than the wall, and
+// Quart is the one with round towers.
+const GATE_STYLES = {
+  minor: { radius: 5, height: 17, gap: 7, round: false },
+  serrans: { radius: 7.5, height: 30, gap: 9.5, round: false },
+  quart: { radius: 7.5, height: 30, gap: 9.5, round: true },
+};
+
+function createArchGeometry() {
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.5, 0);
+  shape.lineTo(-0.5, 0.9);
+  shape.absarc(0, 0.9, 0.5, Math.PI, 0, true);
+  shape.lineTo(0.5, 0);
+  shape.closePath();
+  const geometry = new THREE.ShapeGeometry(shape, 10);
+  geometry.rotateY(Math.PI / 2); // face outwards, along local +X
+  return geometry;
 }
 
-export function createWalls() {
-  const group = new THREE.Group();
+export function createWalls(layout) {
   const stone = new THREE.MeshStandardMaterial({ color: COLORS.stone, roughness: 1, flatShading: true });
   const dark = new THREE.MeshBasicMaterial({ color: COLORS.stoneDark });
-  const dummy = new THREE.Object3D();
-  const merlons = [];
-  const towers = [];
-  const slits = [];
 
-  const place = (list, x, y, z, rotationY = 0) => {
-    dummy.position.set(x, y, z);
-    dummy.rotation.set(0, rotationY, 0);
-    dummy.updateMatrix();
-    list.push(dummy.matrix.clone());
+  const vertices = layout.wall.map(([x, z]) => ({ x, z }));
+  const count = vertices.length;
+  const centre = vertices.reduce((sum, v) => ({ x: sum.x + v.x / count, z: sum.z + v.z / count }), { x: 0, z: 0 });
+  const gateByVertex = new Map(layout.gates.map((gate) => [gate.vertex, gate]));
+
+  const lists = { curtains: [], merlons: [], towers: [], slits: [], polygonal: [], round: [], passages: [], arches: [] };
+  const local = new THREE.Object3D();
+
+  const makeFrame = (x, z, outX, outZ) =>
+    new THREE.Matrix4().makeRotationY(yawTowards(outX, outZ)).setPosition(x, BASE_Y, z);
+
+  const place = (list, frame, x, y, z, { yaw = 0, scale = [1, 1, 1] } = {}) => {
+    local.position.set(x, y, z);
+    local.rotation.set(0, yaw, 0);
+    local.scale.set(...scale);
+    local.updateMatrix();
+    list.push({ matrix: frame.clone().multiply(local.matrix) });
   };
 
-  // Curtain wall
-  const curtainLength = Z_END - Z_START;
-  const curtain = new THREE.Mesh(new THREE.BoxGeometry(WALL.thickness, WALL.height, curtainLength), stone);
-  curtain.position.set(WALL_X, BASE_Y + WALL.height / 2, (Z_START + Z_END) / 2);
-  group.add(curtain);
+  // Curtain segments
+  const segments = vertices.map((a, i) => {
+    const b = vertices[(i + 1) % count];
+    const length = Math.hypot(b.x - a.x, b.z - a.z);
+    let outX = (b.z - a.z) / length;
+    let outZ = -(b.x - a.x) / length;
+    const midX = (a.x + b.x) / 2;
+    const midZ = (a.z + b.z) / 2;
+    if (outX * (midX - centre.x) + outZ * (midZ - centre.z) < 0) {
+      outX = -outX;
+      outZ = -outZ;
+    }
+    return { midX, midZ, outX, outZ, length };
+  });
 
-  const curtainTop = BASE_Y + WALL.height + MERLON.height / 2;
-  const curtainFace = WALL_X + TOWARDS_RIVER * (WALL.thickness / 2 - MERLON.width / 2);
-  for (let z = Z_START; z <= Z_END; z += MERLON.spacing) {
-    place(merlons, curtainFace, curtainTop, z);
-  }
-
-  // Square towers at regular intervals, leaving room for the gate
-  const towerHeight = WALL.height + TOWER.extraHeight;
-  const towerX = WALL_X + TOWARDS_RIVER * TOWER.offset;
-  const towerTop = BASE_Y + towerHeight + MERLON.height / 2;
-  const rim = TOWER.size / 2 - MERLON.width / 2;
-  const firstTower = Math.ceil(Z_START / WALL.towerSpacing) * WALL.towerSpacing + WALL.towerSpacing / 2;
-  for (let z = firstTower; z < Z_END; z += WALL.towerSpacing) {
-    if (Math.abs(z - GATE_Z) < WALL.towerSpacing / 2) continue;
-    place(towers, towerX, BASE_Y + towerHeight / 2, z);
-    place(slits, towerX + TOWARDS_RIVER * (TOWER.size / 2 + 0.02), BASE_Y + towerHeight * 0.65, z);
-    for (let step = -1; step <= 1; step++) {
-      const along = step * rim;
-      place(merlons, towerX + rim, towerTop, z + along);
-      place(merlons, towerX - rim, towerTop, z + along);
-      place(merlons, towerX + along, towerTop, z + rim);
-      place(merlons, towerX + along, towerTop, z - rim);
+  for (const segment of segments) {
+    const frame = makeFrame(segment.midX, segment.midZ, segment.outX, segment.outZ);
+    place(lists.curtains, frame, 0, WALL.height / 2, 0, { scale: [1, 1, segment.length] });
+    const face = WALL.thickness / 2 - MERLON.width / 2;
+    const merlonCount = Math.floor(segment.length / MERLON.spacing);
+    for (let i = 0; i < merlonCount; i++) {
+      const along = (i + 0.5 - merlonCount / 2) * MERLON.spacing;
+      place(lists.merlons, frame, face, WALL.height + MERLON.height / 2, along);
     }
   }
 
-  // Gate: two taller polygonal towers flanking an arched passage
-  const gateHeight = WALL.height + GATE.extraHeight;
-  const gateX = WALL_X + TOWARDS_RIVER * GATE.offset;
-  const gateTowerGeometry = new THREE.CylinderGeometry(GATE.towerRadius, GATE.towerRadius, gateHeight, 6);
-  for (const direction of [-1, 1]) {
-    const z = GATE_Z + direction * GATE.towerGap;
-    const tower = new THREE.Mesh(gateTowerGeometry, stone);
-    tower.position.set(gateX, BASE_Y + gateHeight / 2, z);
-    group.add(tower);
-    const crown = GATE.towerRadius - MERLON.width / 2;
-    for (let i = 0; i < 10; i++) {
-      const angle = (i / 10) * Math.PI * 2;
-      place(
-        merlons,
-        gateX + Math.cos(angle) * crown,
-        BASE_Y + gateHeight + MERLON.height / 2,
-        z + Math.sin(angle) * crown,
-        -angle,
-      );
+  // Towers and gates on the vertices
+  vertices.forEach((vertex, i) => {
+    const before = segments[(i + count - 1) % count];
+    const after = segments[i];
+    const outX = before.outX + after.outX;
+    const outZ = before.outZ + after.outZ;
+    const frame = makeFrame(vertex.x, vertex.z, outX, outZ);
+    const gate = gateByVertex.get(i);
+
+    if (!gate) {
+      const rim = TOWER.size / 2 - MERLON.width / 2;
+      const top = TOWER.height + MERLON.height / 2;
+      place(lists.towers, frame, TOWER.offset, TOWER.height / 2, 0);
+      place(lists.slits, frame, TOWER.offset + TOWER.size / 2 + 0.02, TOWER.height * 0.65, 0);
+      for (let step = -1; step <= 1; step++) {
+        const along = step * rim;
+        place(lists.merlons, frame, TOWER.offset + rim, top, along);
+        place(lists.merlons, frame, TOWER.offset - rim, top, along);
+        place(lists.merlons, frame, TOWER.offset + along, top, rim);
+        place(lists.merlons, frame, TOWER.offset + along, top, -rim);
+      }
+      return;
     }
-  }
 
-  const passageHeight = WALL.height + 4;
-  const passageDepth = 6;
-  const passage = new THREE.Mesh(new THREE.BoxGeometry(passageDepth, passageHeight, GATE.towerGap * 2), stone);
-  passage.position.set(WALL_X + TOWARDS_RIVER * 1.5, BASE_Y + passageHeight / 2, GATE_Z);
-  group.add(passage);
+    const style = GATE_STYLES[gate.id] ?? GATE_STYLES.minor;
+    const towerX = style.radius * 0.6;
+    for (const direction of [-1, 1]) {
+      const towerZ = direction * style.gap;
+      place(style.round ? lists.round : lists.polygonal, frame, towerX, style.height / 2, towerZ, {
+        scale: [style.radius, style.height, style.radius],
+      });
+      const crown = style.radius - MERLON.width / 2;
+      const crownCount = Math.round(style.radius * 2);
+      for (let k = 0; k < crownCount; k++) {
+        const angle = (k / crownCount) * Math.PI * 2;
+        place(
+          lists.merlons,
+          frame,
+          towerX + Math.cos(angle) * crown,
+          style.height + MERLON.height / 2,
+          towerZ + Math.sin(angle) * crown,
+          { yaw: -angle },
+        );
+      }
+    }
+    const passageHeight = style.height * 0.75;
+    const passageDepth = style.radius * 1.2;
+    place(lists.passages, frame, 1, passageHeight / 2, 0, {
+      scale: [passageDepth, passageHeight, style.gap * 2],
+    });
+    const archSize = style.radius * 0.9;
+    place(lists.arches, frame, 1 + passageDepth / 2 + 0.05, 0.5, 0, { scale: [1, archSize, archSize] });
+  });
 
-  const archShape = new THREE.Shape();
-  archShape.moveTo(-2.2, 0);
-  archShape.lineTo(-2.2, 4);
-  archShape.absarc(0, 4, 2.2, Math.PI, 0, true);
-  archShape.lineTo(2.2, 0);
-  archShape.closePath();
-  const arch = new THREE.Mesh(new THREE.ShapeGeometry(archShape, 10), dark);
-  arch.rotation.y = TOWARDS_RIVER * (Math.PI / 2);
-  arch.position.set(passage.position.x + TOWARDS_RIVER * (passageDepth / 2 + 0.03), BASE_Y + 0.5, GATE_Z);
-  group.add(arch);
-
-  // Instanced details
+  const group = new THREE.Group();
   group.add(
-    fillInstances(
-      new THREE.InstancedMesh(new THREE.BoxGeometry(TOWER.size, towerHeight, TOWER.size), stone, towers.length),
-      towers,
-    ),
-    fillInstances(
-      new THREE.InstancedMesh(new THREE.BoxGeometry(0.05, 1.6, 0.35), dark, slits.length),
-      slits,
-    ),
-    fillInstances(
-      new THREE.InstancedMesh(
-        new THREE.BoxGeometry(MERLON.width, MERLON.height, MERLON.width * 1.2),
-        stone,
-        merlons.length,
-      ),
-      merlons,
-    ),
+    createInstances(new THREE.BoxGeometry(WALL.thickness, WALL.height, 1), stone, lists.curtains),
+    createInstances(new THREE.BoxGeometry(MERLON.width, MERLON.height, MERLON.width * 1.2), stone, lists.merlons),
+    createInstances(new THREE.BoxGeometry(TOWER.size, TOWER.height, TOWER.size), stone, lists.towers),
+    createInstances(new THREE.BoxGeometry(0.05, 1.6, 0.35), dark, lists.slits),
+    createInstances(new THREE.CylinderGeometry(1, 1, 1, 6), stone, lists.polygonal),
+    createInstances(new THREE.CylinderGeometry(1, 1, 1, 16), stone, lists.round),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), stone, lists.passages),
+    createInstances(createArchGeometry(), dark, lists.arches),
   );
-
   return group;
 }

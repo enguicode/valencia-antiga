@@ -72,7 +72,7 @@ function createRigging(wood) {
   return group;
 }
 
-export function createBoat() {
+export function createBoat(path) {
   const wood = new THREE.MeshStandardMaterial({ color: COLORS.wood, roughness: 0.9, flatShading: true });
   const mesh = new THREE.Group();
   mesh.rotation.order = 'YXZ';
@@ -84,8 +84,17 @@ export function createBoat() {
     mesh.add(thwart);
   }
 
-  const state = { x: 0, z: 8, heading: 0, speed: 0 };
-  const limitX = RIVER.width / 2 - RIVER.margin;
+  // Heading is measured so that forward = (sin h, cos h) on the (x, z) plane.
+  const launch = path.sampleAt(path.start + 8);
+  const state = {
+    x: launch.x,
+    z: launch.z,
+    heading: Math.atan2(launch.tx, launch.tz),
+    speed: 0,
+    s: path.start + 8, // distance along the river
+    row: 0, // nearest centreline sample
+  };
+  const limit = RIVER.width / 2 - RIVER.margin;
   const forward = new THREE.Vector3();
 
   function update(dt, input, time) {
@@ -99,21 +108,31 @@ export function createBoat() {
     if (Math.abs(rudder) < 0.25) rudder = 0.25;
     state.heading -= input.steer * TURN_RATE * rudder * dt;
 
-    state.x += Math.sin(state.heading) * state.speed * dt;
-    state.z += Math.cos(state.heading) * state.speed * dt;
+    const dirX = Math.sin(state.heading);
+    const dirZ = Math.cos(state.heading);
+    state.x += dirX * state.speed * dt;
+    state.z += dirZ * state.speed * dt;
 
-    if (Math.abs(state.x) > limitX) {
-      state.x = Math.sign(state.x) * limitX;
+    const { sample, s, lateral, index } = path.project(state.x, state.z);
+    if (Math.abs(lateral) > limit) {
+      const excess = lateral - Math.sign(lateral) * limit;
+      state.x -= sample.rx * excess;
+      state.z -= sample.rz * excess;
       // Scrape along the bank: only the part of the motion aimed at it is lost.
-      state.speed *= 1 - Math.min(1, 2.5 * Math.abs(Math.sin(state.heading)) * dt);
+      const intoBank = Math.abs(dirX * sample.rx + dirZ * sample.rz);
+      state.speed *= 1 - Math.min(1, 2.5 * intoBank * dt);
     }
-    if (state.z < 4 || state.z > RIVER.length) {
-      state.z = THREE.MathUtils.clamp(state.z, 4, RIVER.length);
+    const overshoot = s < path.start ? s - path.start : s > path.end ? s - path.end : 0;
+    if (overshoot !== 0) {
+      state.x -= sample.tx * overshoot;
+      state.z -= sample.tz * overshoot;
       state.speed = 0;
     }
+    state.s = s - overshoot;
+    state.row = index;
 
-    const bow = waveHeight(state.x + Math.sin(state.heading) * 2, state.z + Math.cos(state.heading) * 2, time);
-    const stern = waveHeight(state.x - Math.sin(state.heading) * 2, state.z - Math.cos(state.heading) * 2, time);
+    const bow = waveHeight(state.x + dirX * 2, state.z + dirZ * 2, time);
+    const stern = waveHeight(state.x - dirX * 2, state.z - dirZ * 2, time);
     mesh.position.set(state.x, (bow + stern) / 2, state.z);
     mesh.rotation.y = state.heading;
     mesh.rotation.x = (stern - bow) * 0.25;

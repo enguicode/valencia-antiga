@@ -1,12 +1,18 @@
 import * as THREE from 'three';
-import { RIVER } from './config.js';
+import { createRiverPath } from './path.js';
 import { createEnvironment } from './environment.js';
 import { createWater } from './water.js';
 import { createWalls } from './walls.js';
+import { createCity } from './city.js';
+import { createBridges } from './bridges.js';
 import { createBoat } from './boat.js';
 import { createInput } from './input.js';
+import { cullInstances } from './instancing.js';
 
 const debug = new URLSearchParams(location.search).has('debug');
+
+const layout = await (await fetch('./data/layout.json')).json();
+const path = createRiverPath(layout);
 
 const canvas = document.getElementById('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -16,13 +22,14 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
 
-const { sky } = createEnvironment(scene);
-const water = createWater();
-const boat = createBoat();
-scene.add(water.mesh, createWalls(), boat.mesh);
+const { sky } = createEnvironment(scene, path);
+const water = createWater(path);
+const boat = createBoat(path);
+scene.add(water.mesh, createWalls(layout), createCity(layout), createBridges(layout, path), boat.mesh);
 
 const input = createInput(canvas, document.getElementById('joystick'));
 const distanceLabel = document.getElementById('distance');
+document.getElementById('total').textContent = Math.round(path.end - path.start);
 const helpPanel = document.getElementById('help');
 const debugPanel = document.getElementById('debug');
 
@@ -66,12 +73,13 @@ function frame() {
   const time = clock.elapsedTime;
   const axes = input.update();
 
-  water.update(time);
   boat.update(dt, axes, time);
+  water.update(time, boat.state.row);
   updateCamera(dt);
+  cullInstances(camera);
   renderer.render(scene, camera);
 
-  const distance = Math.round(THREE.MathUtils.clamp(boat.state.z, 0, RIVER.length));
+  const distance = Math.round(boat.state.s - path.start);
   if (distance !== shownDistance) {
     shownDistance = distance;
     distanceLabel.textContent = distance;
@@ -97,5 +105,5 @@ renderer.setAnimationLoop(frame);
 
 if (debug) {
   debugPanel.hidden = false;
-  window.__valencia = { boat, renderer, scene, camera };
+  window.__valencia = { boat, renderer, scene, camera, path, layout };
 }

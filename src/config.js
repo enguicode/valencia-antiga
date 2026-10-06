@@ -1,27 +1,27 @@
-// World layout. The river runs along +Z; the city sits on the -X bank,
-// which is on the right-hand side when travelling downstream.
+// Scene axes follow the map: x grows to the east, z to the south, in metres
+// from the Torres dels Serrans. The river flows roughly west to east, so the
+// city sits on its right-hand bank.
 
 export const RIVER = {
-  length: 600, // navigable stretch, in metres
-  width: 56,
-  overrun: 450, // scenery beyond both ends, hidden by fog
+  width: 96,
   margin: 2.5, // how close the boat may get to a bank
+  sampleSpacing: 5,
+  upstreamRun: 250, // navigable water before the first historic bridge
+  downstreamRun: 200, // and after the last one
 };
 
 export const BANK = {
   slopeRun: 8,
   height: 2.5,
-  extent: 260,
+  extent: 1100,
 };
 
 export const WALL = {
-  setback: 16, // distance from the river edge to the wall axis
   height: 9,
   thickness: 3,
-  towerSpacing: 75,
 };
 
-export const CITY_SIDE = -1;
+export const FOG = { near: 150, far: 800 };
 
 export const COLORS = {
   skyTop: 0x5f97d2,
@@ -34,6 +34,8 @@ export const COLORS = {
   trunk: 0x6b4f33,
   wood: 0x7a5230,
   sail: 0xf3e9d2,
+  houseWalls: [0xe9dcc0, 0xd9c7a0, 0xf2ead8, 0xcbb38a],
+  roofs: [0xb5653f, 0xa85a3a, 0xc27448],
 };
 
 // Small deterministic PRNG so the scenery is identical on every load.
@@ -46,4 +48,9 @@ export function createRandom(seed) {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+// Rotation about Y that turns local +X towards the given horizontal direction.
+export function yawTowards(dirX, dirZ) {
+  return Math.atan2(-dirZ, dirX);
 }

@@ -1,8 +1,7 @@
 import * as THREE from 'three';
-import { RIVER, BANK, COLORS, createRandom } from './config.js';
-
-const Z_START = -RIVER.overrun;
-const Z_END = RIVER.length + RIVER.overrun;
+import { RIVER, BANK, FOG, COLORS, createRandom } from './config.js';
+import { buildRibbon } from './path.js';
+import { createInstances } from './instancing.js';
 
 function createSky() {
   const material = new THREE.ShaderMaterial({
@@ -34,83 +33,81 @@ function createSky() {
   return new THREE.Mesh(new THREE.SphereGeometry(1200, 24, 12), material);
 }
 
-// One bank as a strip: a slope rising out of the water, then near-flat ground.
-function createBank(side) {
+// One bank: a slope rising out of the water, then flat ground. The flat part
+// is kept perfectly level so the folds it makes on the inside of bends cannot
+// be seen.
+function createBank(path, side) {
   const half = RIVER.width / 2;
-  const profile = [
+  const geometry = buildRibbon(path.samples, [
     [side * (half - 2), -2],
     [side * (half + BANK.slopeRun), BANK.height],
-    [side * (half + BANK.extent), BANK.height + 1],
-  ];
-  const vertices = [];
-  for (let i = 0; i < profile.length - 1; i++) {
-    const [x0, y0] = profile[i];
-    const [x1, y1] = profile[i + 1];
-    vertices.push(
-      x0, y0, Z_START, x1, y1, Z_START, x1, y1, Z_END,
-      x0, y0, Z_START, x1, y1, Z_END, x0, y0, Z_END,
-    );
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.computeVertexNormals();
+    [side * (half + BANK.extent), BANK.height],
+  ]);
   const material = new THREE.MeshStandardMaterial({
     color: COLORS.grass,
     roughness: 1,
     flatShading: true,
     side: THREE.DoubleSide,
   });
-  return new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  return mesh;
 }
 
-// Orchard trees on the bank opposite the city, mostly there to give a sense of speed.
-function createTrees(side) {
-  const count = 320;
+// Orchard trees on the bank opposite the city.
+function createTrees(path) {
+  const count = Math.round(path.length / 4.5);
   const random = createRandom(1704);
-  const foliage = new THREE.InstancedMesh(
-    new THREE.IcosahedronGeometry(2.6, 0),
-    new THREE.MeshStandardMaterial({ color: COLORS.foliage, roughness: 1, flatShading: true }),
-    count,
-  );
-  const trunks = new THREE.InstancedMesh(
-    new THREE.CylinderGeometry(0.3, 0.4, 2, 5),
-    new THREE.MeshStandardMaterial({ color: COLORS.trunk, roughness: 1, flatShading: true }),
-    count,
-  );
+  const foliage = [];
+  const trunks = [];
   const dummy = new THREE.Object3D();
   for (let i = 0; i < count; i++) {
-    const x = side * (RIVER.width / 2 + BANK.slopeRun + 3 + random() ** 2 * 130);
-    const z = Z_START + random() * (Z_END - Z_START);
+    const sample = path.samples[Math.floor(random() * path.samples.length)];
+    const lateral = -(RIVER.width / 2 + BANK.slopeRun + 3 + random() ** 2 * 130);
+    const x = sample.x + sample.rx * lateral;
+    const z = sample.z + sample.rz * lateral;
     const scale = 0.7 + random() * 0.9;
-    const ground = BANK.height;
 
     dummy.rotation.set(0, random() * Math.PI, 0);
     dummy.scale.setScalar(scale);
-    dummy.position.set(x, ground + scale, z);
+    dummy.position.set(x, BANK.height + scale, z);
     dummy.updateMatrix();
-    trunks.setMatrixAt(i, dummy.matrix);
+    trunks.push({ matrix: dummy.matrix.clone() });
 
-    dummy.position.set(x, ground + scale * 3.8, z);
+    dummy.position.set(x, BANK.height + scale * 3.8, z);
     dummy.updateMatrix();
-    foliage.setMatrixAt(i, dummy.matrix);
+    foliage.push({ matrix: dummy.matrix.clone() });
   }
   const group = new THREE.Group();
-  group.add(trunks, foliage);
+  group.add(
+    createInstances(
+      new THREE.CylinderGeometry(0.3, 0.4, 2, 5),
+      new THREE.MeshStandardMaterial({ color: COLORS.trunk, roughness: 1, flatShading: true }),
+      trunks,
+    ),
+    createInstances(
+      new THREE.IcosahedronGeometry(2.6, 0),
+      new THREE.MeshStandardMaterial({ color: COLORS.foliage, roughness: 1, flatShading: true }),
+      foliage,
+    ),
+  );
   return group;
 }
 
-export function createEnvironment(scene) {
-  scene.fog = new THREE.Fog(COLORS.horizon, 110, 430);
+export function createEnvironment(scene, path) {
+  scene.fog = new THREE.Fog(COLORS.horizon, FOG.near, FOG.far);
 
   const sky = createSky();
   scene.add(sky);
 
+  // Low sun from the north-west, as on a summer evening: it is the only time
+  // of day the north-facing river front of the city is lit.
   scene.add(new THREE.HemisphereLight(0xd6e6f5, 0x8a7a55, 1.2));
   const sun = new THREE.DirectionalLight(0xfff1d6, 1.9);
-  sun.position.set(70, 90, -50);
+  sun.position.set(-60, 55, -80);
   scene.add(sun);
 
-  scene.add(createBank(1), createBank(-1), createTrees(1));
+  scene.add(createBank(path, 1), createBank(path, -1), createTrees(path));
 
   return { sky };
 }

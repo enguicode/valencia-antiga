@@ -4,7 +4,7 @@ Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700, he
 
 El visitante navega en barca por el río, que entonces hacía de foso natural, y ve la ciudad desde fuera: la muralla, sus puertas, los puentes y el perfil de torres y campanarios.
 
-> **Estado:** v0.1 hecha (río navegable con muralla de prueba), pendiente de probar en un móvil real. La muralla aún no sigue el trazado histórico.
+> **Estado:** v0.2 hecha. El río, la muralla, las puertas y los puentes están donde les toca según el callejero actual; falta cotejarlos con el plano de Tosca y probar la fluidez en un móvil real. Detalle en [docs/sources.md](docs/sources.md).
 
 ## Enfoque
 
@@ -73,7 +73,7 @@ La ciudad pasa de decorado genérico a tener la forma de València.
 
 Lo que más cuesta de este proyecto no es el 3D sino colocar cada cosa donde estaba. Reglas:
 
-- Todo dato histórico que aparezca en la escena o en las fichas lleva fuente, anotada en `docs/sources.md` (por crear).
+- Todo dato histórico que aparezca en la escena o en las fichas lleva fuente, anotada en [docs/sources.md](docs/sources.md).
 - Donde no haya documentación se inventa con criterio y se marca como reconstrucción libre.
 - Fuente principal: plano de Tomás Vicente Tosca, *Valentia Edetanorum* (1704).
 
@@ -91,8 +91,9 @@ Datos de partida, pendientes de contrastar antes de modelarlos:
 ```
 valencia-antiga/
 ├── index.html      # página y arranque de la escena
-├── src/            # módulos de la escena (river, walls, bridges, boat…)
-├── data/           # trazados y puntos de interés
+├── src/            # módulos de la escena (path, water, walls, city, bridges, boat…)
+├── data/           # layout.json: río, muralla, puertas y puentes en metros
+├── scripts/        # build-layout.py (genera el trazado) y deploy.sh
 └── docs/           # fuentes y notas históricas
 ```
 
@@ -116,4 +117,12 @@ La página está en Cloudflare Pages: <https://valencia-antiga.pages.dev/>
 bash scripts/deploy.sh
 ```
 
-El script sube solo `index.html` y `src/`.
+El script sube solo `index.html`, `src/` y `data/`.
+
+## Regenerar el trazado
+
+```bash
+python3 scripts/build-layout.py
+```
+
+Descarga los datos de OpenStreetMap y reescribe `data/layout.json`.

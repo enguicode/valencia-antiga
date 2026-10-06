@@ -186,7 +186,7 @@
 
     #help {
       left: 50%;
-      bottom: max(22px, env(safe-area-inset-bottom));
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px);
       transform: translateX(-50%);
       max-width: calc(100% - 32px);
       font-size: 0.9rem;
@@ -198,7 +198,7 @@
 
     #tour-notice {
       left: 50%;
-      bottom: max(22px, env(safe-area-inset-bottom));
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px);
       transform: translateX(-50%);
       width: max-content;
       max-width: calc(100% - 32px);
@@ -393,8 +393,63 @@
       text-align: center;
     }
 
+    /* Quick actions: small round buttons along the bottom edge. The hour and
+       the sound sit in the middle, between the two sticks on a touch screen;
+       the guided tour sits by the stick that sails the boat. */
+    .quick {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      color: var(--ink);
+      background: rgba(244, 233, 210, 0.88);
+      border: 1px solid var(--rule);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .quick.active {
+      background: var(--ink);
+      color: #f4e9d2;
+    }
+
+    .quick svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .quick .label { display: none; }
+
+    #quick {
+      position: fixed;
+      left: 50%;
+      bottom: max(22px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+    }
+
+    #tour {
+      position: fixed;
+      left: max(14px, env(safe-area-inset-left));
+      bottom: max(22px, env(safe-area-inset-bottom));
+    }
+
+    /* Tucked into the free corner above the stick, clear of its ring. */
+    body.touch #tour {
+      left: max(4px, env(safe-area-inset-left) - 10px);
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 100px);
+    }
+
     /* Nothing of the cockpit shows until the visitor sets off. */
     body:not(.started) .panel,
+    body:not(.started) .quick,
     body:not(.started) #controls,
     body:not(.started) #menu-toggle { visibility: hidden; }
 
@@ -629,7 +684,10 @@
 
     /* Hints sit above the sticks instead of between them. */
     body.touch #help,
-    body.touch #tour-notice { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 126px); }
+    body.touch #tour-notice {
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 126px);
+      max-width: calc(100% - 120px);
+    }
 
     body.touch #help .keys { display: none; }
 
@@ -698,12 +756,6 @@
   </button>
 
   <div id="controls">
-    <button id="sky" type="button"></button>
-    <button id="tour" type="button">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2.2 5.4-5.4 2.2 2.2-5.4z"/></svg>
-      <span class="label" data-i18n="tour">Recorrido guiado</span>
-    </button>
-    <button id="sound" type="button"></button>
     <button class="reset-found" type="button">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4.5v4.2h4.2"/></svg>
       <span class="label" data-i18n="reset.short">Reiniciar puntos</span>
@@ -858,6 +910,16 @@
     <div class="knob">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
     </div>
+  </div>
+
+  <!-- Quick actions within reach of the thumbs: icon only, the name is in the label. -->
+  <button id="tour" class="quick" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2.2 5.4-5.4 2.2 2.2-5.4z"/></svg>
+    <span class="label" data-i18n="tour">Recorrido guiado</span>
+  </button>
+  <div id="quick">
+    <button id="sky" class="quick" type="button"></button>
+    <button id="sound" class="quick" type="button"></button>
   </div>
 
   <script type="module" src="./src/main.js"></script>

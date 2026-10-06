@@ -16,7 +16,7 @@ Es una reconstrucción aproximada: los sitios están donde estaban, las formas s
 | **Encontrar los puntos de interés** | Junto a cada sitio con historia flota un aro claro sobre el agua. Al entrar en él sale la ficha, la cámara enfoca el sitio (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Son quince; una flecha en el borde de la pantalla lleva al más cercano que falte. De noche aparece uno más, sobre el dicho de «quedarse a la luna de València». |
 | **Repasar lo encontrado** | Tocar la cuenta de arriba a la izquierda abre un cuaderno con los quince puntos; los no descubiertos aparecen en blanco, y los encontrados llevan un ojo que te lleva volando a verlos de cerca. |
 | **Recorrido guiado** | La barca baja sola por el centro del río y pasa por los quince aros. Arrastrar solo mueve la cámara. |
-| **Cambiar la hora** | Día, atardecer o noche desde la portada o el menú; más horas en los ajustes. De noche se encienden ventanas, faroles y luciérnagas. |
+| **Cambiar la hora** | Día, atardecer o noche desde la portada o el botón del sol; más horas en los ajustes. De noche se encienden ventanas, faroles y luciérnagas. |
 | **Elegir barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. |
 | **Elegir idioma** | Castellano, valenciano o inglés, en la portada y en los ajustes. |
 
@@ -30,7 +30,7 @@ Es una reconstrucción aproximada: los sitios están donde estaban, las formas s
 
 En pantalla táctil también vale arrastrar en cualquier parte: el primer dedo lleva la barca y el segundo gira la cámara.
 
-La interfaz deja la pantalla casi libre: arriba a la izquierda, la cuenta de puntos y los metros recorridos; arriba a la derecha, un minimapa que se amplía al tocarlo y, debajo, el botón «Menú», que despliega el momento del día, el recorrido guiado, el sonido, los ajustes y la ayuda.
+La interfaz deja la pantalla casi libre: arriba a la izquierda, la cuenta de puntos y los metros recorridos; arriba a la derecha, un minimapa que se amplía al tocarlo y, debajo, el botón «Menú», que despliega el reinicio de los puntos, los ajustes y la ayuda. Abajo quedan tres botones redondos sin texto: el momento del día y el sonido en el centro (entre los dos mandos en el móvil) y el recorrido guiado a la izquierda, junto al mando de la barca.
 
 ## Qué hay en la escena
 

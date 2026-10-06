@@ -324,7 +324,10 @@ export function createTour(path, button) {
 
   const set = (value) => {
     active = value;
-    button.querySelector('.label').textContent = t(active ? 'tour.stop' : 'tour');
+    const name = t(active ? 'tour.stop' : 'tour');
+    button.querySelector('.label').textContent = name;
+    button.setAttribute('aria-label', name);
+    button.title = name;
     button.classList.toggle('active', active);
   };
   button.addEventListener('click', () => set(!active));

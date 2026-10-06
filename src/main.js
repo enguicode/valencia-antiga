@@ -299,8 +299,7 @@ const setMenu = (open) => {
   menuToggle.setAttribute('aria-expanded', String(open));
 };
 menuToggle.addEventListener('click', () => setMenu(!document.body.classList.contains('menu-open')));
-// Starting the tour or opening a dialog is the end of the errand: fold it away.
-document.getElementById('tour').addEventListener('click', () => setMenu(false));
+// Opening a dialog is the end of the errand: fold it away.
 
 for (const opener of document.querySelectorAll('[data-open]')) {
   opener.addEventListener('click', () => {

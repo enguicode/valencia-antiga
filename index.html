@@ -46,52 +46,14 @@
       pointer-events: none;
     }
 
-    /* One framed panel across the top: the title, or the history card that
-       replaces it, on the left; progress and the map in a column on the right. */
-    #top {
-      top: max(12px, env(safe-area-inset-top));
-      left: max(12px, env(safe-area-inset-left));
-      display: flex;
-      align-items: stretch;
-      gap: 12px;
-      width: min(560px, calc(100% - 24px));
-      padding: 10px;
-    }
-
-    #story {
-      flex: 1;
-      min-width: 0;
-      padding: 2px 4px;
-    }
-
-    #title .name {
-      margin: 0;
-      font-size: 1.15rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-    }
-
-    #title p {
-      margin: 2px 0 0;
-      font-size: 0.8rem;
-      font-style: italic;
-      opacity: 0.8;
-    }
-
-    #side {
-      flex: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 118px;
-      padding-left: 12px;
-      border-left: 1px solid var(--rule);
-    }
-
-    #progress {
+    /* The top of the screen stays nearly empty: a one-line tally on the left
+       and a small map on the right. */
+    #status {
+      top: max(10px, env(safe-area-inset-top));
+      left: max(10px, env(safe-area-inset-left));
+      padding: 6px 10px;
       font-size: 0.82rem;
       font-variant-numeric: tabular-nums;
-      text-align: center;
       white-space: nowrap;
     }
 
@@ -137,20 +99,56 @@
     }
 
     #minimap {
-      display: block;
-      width: 104px;
-      height: 104px;
-      border: 1px solid var(--rule);
-      border-radius: 2px;
+      top: max(10px, env(safe-area-inset-top));
+      right: max(10px, env(safe-area-inset-right));
+      width: 84px;
+      height: 84px;
+      padding: 0;
     }
 
-    #mission {
-      margin: 10px 0 0;
-      font-size: 0.86rem;
+    /* History card: only while the boat is in, or just past, a ring. */
+    #card {
+      top: calc(max(10px, env(safe-area-inset-top)) + 40px);
+      left: max(10px, env(safe-area-inset-left));
+      width: min(340px, calc(100% - 114px));
+      padding: 9px 12px;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    #card.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    #card h2 {
+      margin: 0 0 3px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    #card p {
+      margin: 0 0 5px;
+      font-size: 0.84rem;
       line-height: 1.35;
     }
 
-    #mission strong { font-variant-numeric: tabular-nums; }
+    #card a,
+    #card .tally {
+      font-size: 0.74rem;
+      opacity: 0.8;
+    }
+
+    #card a { color: inherit; }
+
+    #card.visible a { pointer-events: auto; }
+
+    #card .tally {
+      float: right;
+      margin: 0;
+      font-style: italic;
+    }
 
     /* Arrow at the edge of the screen towards the nearest point still to find. */
     #pointer {
@@ -181,39 +179,6 @@
       border-radius: 3px;
     }
 
-    #poi {
-      width: min(440px, calc(100% - 28px));
-      padding: 20px 22px;
-      color: var(--ink);
-      font: inherit;
-      line-height: 1.5;
-      background: #f4e9d2;
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      -webkit-user-select: text;
-      user-select: text;
-    }
-
-    #poi::backdrop { background: rgba(46, 36, 24, 0.4); }
-
-    #poi h2 {
-      margin: 0 0 8px;
-      font-size: 1.2rem;
-    }
-
-    #poi p { margin: 0 0 10px; }
-
-    #poi a { color: inherit; font-size: 0.85rem; }
-
-    #poi .tally {
-      margin: 14px 0 0;
-      padding-top: 10px;
-      border-top: 1px solid var(--rule);
-      font-size: 0.88rem;
-      font-style: italic;
-    }
-
-    #poi .close,
     #reset-found {
       padding: 8px 16px;
       font: inherit;
@@ -222,11 +187,6 @@
       border: 0;
       border-radius: 3px;
       cursor: pointer;
-    }
-
-    #poi .close {
-      display: block;
-      margin: 14px 0 0 auto;
     }
 
     #controls {
@@ -491,19 +451,16 @@
 <body>
   <canvas id="scene"></canvas>
 
-  <header id="top" class="panel">
-    <div id="story">
-      <div id="title">
-        <div class="name">València Antiga</div>
-        <p>El Turia hacia 1700</p>
-      </div>
-      <p id="mission">Puntos de interés: <strong id="found">0 de 12</strong><br>Toca las señales doradas.</p>
-    </div>
-    <div id="side">
-      <div id="progress"><span id="distance">0</span> m de <span id="total">…</span></div>
-      <canvas id="minimap"></canvas>
-    </div>
-  </header>
+  <div id="status" class="panel"><strong id="found">0 de 12</strong> puntos · <span id="distance">0</span> m de <span id="total">…</span></div>
+
+  <canvas id="minimap" class="panel"></canvas>
+
+  <article id="card" class="panel">
+    <h2></h2>
+    <p class="text"></p>
+    <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
+    <span class="tally"></span>
+  </article>
 
   <div id="help" class="panel">
     <span class="keys"><kbd>W</kbd> <kbd>S</kbd> avanzar y ciar · <kbd>A</kbd> <kbd>D</kbd> timón · también con las flechas o arrastrando · botón derecho: girar la cámara</span>
@@ -529,14 +486,6 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5l16 7-16 7 4-7z" fill="#e2a52e" stroke="#2e2418" stroke-width="1.6" stroke-linejoin="round"/></svg>
     <span></span>
   </div>
-
-  <dialog id="poi">
-    <h2></h2>
-    <p class="text"></p>
-    <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
-    <p class="tally"></p>
-    <button id="close-poi" class="close" type="button">Seguir navegando</button>
-  </dialog>
 
   <div id="debug" class="panel" hidden></div>
 
@@ -565,7 +514,7 @@
       <li><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
       <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
       <li><strong>Pantalla táctil:</strong> el primer dedo lleva la barca (arriba para avanzar, a los lados para virar); un segundo dedo gira la cámara.</li>
-      <li><strong>Puntos de interés:</strong> sobre cada sitio con historia flota una señal dorada. Tócala para leer su ficha; la flecha del borde de la pantalla lleva a la más cercana que te falte. Hay doce.</li>
+      <li><strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro dorado sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha; la flecha del borde de la pantalla lleva al más cercano que te falte. Hay doce.</li>
       <li><strong>Barra de abajo:</strong> el sol cambia el momento del día; el altavoz, el sonido; la brújula inicia el recorrido guiado; la rueda abre los ajustes.</li>
       <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez la brújula.</li>
     </ul>

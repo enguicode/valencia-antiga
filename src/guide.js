@@ -1,26 +1,24 @@
 import * as THREE from 'three';
-import { BANK } from './config.js';
-import { PRETIL } from './riverside.js';
 
-// Points of interest. Each one has a golden marker floating over the place
-// it talks about; tapping the marker opens its history card and counts the
-// point as found. Finding them all is the visitor's errand.
+// Points of interest. Each one has a golden ring floating on the river beside
+// the place it talks about, with a pin over it so it can be seen from afar.
+// Sailing into the ring shows its history card and counts the point as
+// found. Finding them all is the visitor's errand.
 
 const STORAGE_KEY = 'valencia-antiga.found';
-const VISIBLE_WITHIN = 750; // metres from the boat
-const TAP_RADIUS = 44; // pixels
-const MARKER_SIZE = 0.085; // of the viewport's height
+const RING_RADIUS = 18;
+const RING_OFFSET = 14; // from the middle of the river, towards the place
+const CARD_STAYS_WITHIN = 75; // metres from the ring before the card goes
+const VISIBLE_WITHIN = 750;
+const PIN_SIZE = 0.06; // of the viewport's height
+const GOLD = 0xe2a52e;
+const GREEN = 0x4a7a4e;
 
-// How high the marker floats, by what it marks.
-const HEIGHTS = { bridge: 13, gate: 24, start: 5, micalet: 60, cathedral: 44, palace: 36, convent: 34, church: 38 };
-const TALL_GATES = { serrans: 36, quart: 36, mar: 28, 'sant-vicent': 28 };
-
-function drawMarker(found) {
+function drawPin(found) {
   const canvas = document.createElement('canvas');
   canvas.width = 96;
   canvas.height = 128;
   const context = canvas.getContext('2d');
-  // A pin: a disc with a point at the bottom, aimed at the place.
   context.beginPath();
   context.arc(48, 46, 38, Math.PI * 0.82, Math.PI * 0.18);
   context.lineTo(48, 124);
@@ -31,7 +29,6 @@ function drawMarker(found) {
   context.strokeStyle = found ? 'rgba(244, 233, 210, 0.9)' : '#2e2418';
   context.stroke();
   context.fillStyle = context.strokeStyle;
-  context.strokeStyle = context.fillStyle;
   context.lineCap = 'round';
   context.lineJoin = 'round';
   if (found) {
@@ -61,41 +58,58 @@ function readFound() {
 }
 
 export function createGuide(points, layout, path, camera, elements) {
-  const { dialog, counter, pointer } = elements;
+  const { card, counter, pointer } = elements;
   const found = readFound();
-  const materials = {
-    pending: new THREE.SpriteMaterial({ map: drawMarker(false), sizeAttenuation: false, fog: false }),
-    found: new THREE.SpriteMaterial({ map: drawMarker(true), sizeAttenuation: false, fog: false, opacity: 0.8 }),
+  const pins = {
+    pending: new THREE.SpriteMaterial({ map: drawPin(false), sizeAttenuation: false, fog: false }),
+    found: new THREE.SpriteMaterial({ map: drawPin(true), sizeAttenuation: false, fog: false, opacity: 0.8 }),
   };
+  const flat = (color, opacity) =>
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
+  const rings = {
+    pending: { edge: flat(GOLD, 0.9), fill: flat(GOLD, 0.22) },
+    found: { edge: flat(GREEN, 0.55), fill: flat(GREEN, 0.08) },
+  };
+  const edgeGeometry = new THREE.RingGeometry(RING_RADIUS - 2.4, RING_RADIUS, 48).rotateX(-Math.PI / 2);
+  const fillGeometry = new THREE.CircleGeometry(RING_RADIUS - 2.4, 48).rotateX(-Math.PI / 2);
 
-  // Where the marker stands: over the thing itself, not at a spot on the river.
+  // The ring sits on the water at the point of the river nearest the place,
+  // pulled towards that bank but still within reach of the middle.
   const locate = ({ type, id, offset = 0 }) => {
-    if (type === 'start') {
-      const point = path.pointAt(path.start + offset);
-      return [point.x + point.rx * PRETIL.offset, BANK.height + HEIGHTS.start, point.z + point.rz * PRETIL.offset];
-    }
-    if (type === 'bridge') {
-      const bridge = layout.bridges.find((item) => item.id === id);
-      const { sample } = path.project(bridge.x, bridge.z);
-      return [sample.x, HEIGHTS.bridge, sample.z];
-    }
+    if (type === 'start') return { s: path.start + offset, side: 1 };
+    let x;
+    let z;
     if (type === 'gate') {
-      const [x, z] = layout.wall[layout.gates.find((gate) => gate.id === id).vertex];
-      return [x, BANK.height + (TALL_GATES[id] ?? HEIGHTS.gate), z];
+      [x, z] = layout.wall[layout.gates.find((gate) => gate.id === id).vertex];
+    } else {
+      const list = type === 'bridge' ? layout.bridges : layout.landmarks;
+      ({ x, z } = list.find((item) => item.id === id));
     }
-    const landmark = layout.landmarks.find((item) => item.id === id);
-    return [landmark.x, BANK.height + (HEIGHTS[landmark.kind] ?? 36), landmark.z];
+    const { s, lateral } = path.project(x, z);
+    return { s: s + offset, side: type === 'bridge' ? 0 : Math.sign(lateral) };
   };
 
   const group = new THREE.Group();
   const markers = points.map((point, i) => {
-    const [x, y, z] = locate(point.at);
-    const sprite = new THREE.Sprite(found.has(point.id) ? materials.found : materials.pending);
-    sprite.center.set(0.5, 0); // the tip of the pin is the anchor
-    sprite.scale.set(MARKER_SIZE * 0.75, MARKER_SIZE, 1);
-    sprite.renderOrder = 3;
-    group.add(sprite);
-    return { ...point, x, y, z, sprite, phase: i * 1.7 };
+    const { s, side } = locate(point.at);
+    const centre = path.pointAt(s);
+    const x = centre.x + centre.rx * side * RING_OFFSET;
+    const z = centre.z + centre.rz * side * RING_OFFSET;
+    const state = found.has(point.id) ? 'found' : 'pending';
+
+    const ring = new THREE.Group();
+    ring.position.set(x, 0.55, z);
+    const edge = new THREE.Mesh(edgeGeometry, rings[state].edge);
+    const fill = new THREE.Mesh(fillGeometry, rings[state].fill);
+    edge.renderOrder = fill.renderOrder = 3; // over the water
+    ring.add(fill, edge);
+
+    const pin = new THREE.Sprite(pins[state]);
+    pin.center.set(0.5, 0); // the tip of the pin is the anchor
+    pin.scale.set(PIN_SIZE * 0.75, PIN_SIZE, 1);
+    pin.renderOrder = 4;
+    group.add(ring, pin);
+    return { ...point, x, z, ring, edge, fill, pin, phase: i * 1.7 };
   });
 
   const showCount = () => {
@@ -103,11 +117,23 @@ export function createGuide(points, layout, path, camera, elements) {
   };
   showCount();
 
-  function open(marker) {
+  const paint = (marker) => {
+    const state = found.has(marker.id) ? 'found' : 'pending';
+    marker.edge.material = rings[state].edge;
+    marker.fill.material = rings[state].fill;
+    marker.pin.material = pins[state];
+  };
+
+  let shown = null;
+
+  function show(marker) {
+    shown = marker;
+    card.classList.toggle('visible', Boolean(marker));
+    if (!marker) return;
     const first = !found.has(marker.id);
     if (first) {
       found.add(marker.id);
-      marker.sprite.material = materials.found;
+      paint(marker);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify([...found]));
       } catch {
@@ -115,108 +141,89 @@ export function createGuide(points, layout, path, camera, elements) {
       }
       showCount();
     }
-    dialog.querySelector('h2').textContent = marker.title;
-    dialog.querySelector('.text').textContent = marker.text;
-    dialog.querySelector('a').href = marker.source;
-    const left = markers.length - found.size;
-    dialog.querySelector('.tally').textContent =
-      left === 0
-        ? `Has encontrado los ${markers.length} puntos de interés.`
-        : `${found.size} de ${markers.length} encontrados${first ? '' : ' (este ya lo tenías)'}.`;
-    dialog.showModal();
+    card.querySelector('h2').textContent = marker.title;
+    card.querySelector('.text').textContent = marker.text;
+    card.querySelector('a').href = marker.source;
+    card.querySelector('.tally').textContent =
+      found.size === markers.length
+        ? `Has encontrado los ${markers.length} puntos.`
+        : `${found.size} de ${markers.length}${first ? '' : ' · ya lo tenías'}`;
   }
 
   function reset() {
     found.clear();
-    for (const marker of markers) marker.sprite.material = materials.pending;
+    markers.forEach(paint);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
       // Nothing was stored.
     }
     showCount();
+    show(null);
   }
 
   const projected = new THREE.Vector3();
-  const toScreen = (marker) => {
-    projected.set(marker.x, marker.sprite.position.y + 2, marker.z).project(camera);
-    return {
-      x: (projected.x * 0.5 + 0.5) * window.innerWidth,
-      y: (-projected.y * 0.5 + 0.5) * window.innerHeight,
-      ahead: projected.z < 1,
-    };
-  };
-
-  // A tap opens the marker under the finger, if there is one.
-  function tap(x, y) {
-    let best = null;
-    let bestDistance = TAP_RADIUS;
-    for (const marker of markers) {
-      if (!marker.sprite.visible) continue;
-      const screen = toScreen(marker);
-      if (!screen.ahead) continue;
-      // The pin is taller than it is wide: measure from its middle.
-      const middle = y + MARKER_SIZE * window.innerHeight * 0.4;
-      const distance = Math.hypot(screen.x - x, screen.y - middle);
-      if (distance < bestDistance) {
-        best = marker;
-        bestDistance = distance;
-      }
-    }
-    if (best) open(best);
-    return Boolean(best);
-  }
-
   const cameraSpace = new THREE.Vector3();
 
   function update(time, boatState) {
     let nearest = null;
     let nearestDistance = Infinity;
+    let entered = null;
     for (const marker of markers) {
       const distance = Math.hypot(marker.x - boatState.x, marker.z - boatState.z);
-      marker.sprite.visible = distance < VISIBLE_WITHIN;
-      marker.sprite.position.set(marker.x, marker.y + Math.sin(time * 1.6 + marker.phase) * 0.8, marker.z);
+      marker.distance = distance;
+      const visible = distance < VISIBLE_WITHIN;
+      marker.ring.visible = visible;
+      marker.pin.visible = visible;
+      marker.ring.scale.setScalar(1 + Math.sin(time * 2 + marker.phase) * 0.035);
+      marker.pin.position.set(marker.x, 5 + Math.sin(time * 1.6 + marker.phase) * 0.6, marker.z);
+      if (distance < RING_RADIUS) entered = marker;
       if (!found.has(marker.id) && distance < nearestDistance) {
         nearest = marker;
         nearestDistance = distance;
       }
     }
 
-    // An arrow at the edge of the screen points to the nearest point still to
-    // be found whenever its marker is out of view.
+    // The card comes up on entering a ring and stays a while after leaving
+    // it, so there is time to read it without stopping.
+    if (entered && entered !== shown) show(entered);
+    else if (shown && !entered && shown.distance > CARD_STAYS_WITHIN) show(null);
+
+    // An arrow at the edge of the screen points to the nearest ring still to
+    // be found whenever it is out of view.
     if (!nearest) {
       pointer.classList.remove('visible');
       return;
     }
-    const screen = toScreen(nearest);
+    projected.set(nearest.x, 6, nearest.z).project(camera);
+    const screenX = (projected.x * 0.5 + 0.5) * window.innerWidth;
+    const screenY = (-projected.y * 0.5 + 0.5) * window.innerHeight;
     const margin = 46;
-    const top = 210;
+    const top = 150;
     const bottom = window.innerHeight - 96;
     const onScreen =
-      screen.ahead &&
-      nearest.sprite.visible &&
-      screen.x > 16 &&
-      screen.x < window.innerWidth - 16 &&
-      screen.y > 0 &&
-      screen.y < bottom;
+      projected.z < 1 &&
+      nearest.pin.visible &&
+      screenX > 16 &&
+      screenX < window.innerWidth - 16 &&
+      screenY > 0 &&
+      screenY < bottom;
     pointer.classList.toggle('visible', !onScreen);
     if (onScreen) return;
 
-    cameraSpace.set(nearest.x, nearest.y, nearest.z).applyMatrix4(camera.matrixWorldInverse);
+    cameraSpace.set(nearest.x, 6, nearest.z).applyMatrix4(camera.matrixWorldInverse);
     const angle = Math.atan2(-cameraSpace.y, cameraSpace.x); // screen y grows downwards
-    const centreX = window.innerWidth / 2;
-    const centreY = (top + bottom) / 2;
     const reach = Math.min(
       (window.innerWidth / 2 - margin) / Math.max(Math.abs(Math.cos(angle)), 0.001),
-      ((bottom - top) / 2) / Math.max(Math.abs(Math.sin(angle)), 0.001),
+      (bottom - top) / 2 / Math.max(Math.abs(Math.sin(angle)), 0.001),
     );
-    pointer.style.left = `${centreX + Math.cos(angle) * reach}px`;
-    pointer.style.top = `${centreY + Math.sin(angle) * reach}px`;
+    pointer.style.left = `${window.innerWidth / 2 + Math.cos(angle) * reach}px`;
+    pointer.style.top = `${(top + bottom) / 2 + Math.sin(angle) * reach}px`;
     pointer.querySelector('svg').style.transform = `rotate(${angle}rad)`;
     pointer.querySelector('span').textContent = `${Math.round(nearestDistance / 10) * 10} m`;
   }
 
-  return { group, markers, found, tap, update, reset };
+  return { group, markers, found, update, reset };
 }
 
 // Autopilot for the guided tour: holds a steady speed down the middle of the

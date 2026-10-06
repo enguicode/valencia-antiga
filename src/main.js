@@ -78,20 +78,17 @@ scene.add(
   boat.mesh,
 );
 
-const input = createInput(canvas, document.getElementById('joystick'), (x, y) => {
-  if (started) guide.tap(x, y);
-});
+const input = createInput(canvas, document.getElementById('joystick'));
 const distanceLabel = document.getElementById('distance');
 document.getElementById('total').textContent = Math.round(path.end - path.start);
 const helpPanel = document.getElementById('help');
 const debugPanel = document.getElementById('debug');
 const guide = createGuide(points, layout, path, camera, {
-  dialog: document.getElementById('poi'),
+  card: document.getElementById('card'),
   counter: document.getElementById('found'),
   pointer: document.getElementById('pointer'),
 });
 scene.add(guide.group);
-document.getElementById('close-poi').addEventListener('click', () => document.getElementById('poi').close());
 document.getElementById('reset-found').addEventListener('click', () => guide.reset());
 const tour = createTour(path, document.getElementById('tour'));
 const minimap = createMinimap(document.getElementById('minimap'), layout, path, guide);
@@ -292,7 +289,7 @@ function frame() {
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
   renderer.render(scene, camera);
-  guide.update(time, boat.state);
+  if (started) guide.update(time, boat.state);
   minimap.update(boat.state);
 
   const distance = Math.round(boat.state.s - path.start);

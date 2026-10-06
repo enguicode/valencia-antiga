@@ -88,7 +88,7 @@ export function createInput(surface, joystickElement, onTap) {
       event.timeStamp - press.at < TAP.milliseconds &&
       Math.hypot(event.clientX - press.x, event.clientY - press.y) < TAP.pixels
     ) {
-      onTap(event.clientX, event.clientY);
+      onTap?.(event.clientX, event.clientY);
     }
     if (event.pointerId === look.id) look.id = null;
     if (event.pointerId !== drag.id) return;

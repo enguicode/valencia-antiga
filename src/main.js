@@ -94,6 +94,11 @@ const guide = createGuide(points, layout, path, camera, {
   card: document.getElementById('card'),
   counter: document.getElementById('found'),
   pointer: document.getElementById('pointer'),
+  // On entering a ring the camera turns to the place it is about.
+  onEnter: (marker) => {
+    focus.subject = marker.subject;
+    focus.left = FOCUS.seconds;
+  },
 });
 scene.add(guide.group);
 document.getElementById('reset-found').addEventListener('click', () => guide.reset());
@@ -142,10 +147,13 @@ scene.traverse((object) => {
 });
 const sound = createSound(document.getElementById('sound'));
 
+let baseFov = 55; // the lens when nothing is being singled out
+
 function resize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
-  camera.fov = camera.aspect < 1 ? 72 : 55; // widen in portrait so both banks stay in view
+  baseFov = camera.aspect < 1 ? 72 : 55; // widen in portrait so both banks stay in view
+  camera.fov = baseFov;
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
@@ -241,18 +249,46 @@ function updateOrbit(dt, axes) {
   orbit.lift *= keep;
 }
 
+// For a few seconds after entering a ring the camera leaves the stern, steps
+// to one side of the boat and zooms in on the place the card is about.
+const FOCUS = { seconds: 7, back: 13, aside: 8, up: 9, narrowest: 12 };
+const focus = { subject: null, left: 0 };
+
 function updateCamera(dt, snap = false) {
-  const angle = boat.state.heading + orbit.yaw;
-  viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
-  cameraGoal.copy(boat.mesh.position).addScaledVector(viewDirection, -CAMERA_BACK);
-  cameraGoal.y = CAMERA_UP + orbit.lift;
-  lookGoal.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
-  lookGoal.y = 2;
+  let wantedFov = baseFov;
+  focus.left -= dt;
+  if (focus.left > 0) {
+    const { subject } = focus;
+    const dx = subject.x - boat.mesh.position.x;
+    const dz = subject.z - boat.mesh.position.z;
+    const distance = Math.hypot(dx, dz) || 1;
+    viewDirection.set(dx / distance, 0, dz / distance);
+    cameraGoal
+      .copy(boat.mesh.position)
+      .addScaledVector(viewDirection, -FOCUS.back)
+      .add(lookGoal.set(-viewDirection.z, 0, viewDirection.x).multiplyScalar(FOCUS.aside));
+    cameraGoal.y = FOCUS.up;
+    lookGoal.set(subject.x, subject.y, subject.z);
+    // Narrow the lens until the place fills the view, however far it is.
+    const fitting = THREE.MathUtils.radToDeg(2 * Math.atan(subject.span / 2 / distance));
+    wantedFov = THREE.MathUtils.clamp(fitting / Math.min(camera.aspect, 1), FOCUS.narrowest, baseFov);
+  } else {
+    const angle = boat.state.heading + orbit.yaw;
+    viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
+    cameraGoal.copy(boat.mesh.position).addScaledVector(viewDirection, -CAMERA_BACK);
+    cameraGoal.y = CAMERA_UP + orbit.lift;
+    lookGoal.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
+    lookGoal.y = 2;
+  }
 
   const ease = snap ? 1 : 1 - Math.exp(-dt * (orbit.idle < ORBIT.holdSeconds ? 9 : 3));
   camera.position.lerp(cameraGoal, ease);
   lookAt.lerp(lookGoal, ease);
   camera.lookAt(lookAt);
+  if (Math.abs(camera.fov - wantedFov) > 0.05) {
+    camera.fov += (wantedFov - camera.fov) * (snap ? 1 : 1 - Math.exp(-dt * 2.5));
+    camera.updateProjectionMatrix();
+  }
   sky.position.copy(camera.position);
 }
 
@@ -303,6 +339,7 @@ function frame() {
   nightLights.update(time, atmosphere.state.night);
   city.userData.facades.emissiveIntensity = atmosphere.state.night * 1.4;
   if (started) updateOrbit(dt, axes);
+  if (axes.looking) focus.left = 0; // looking around by hand takes the camera back
   updateCamera(dt);
   cullInstances(camera, scene.fog.far);
   quality.update(dt);

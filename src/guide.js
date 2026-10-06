@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { BANK } from './config.js';
+import { PRETIL } from './riverside.js';
 
 // Points of interest. Each one has a pale ring floating on the river beside
 // the place it talks about, with a pin over it so it can be seen from afar.
@@ -11,6 +13,17 @@ const RING_OFFSET = 14; // from the middle of the river, towards the place
 const CARD_STAYS_WITHIN = 75; // metres from the ring before the card goes
 const VISIBLE_WITHIN = 750;
 const PIN_SIZE = 0.05; // of the viewport's height
+// What the camera turns to on entering a ring: how high to aim on the place
+// itself and how wide a view it needs, in metres.
+const SUBJECTS = {
+  bridge: { aim: 4, span: 150 },
+  gate: { aim: 12, span: 70 },
+  start: { aim: 2, span: 60 },
+  micalet: { aim: 34, span: 110 },
+  palace: { aim: 14, span: 150 },
+  convent: { aim: 14, span: 110 },
+};
+
 const PALE = 0xf4e9d2; // the parchment of the panels, so the rings do not shout
 const GREEN = 0x4a7a4e;
 
@@ -58,7 +71,7 @@ function readFound() {
 }
 
 export function createGuide(points, layout, path, camera, elements) {
-  const { card, counter, pointer } = elements;
+  const { card, counter, pointer, onEnter } = elements;
   const found = readFound();
   const pins = {
     pending: new THREE.SpriteMaterial({ map: drawPin(false), sizeAttenuation: false, fog: false }),
@@ -75,23 +88,42 @@ export function createGuide(points, layout, path, camera, elements) {
 
   // The ring sits on the water at the point of the river nearest the place,
   // pulled towards that bank but still within reach of the middle.
+  // Also works out the subject: the spot on the place itself to look at.
   const locate = ({ type, id, offset = 0 }) => {
-    if (type === 'start') return { s: path.start + offset, side: 1 };
+    if (type === 'start') {
+      const wall = path.pointAt(path.start + offset + 40);
+      return {
+        s: path.start + offset,
+        side: 1,
+        subject: { ...SUBJECTS.start, x: wall.x + wall.rx * PRETIL.offset, z: wall.z + wall.rz * PRETIL.offset },
+      };
+    }
     let x;
     let z;
+    let kind = type;
     if (type === 'gate') {
       [x, z] = layout.wall[layout.gates.find((gate) => gate.id === id).vertex];
+    } else if (type === 'bridge') {
+      const bridge = layout.bridges.find((item) => item.id === id);
+      const { sample } = path.project(bridge.x, bridge.z);
+      ({ x, z } = sample);
     } else {
-      const list = type === 'bridge' ? layout.bridges : layout.landmarks;
-      ({ x, z } = list.find((item) => item.id === id));
+      const landmark = layout.landmarks.find((item) => item.id === id);
+      ({ x, z } = landmark);
+      kind = landmark.kind;
     }
     const { s, lateral } = path.project(x, z);
-    return { s: s + offset, side: type === 'bridge' ? 0 : Math.sign(lateral) };
+    return {
+      s: s + offset,
+      side: type === 'bridge' ? 0 : Math.sign(lateral),
+      subject: { ...(SUBJECTS[kind] ?? SUBJECTS.convent), x, z },
+    };
   };
 
   const group = new THREE.Group();
   const markers = points.map((point, i) => {
-    const { s, side } = locate(point.at);
+    const { s, side, subject } = locate(point.at);
+    subject.y = (point.at.type === 'bridge' || point.at.type === 'start' ? 0 : BANK.height) + subject.aim;
     const centre = path.pointAt(s);
     const x = centre.x + centre.rx * side * RING_OFFSET;
     const z = centre.z + centre.rz * side * RING_OFFSET;
@@ -109,7 +141,7 @@ export function createGuide(points, layout, path, camera, elements) {
     pin.scale.set(PIN_SIZE * 0.75, PIN_SIZE, 1);
     pin.renderOrder = 4;
     group.add(ring, pin);
-    return { ...point, x, z, ring, edge, fill, pin, phase: i * 1.7 };
+    return { ...point, x, z, subject, ring, edge, fill, pin, phase: i * 1.7 };
   });
 
   const showCount = () => {
@@ -141,6 +173,7 @@ export function createGuide(points, layout, path, camera, elements) {
       }
       showCount();
     }
+    onEnter?.(marker);
     card.querySelector('h2').textContent = marker.title;
     card.querySelector('.text').textContent = marker.text;
     card.querySelector('a').href = marker.source;

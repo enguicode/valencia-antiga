@@ -8,7 +8,7 @@
   },
   {
     "id": "pont-sant-josep",
-    "at": { "type": "bridge", "id": "sant-josep" },
+    "at": { "type": "bridge", "id": "sant-josep", "offset": -55 },
     "title": "Pont de Sant Josep",
     "text": "El último de los cinco puentes históricos en hacerse de piedra, entre 1604 y 1607.",
     "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
@@ -22,7 +22,7 @@
   },
   {
     "id": "pont-serrans",
-    "at": { "type": "bridge", "id": "serrans" },
+    "at": { "type": "bridge", "id": "serrans", "offset": -55 },
     "title": "Pont dels Serrans",
     "text": "Reedificado en 1518, un año después de que una riada lo dañara gravemente. Tiene nueve arcos y casi 160 metros de largo.",
     "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
@@ -36,7 +36,7 @@
   },
   {
     "id": "pont-trinitat",
-    "at": { "type": "bridge", "id": "trinitat" },
+    "at": { "type": "bridge", "id": "trinitat", "offset": -55 },
     "title": "Pont de la Trinitat",
     "text": "El primero de los cinco puentes históricos en levantarse en piedra, entre 1356 y 1402.",
     "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
@@ -57,7 +57,7 @@
   },
   {
     "id": "pont-real",
-    "at": { "type": "bridge", "id": "real" },
+    "at": { "type": "bridge", "id": "real", "offset": -55 },
     "title": "Pont del Real",
     "text": "Reconstruido tras la riada de 1589 y acabado con prisas en 1598, para la boda de Felipe III con Margarita de Austria.",
     "source": "https://es.wikipedia.org/wiki/Puente_del_Real_(Valencia)"
@@ -78,7 +78,7 @@
   },
   {
     "id": "pont-mar",
-    "at": { "type": "bridge", "id": "mar" },
+    "at": { "type": "bridge", "id": "mar", "offset": -55 },
     "title": "Pont de la Mar",
     "text": "La riada de 1589 arrasó el puente anterior. El de piedra, diseñado por Francesc Figuerola, se acabó en 1596 con diez arcos.",
     "source": "https://es.wikipedia.org/wiki/Puente_de_la_Mar_(Valencia)"

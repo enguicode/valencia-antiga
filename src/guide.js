@@ -72,6 +72,10 @@ function readFound() {
   }
 }
 
+// Most cards cite Wikipedia; the few that do not name their source.
+export const sourceLabel = (point) =>
+  point.sourceName ? t('card.sourceNamed', { name: point.sourceName }) : t('card.source');
+
 export function createGuide(points, layout, path, camera, elements) {
   const { card, counter, pointer, onEnter } = elements;
   const found = readFound();
@@ -198,6 +202,7 @@ export function createGuide(points, layout, path, camera, elements) {
     card.querySelector('h2').textContent = localized(marker.title);
     card.querySelector('.text').textContent = localized(marker.text);
     card.querySelector('a').href = marker.source;
+    card.querySelector('a').textContent = sourceLabel(marker);
     const total = markers.length;
     card.querySelector('.tally').textContent =
       found.size === total

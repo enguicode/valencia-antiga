@@ -4,7 +4,7 @@ Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700, he
 
 **Publicado en <https://valencia-antiga.pages.dev/>**
 
-El visitante baja en barca por el viejo cauce del río, que entonces hacía de foso natural, y ve la ciudad desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Por el camino hay doce puntos de interés que descubrir, cada uno con su ficha de historia.
+El visitante baja en barca por el viejo cauce del río, que entonces hacía de foso natural, y ve la ciudad desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Por el camino hay trece puntos de interés que descubrir, cada uno con su ficha de historia.
 
 Es una reconstrucción aproximada: los sitios están donde estaban, las formas son un esbozo. El detalle de qué es fiable y qué no está en [docs/sources.md](docs/sources.md).
 
@@ -13,9 +13,9 @@ Es una reconstrucción aproximada: los sitios están donde estaban, las formas s
 | | |
 | --- | --- |
 | **Navegar** | 2,4 km de río, desde antes del Pont de Sant Josep hasta pasado el de la Mar. La barca frena contra las orillas y se encauza sola por los arcos de los puentes, abatiendo la vela. |
-| **Encontrar los puntos de interés** | Junto a cada sitio con historia flota un aro claro sobre el agua. Al entrar en él sale la ficha, la cámara enfoca el sitio (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Son doce; una flecha en el borde de la pantalla lleva al más cercano que falte. |
-| **Repasar lo encontrado** | Tocar la cuenta de arriba a la izquierda abre un cuaderno con los doce puntos; los no descubiertos aparecen en blanco. |
-| **Recorrido guiado** | La barca baja sola por el centro del río y pasa por los doce aros. Arrastrar solo mueve la cámara. |
+| **Encontrar los puntos de interés** | Junto a cada sitio con historia flota un aro claro sobre el agua. Al entrar en él sale la ficha, la cámara enfoca el sitio (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Son trece; una flecha en el borde de la pantalla lleva al más cercano que falte. |
+| **Repasar lo encontrado** | Tocar la cuenta de arriba a la izquierda abre un cuaderno con los trece puntos; los no descubiertos aparecen en blanco. |
+| **Recorrido guiado** | La barca baja sola por el centro del río y pasa por los trece aros. Arrastrar solo mueve la cámara. |
 | **Cambiar la hora** | Día, atardecer o noche desde la portada o el menú; más horas en los ajustes. De noche se encienden ventanas, faroles y luciérnagas. |
 | **Elegir barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. |
 | **Elegir idioma** | Castellano, valenciano o inglés, en la portada y en los ajustes. |
@@ -121,7 +121,7 @@ Estado de los datos:
 | --- | --- |
 | Posición de puentes, puertas y edificios | De OpenStreetMap: fiable |
 | Curso del río y perímetro de la muralla | Aproximados y suavizados |
-| Datos de las doce fichas | Contrastados con Wikipedia en español, una fuente secundaria |
+| Datos de las trece fichas | Contrastados con Wikipedia en español, una fuente secundaria; la del Portal Nou, con dos blogs de historia local |
 | Muralla cristiana: levantada en 1356, derribo iniciado en 1865 | De memoria; solo consta en Wikipedia que la Puerta del Mar cayó en 1868 |
 | Forma de puertas, puentes, Micalet, Seu, Palau del Real, Trinitat y Sant Pius V | Rehecha con lo que dicen las fuentes; las medidas que faltan, estimadas |
 | Navegar en barca por el Turia | Licencia: el río no era navegable hacia 1700 |
@@ -158,7 +158,7 @@ Después de la v1.0:
 - **Medir el coste gráfico.** Las texturas, las sombras y el detalle han subido mucho la carga; lo primero a recortar serían los árboles.
 - **Cotejar con el plano de Tosca** el trazado, las puertas y los puentes.
 - **Mejores fuentes** que Wikipedia para las fichas.
-- **Fichas que faltan:** Portal Nou, Portal de la Trinitat y Portal del Real no tienen porque no se encontró fuente.
+- **Fichas que faltan:** Portal de la Trinitat y Portal del Real no tienen: lo poco que se sabe de cada uno viene de una sola fuente.
 - **Revisar las traducciones** con alguien que hable valenciano e inglés.
 
 ## Ideas para después

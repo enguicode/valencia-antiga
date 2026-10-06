@@ -37,6 +37,26 @@
     "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
   },
   {
+    "id": "portal-nou",
+    "at": {
+      "type": "gate",
+      "id": "sant-josep",
+      "offset": 40
+    },
+    "title": {
+      "es": "Portal Nou",
+      "ca": "Portal Nou",
+      "en": "Portal Nou"
+    },
+    "text": {
+      "es": "La puerta que daba al Pont de Sant Josep. Fue primero un simple hueco en la muralla; hacia 1419 el rey autorizó hacer un portal nuevo, acabado en la década de 1470, con dos torres redondas parecidas a las de Quart. Cayó con la muralla en el siglo XIX.",
+      "ca": "El portal que donava al Pont de Sant Josep. Va ser primer una simple obertura en el mur; cap al 1419 el rei va autoritzar fer-ne un de nou, acabat en la dècada de 1470, amb dues torres redones semblants a les de Quart. Va caure amb la muralla al segle XIX.",
+      "en": "The gate that opened onto the Pont de Sant Josep. At first a plain opening in the wall; around 1419 the king authorised a new gate, finished in the 1470s, with two round towers much like those of Quart. It came down with the wall in the nineteenth century."
+    },
+    "source": "https://passejantvalenciaambullscuriosos.blogspot.com/2017/07/lenderrocament-de-les-portes-de-la.html",
+    "sourceName": "Passejant València amb ulls curiosos"
+  },
+  {
     "id": "torres-serrans",
     "at": {
       "type": "gate",

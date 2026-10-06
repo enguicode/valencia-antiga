@@ -37,13 +37,14 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 
 ## Fichas de historia (v0.4)
 
-Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las doce es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
+Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las trece es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
 
 | Ficha | Datos que afirma | Artículo |
 | --- | --- | --- |
 | Pretiles | Fàbrica Nova del Riu desde 1590, contra las riadas | Puente del Real (Valencia) |
 | Pont de Sant Josep | De piedra entre 1604 y 1607, el último de los cinco | Puente de Serranos |
 | Torres dels Serrans | 1392-1398, Pere Balaguer, entrada principal, prisión de nobles desde 1586 | Torres de Serranos |
+| Portal Nou | Primero un hueco en el muro; portal nuevo autorizado hacia 1419 y acabado en la década de 1470; dos torres redondas parecidas a las de Quart | Blog «Passejant València amb ulls curiosos» y castillosricsol.es (no Wikipedia) |
 | Pont dels Serrans | Reedificado en 1518 tras la riada de 1517; nueve arcos; 159,7 m | Puente de Serranos |
 | El Micalet y la Seu | 1381-1429; prisma octogonal; altura hasta la terraza igual al perímetro; cimborrio gótico | El Miguelete; Catedral de Santa María (Valencia) |
 | Pont de la Trinitat | De piedra entre 1356 y 1402, el primero de los cinco | Puente de Serranos |
@@ -57,7 +58,8 @@ Los textos están en `data/points.json`, en castellano, valenciano e inglés; ca
 Discrepancias vistas y cómo se han resuelto:
 
 - El artículo del puente de Serranos lo llama «el más antiguo de los existentes» y a la vez fecha el de la Trinitat en 1356-1402. Las fichas no dicen cuál es el más antiguo.
-- El Portal Nou, el de la Trinitat y el del Real no tienen ficha: no se encontró fuente para sus datos.
+- El Portal Nou tiene ficha desde la revisión de monumentos. Sus dos fuentes son blogs y no coinciden del todo: una da el final de la obra en 1471 y la otra en 1474, y el derribo en 1864 o 1868; la ficha dice «década de 1470» y «siglo XIX».
+- El Portal de la Trinitat y el del Real siguen sin ficha: lo poco que se sabe de ellos viene de una sola fuente cada uno.
 
 El minimapa se dibuja con el mismo trazado que la escena; no reproduce el plano de Tosca.
 

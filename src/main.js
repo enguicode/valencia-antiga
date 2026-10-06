@@ -10,7 +10,7 @@ import { createRiverside } from './riverside.js';
 import { createBoat, DRAW_ORDER } from './boat.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
-import { createGuide, createTour } from './guide.js';
+import { createGuide, createTour, sourceLabel } from './guide.js';
 import { createMinimap } from './minimap.js';
 import { createAtmosphere } from './atmosphere.js';
 import { createLife } from './life.js';
@@ -137,7 +137,7 @@ document.getElementById('status').addEventListener('click', () => {
       source.href = entry.source;
       source.target = '_blank';
       source.rel = 'noopener';
-      source.textContent = t('card.source');
+      source.textContent = sourceLabel(entry);
       item.append(source);
       return item;
     }),

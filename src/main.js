@@ -5,6 +5,8 @@ import { createWater } from './water.js';
 import { createWalls } from './walls.js';
 import { createCity } from './city.js';
 import { createBridges } from './bridges.js';
+import { createLandmarks, landmarkClearings } from './landmarks.js';
+import { createRiverside } from './riverside.js';
 import { createBoat } from './boat.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
@@ -22,10 +24,18 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
 
-const { sky } = createEnvironment(scene, path);
+const { sky } = createEnvironment(scene, path, landmarkClearings(layout));
 const water = createWater(path);
 const boat = createBoat(path);
-scene.add(water.mesh, createWalls(layout), createCity(layout), createBridges(layout, path), boat.mesh);
+scene.add(
+  water.mesh,
+  createWalls(layout),
+  createCity(layout),
+  createBridges(layout, path),
+  createLandmarks(layout, path),
+  createRiverside(layout, path),
+  boat.mesh,
+);
 
 const input = createInput(canvas, document.getElementById('joystick'));
 const distanceLabel = document.getElementById('distance');

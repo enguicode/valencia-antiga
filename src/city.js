@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BANK, COLORS, createRandom } from './config.js';
 import { createInstances } from './instancing.js';
+import { landmarkClearings } from './landmarks.js';
 
 // Generic houses filling the walled city. They are placeholders for volume:
 // there is no street plan behind them.
@@ -45,6 +46,7 @@ export function createCity(layout) {
   const bodies = [];
   const roofs = [];
 
+  const clearings = landmarkClearings(layout);
   const random = createRandom(1356);
   const pick = (list) => list[Math.floor(random() * list.length)];
   const dummy = new THREE.Object3D();
@@ -53,6 +55,7 @@ export function createCity(layout) {
     const x = minX + random() * spanX;
     const z = minZ + random() * spanZ;
     if (!isInside(x, z, polygon) || distanceToEdges(x, z, polygon) < WALL_CLEARANCE) continue;
+    if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
 
     const width = 7 + random() * 6;
     const depth = 7 + random() * 8;

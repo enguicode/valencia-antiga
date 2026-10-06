@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RIVER, BANK, FOG, COLORS } from './config.js';
-import { buildRibbon } from './path.js';
+import { buildRibbon, setRibbonWindow } from './path.js';
 
 const COLUMNS = 13;
 
@@ -40,7 +40,7 @@ export function createWater(path) {
     positions.clearUpdateRanges();
     positions.addUpdateRange(first * COLUMNS * 3, (last - first + 1) * COLUMNS * 3);
     positions.needsUpdate = true;
-    geometry.setDrawRange(first * (COLUMNS - 1) * 6, (last - first) * (COLUMNS - 1) * 6);
+    setRibbonWindow(first, last);
   }
 
   return { mesh, update };

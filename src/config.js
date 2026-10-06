@@ -12,7 +12,7 @@ export const RIVER = {
 
 export const BANK = {
   slopeRun: 8,
-  height: 2.5,
+  height: 4, // street level above the water
   extent: 1100,
 };
 

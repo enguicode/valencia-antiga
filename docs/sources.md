@@ -17,6 +17,22 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 | Número de arcos de cada puente | De memoria: 13, 9, 10, 10 y 10 | Sin contrastar |
 | Casas | Repartidas al azar dentro de la muralla | Inventado: no hay callejero |
 
+## Edificios y ribera (v0.3)
+
+| Elemento | De dónde sale | Fiabilidad |
+| --- | --- | --- |
+| Posición de Micalet, Seu, Lonja, Palacio del Real, monasterio de la Trinitat, Sant Doménec y las iglesias | Edificio o yacimiento actual en OpenStreetMap | Fiable en posición |
+| Forma de todos ellos | Maqueta esquemática hecha a ojo: torre octogonal de 51 m para el Micalet, nave con cimborrio para la Seu, sala con torre para la Lonja, bloque con cuatro torres para el Palacio del Real | Orientativa: proporciones de memoria, sin plano ni alzado |
+| Orientación | Eje largo de la planta actual; la Seu, fijada de este a oeste; Palacio del Real, Sant Pius V y la Saïdia, paralelos al río | Aproximada |
+| Qué iglesias existían hacia 1700 | Selección de memoria entre las iglesias actuales del centro (Santa Caterina, Sants Joans, Sant Nicolau, Sant Martí, Sant Esteve, Sant Llorenç, el Salvador, Sant Joan de l'Hospital, Sant Andreu, Sant Agustí, el Carme, la Companyia, Corpus Christi, Santa Mònica, Desemparats) | Sin contrastar; varias se han reformado o reconstruido después |
+| Sant Pius V | Posición del actual Museu de Belles Arts | Dudoso para 1700: el colegio se empezó en 1683 y se terminó en el XVIII |
+| Monasterio de la Saïdia | Posición de las ruinas del Portal de Saïdia | Aproximada; el edificio es genérico |
+| Portal de Sant Vicent | Punto donde la actual calle de Sant Vicent Màrtir corta la ronda | Aproximado; la forma es inventada, igual que la del Portal de la Mar |
+| Pretiles con bolas | A lo largo de las dos orillas, a 56 m del eje del río | Existieron, pero aquí son continuos y uniformes; en 1700 la obra no estaba completa |
+| Escaleras al río | Una junto a cada puente, en el lado de la ciudad | Inventado: posición y forma |
+| Azud | Cierra el extremo de aguas arriba del tramo navegable | Inventado: no corresponde a ningún azud real |
+| Colores (cúpula azul, tejados) | Orientativos | Inventado |
+
 ## Pendiente
 
 - Cotejar muralla, puertas y puentes con el plano de Tomás Vicente Tosca (1704). Todavía no se ha usado: el trazado actual sale solo del callejero moderno.

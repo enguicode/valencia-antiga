@@ -395,6 +395,297 @@
    "vertex": 38,
    "placement": "OSM position of the surviving gate",
    "major": true
+  },
+  {
+   "id": "sant-vicent",
+   "name": "Portal de Sant Vicent",
+   "vertex": 23,
+   "placement": "where today's Carrer de Sant Vicent Màrtir meets the ring",
+   "major": true
+  }
+ ],
+ "landmarks": [
+  {
+   "id": "micalet",
+   "name": "el Micalet",
+   "kind": "micalet",
+   "x": 32.8,
+   "z": 439.8,
+   "axis": [
+    0.841,
+    -0.542
+   ],
+   "length": 16,
+   "width": 16
+  },
+  {
+   "id": "seu",
+   "name": "Catedral de València",
+   "kind": "cathedral",
+   "x": 77.2,
+   "z": 412.3,
+   "axis": [
+    1,
+    0
+   ],
+   "length": 95,
+   "width": 28
+  },
+  {
+   "id": "llotja",
+   "name": "Llotja de la Seda",
+   "kind": "llotja",
+   "x": -208.7,
+   "z": 541.5,
+   "axis": [
+    0.469,
+    -0.883
+   ],
+   "length": 55,
+   "width": 62
+  },
+  {
+   "id": "palau-real",
+   "name": "Palau del Real de València",
+   "kind": "palace",
+   "x": 725.9,
+   "z": 128.2,
+   "axis": [
+    0.765,
+    0.644
+   ],
+   "length": 72,
+   "width": 51,
+   "alignToRiver": true
+  },
+  {
+   "id": "trinitat",
+   "name": "Reial Monestir de la Santíssima Trinitat",
+   "kind": "convent",
+   "x": 337.1,
+   "z": -121.1
+  },
+  {
+   "id": "sant-pius",
+   "name": "Museu de Belles Arts de València",
+   "kind": "convent",
+   "x": 441.6,
+   "z": -1.3,
+   "alignToRiver": true
+  },
+  {
+   "id": "sant-domenec",
+   "name": "Convent de Sant Doménec",
+   "kind": "convent",
+   "x": 602.0,
+   "z": 564.1,
+   "axis": [
+    0.984,
+    -0.177
+   ],
+   "length": 107,
+   "width": 105
+  },
+  {
+   "id": "saidia",
+   "name": "Portal de Saïdia",
+   "kind": "convent",
+   "x": -110.3,
+   "z": -402.2,
+   "alignToRiver": true
+  },
+  {
+   "id": "santa-monica",
+   "name": "Santa Mònica",
+   "kind": "church",
+   "x": 115.3,
+   "z": -310.7,
+   "axis": [
+    0.053,
+    0.999
+   ],
+   "length": 40,
+   "width": 39
+  },
+  {
+   "id": "desemparats",
+   "name": "Basílica de la Mare de Déu dels Desemparats",
+   "kind": "church",
+   "x": 102.6,
+   "z": 336.1,
+   "axis": [
+    0.323,
+    -0.946
+   ],
+   "length": 48,
+   "width": 33,
+   "dome": true,
+   "tower": false
+  },
+  {
+   "id": "santa-caterina",
+   "name": "Església de Santa Caterina",
+   "kind": "church",
+   "x": -33.6,
+   "z": 573.7,
+   "axis": [
+    0.988,
+    0.153
+   ],
+   "length": 55,
+   "width": 47,
+   "towerHeight": 56,
+   "towerSides": 6
+  },
+  {
+   "id": "sants-joans",
+   "name": "Església dels Sants Joans",
+   "kind": "church",
+   "x": -276.8,
+   "z": 556.9,
+   "axis": [
+    0.818,
+    0.576
+   ],
+   "length": 56,
+   "width": 57
+  },
+  {
+   "id": "sant-nicolau",
+   "name": "Església de Sant Nicolau",
+   "kind": "church",
+   "x": -242.8,
+   "z": 342.7,
+   "axis": [
+    0.957,
+    0.29
+   ],
+   "length": 60,
+   "width": 33
+  },
+  {
+   "id": "sant-marti",
+   "name": "Església de Sant Martí",
+   "kind": "church",
+   "x": 27.5,
+   "z": 671.1,
+   "axis": [
+    0.976,
+    0.216
+   ],
+   "length": 52,
+   "width": 36
+  },
+  {
+   "id": "sant-esteve",
+   "name": "Iglesia de San Esteban",
+   "kind": "church",
+   "x": 243.6,
+   "z": 352.7,
+   "axis": [
+    0.958,
+    -0.287
+   ],
+   "length": 48,
+   "width": 40
+  },
+  {
+   "id": "sant-llorenc",
+   "name": "Església de Sant Llorenç",
+   "kind": "church",
+   "x": 85.1,
+   "z": 159.0,
+   "axis": [
+    0.472,
+    -0.882
+   ],
+   "length": 32,
+   "width": 22
+  },
+  {
+   "id": "salvador",
+   "name": "Reial Església del Santíssim Crist del Salvador",
+   "kind": "church",
+   "x": 192.7,
+   "z": 223.9,
+   "axis": [
+    0.675,
+    -0.738
+   ],
+   "length": 49,
+   "width": 35
+  },
+  {
+   "id": "sant-joan-hospital",
+   "name": "Iglesia de San Juan del Hospital",
+   "kind": "church",
+   "x": 258.1,
+   "z": 551.9,
+   "axis": [
+    0.988,
+    -0.153
+   ],
+   "length": 49,
+   "width": 37
+  },
+  {
+   "id": "sant-andreu",
+   "name": "Sant Joan de la Creu",
+   "kind": "church",
+   "x": 108.0,
+   "z": 801.4,
+   "axis": [
+    0.366,
+    -0.931
+   ],
+   "length": 62,
+   "width": 57
+  },
+  {
+   "id": "sant-agusti",
+   "name": "Església de Sant Agustí i Santa Caterina",
+   "kind": "church",
+   "x": -351.4,
+   "z": 1171.9,
+   "axis": [
+    0.003,
+    -1.0
+   ],
+   "length": 69,
+   "width": 49
+  },
+  {
+   "id": "carme",
+   "name": "Església de la Santíssima Creu",
+   "kind": "church",
+   "x": -217.6,
+   "z": -21.0,
+   "axis": [
+    0.238,
+    -0.971
+   ],
+   "length": 58,
+   "width": 47
+  },
+  {
+   "id": "companyia",
+   "name": "Església de la Companyia de Jesús",
+   "kind": "church",
+   "x": -198.5,
+   "z": 473.2,
+   "axis": [
+    0.092,
+    -0.996
+   ],
+   "length": 45,
+   "width": 39
+  },
+  {
+   "id": "corpus-christi",
+   "name": "Convento del Corpus Christi",
+   "kind": "church",
+   "x": -695.3,
+   "z": 72.6
   }
  ]
 }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RIVER, BANK, FOG, COLORS, createRandom } from './config.js';
 import { buildRibbon } from './path.js';
 import { createInstances } from './instancing.js';
+import { PRETIL } from './riverside.js';
 
 function createSky() {
   const material = new THREE.ShaderMaterial({
@@ -33,14 +34,17 @@ function createSky() {
   return new THREE.Mesh(new THREE.SphereGeometry(1200, 24, 12), material);
 }
 
-// One bank: a slope rising out of the water, then flat ground. The flat part
-// is kept perfectly level so the folds it makes on the inside of bends cannot
-// be seen.
+// One bank: a shore rising out of the water up to the foot of the parapet
+// wall, then flat ground at street level behind it. The flat part is kept
+// perfectly level so the folds it makes on the inside of bends cannot be seen.
 function createBank(path, side) {
   const half = RIVER.width / 2;
-  const geometry = buildRibbon(path.samples, [
+  const shore = buildRibbon(path.samples, [
     [side * (half - 2), -2],
-    [side * (half + BANK.slopeRun), BANK.height],
+    [side * PRETIL.offset, PRETIL.foot],
+  ]);
+  const street = buildRibbon(path.samples, [
+    [side * (PRETIL.offset + PRETIL.thickness), BANK.height],
     [side * (half + BANK.extent), BANK.height],
   ]);
   const material = new THREE.MeshStandardMaterial({
@@ -49,13 +53,17 @@ function createBank(path, side) {
     flatShading: true,
     side: THREE.DoubleSide,
   });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.frustumCulled = false;
-  return mesh;
+  const group = new THREE.Group();
+  for (const geometry of [shore, street]) {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.frustumCulled = false;
+    group.add(mesh);
+  }
+  return group;
 }
 
 // Orchard trees on the bank opposite the city.
-function createTrees(path) {
+function createTrees(path, clearings) {
   const count = Math.round(path.length / 4.5);
   const random = createRandom(1704);
   const foliage = [];
@@ -63,10 +71,11 @@ function createTrees(path) {
   const dummy = new THREE.Object3D();
   for (let i = 0; i < count; i++) {
     const sample = path.samples[Math.floor(random() * path.samples.length)];
-    const lateral = -(RIVER.width / 2 + BANK.slopeRun + 3 + random() ** 2 * 130);
+    const lateral = -(PRETIL.offset + 4 + random() ** 2 * 130);
     const x = sample.x + sample.rx * lateral;
     const z = sample.z + sample.rz * lateral;
     const scale = 0.7 + random() * 0.9;
+    if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
 
     dummy.rotation.set(0, random() * Math.PI, 0);
     dummy.scale.setScalar(scale);
@@ -94,7 +103,7 @@ function createTrees(path) {
   return group;
 }
 
-export function createEnvironment(scene, path) {
+export function createEnvironment(scene, path, clearings) {
   scene.fog = new THREE.Fog(COLORS.horizon, FOG.near, FOG.far);
 
   const sky = createSky();
@@ -107,7 +116,7 @@ export function createEnvironment(scene, path) {
   sun.position.set(-60, 55, -80);
   scene.add(sun);
 
-  scene.add(createBank(path, 1), createBank(path, -1), createTrees(path));
+  scene.add(createBank(path, 1), createBank(path, -1), createTrees(path, clearings));
 
   return { sky };
 }

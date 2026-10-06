@@ -60,6 +60,16 @@ export function createRiverPath(layout) {
   return { samples, length, step, project, sampleAt, start, end };
 }
 
+const ribbons = [];
+
+// Limits every ribbon to the rows between two samples, so the stretches lost
+// in the fog are not drawn.
+export function setRibbonWindow(first, last) {
+  for (const { geometry, columns } of ribbons) {
+    geometry.setDrawRange(first * (columns - 1) * 6, (last - first) * (columns - 1) * 6);
+  }
+}
+
 // Sweeps a cross-section along the river. `profile` lists [lateral, height]
 // pairs; vertices are laid out row by row, one row per sample.
 export function buildRibbon(samples, profile) {
@@ -86,5 +96,6 @@ export function buildRibbon(samples, profile) {
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
+  ribbons.push({ geometry, columns });
   return geometry;
 }

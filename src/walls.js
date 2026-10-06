@@ -12,9 +12,12 @@ const MERLON = { width: 1, height: 1.2, spacing: 2.4 };
 const TOWER = { size: 8, height: WALL.height + 5, offset: 2.5 };
 
 // Proportions only: the two surviving gates are far taller than the wall, and
-// Quart is the one with round towers.
+// Quart is the one with round towers. The other two great gates are drawn
+// larger than the minor ones, without evidence for their shape.
 const GATE_STYLES = {
   minor: { radius: 5, height: 17, gap: 7, round: false },
+  mar: { radius: 6, height: 22, gap: 8, round: false },
+  'sant-vicent': { radius: 6, height: 22, gap: 8, round: false },
   serrans: { radius: 7.5, height: 30, gap: 9.5, round: false },
   quart: { radius: 7.5, height: 30, gap: 9.5, round: true },
 };

@@ -24,6 +24,9 @@ QUERY = """
   way["bridge"]["name"~"^Pont"](39.455,-0.410,39.492,-0.345);
   way["highway"]["name"~"Guillem de Castro|Xàtiva|Colón|Colom|Blanqueri|Comte de Trénor|Pintor López|Ciutadella"](39.462,-0.392,39.485,-0.360);
   nwr["historic"="city_gate"](39.462,-0.392,39.485,-0.360);
+  nwr["name"~"Micalet|Catedral de València|Llotja de la Seda|Palau del Real|Santíssima Trinitat|Belles Arts|Sant Doménec|Portal de Saïdia"](39.462,-0.400,39.490,-0.355);
+  nwr["amenity"="place_of_worship"](39.464,-0.390,39.486,-0.360);
+  way["highway"]["name"="Carrer de Sant Vicent Màrtir"](39.462,-0.392,39.475,-0.370);
 );
 out geom tags;
 """
@@ -64,6 +67,36 @@ BRIDGE_GATES = {
     "mar": "Portal de la Mar",
 }
 
+# Buildings drawn with their own silhouette: (OSM name, id, kind, options).
+# "kind" picks the model in src/landmarks.js. The churches are today's
+# buildings on sites that, from memory, were already churches around 1700;
+# see docs/sources.md.
+LANDMARKS = [
+    ("el Micalet", "micalet", "micalet", {}),
+    ("Catedral de València", "seu", "cathedral", {"axis": [1, 0], "length": 95, "width": 28}),
+    ("Llotja de la Seda", "llotja", "llotja", {}),
+    ("Palau del Real de València", "palau-real", "palace", {"alignToRiver": True}),
+    ("Reial Monestir de la Santíssima Trinitat", "trinitat", "convent", {}),
+    ("Museu de Belles Arts de València", "sant-pius", "convent", {"alignToRiver": True}),
+    ("Convent de Sant Doménec", "sant-domenec", "convent", {}),
+    ("Portal de Saïdia", "saidia", "convent", {"alignToRiver": True}),
+    ("Santa Mònica", "santa-monica", "church", {}),
+    ("Basílica de la Mare de Déu dels Desemparats", "desemparats", "church", {"dome": True, "tower": False}),
+    ("Església de Santa Caterina", "santa-caterina", "church", {"towerHeight": 56, "towerSides": 6}),
+    ("Església dels Sants Joans", "sants-joans", "church", {}),
+    ("Església de Sant Nicolau", "sant-nicolau", "church", {}),
+    ("Església de Sant Martí", "sant-marti", "church", {}),
+    ("Iglesia de San Esteban", "sant-esteve", "church", {}),
+    ("Església de Sant Llorenç", "sant-llorenc", "church", {}),
+    ("Reial Església del Santíssim Crist del Salvador", "salvador", "church", {}),
+    ("Iglesia de San Juan del Hospital", "sant-joan-hospital", "church", {}),
+    ("Sant Joan de la Creu", "sant-andreu", "church", {}),
+    ("Església de Sant Agustí i Santa Caterina", "sant-agusti", "church", {}),
+    ("Església de la Santíssima Creu", "carme", "church", {}),
+    ("Església de la Companyia de Jesús", "companyia", "church", {}),
+    ("Convento del Corpus Christi", "corpus-christi", "church", {}),
+]
+
 ORIGIN_NAME = "Torres dels Serrans"
 TOWER_SPACING = 70  # metres between wall vertices, which is where towers go
 ANGLE_BINS = 90
@@ -92,6 +125,31 @@ def element_points(element):
         b = element["bounds"]
         return [((b["minlat"] + b["maxlat"]) / 2, (b["minlon"] + b["maxlon"]) / 2)]
     return []
+
+
+def footprint_points(element):
+    if element["type"] == "relation":
+        return [
+            (p["lat"], p["lon"])
+            for member in element.get("members", [])
+            if member.get("role") != "inner"
+            for p in member.get("geometry", [])
+        ]
+    return element_points(element)
+
+
+def principal_axis(points):
+    """Long axis of a footprint and its extent along and across that axis."""
+    cx = sum(p[0] for p in points) / len(points)
+    cz = sum(p[1] for p in points) / len(points)
+    sxx = sum((p[0] - cx) ** 2 for p in points)
+    szz = sum((p[1] - cz) ** 2 for p in points)
+    sxz = sum((p[0] - cx) * (p[1] - cz) for p in points)
+    angle = 0.5 * math.atan2(2 * sxz, sxx - szz)
+    ax, az = math.cos(angle), math.sin(angle)
+    along = [(p[0] - cx) * ax + (p[1] - cz) * az for p in points]
+    across = [-(p[0] - cx) * az + (p[1] - cz) * ax for p in points]
+    return (ax, az), max(along) - min(along), max(across) - min(across)
 
 
 def bbox_centre(points):
@@ -202,6 +260,38 @@ def main():
             "major": True,
         })
 
+    street = [to_local(p) for p in points_named("Carrer de Sant Vicent Màrtir", lambda tags: "highway" in tags)]
+    if street:
+        vertex = min(range(len(wall)), key=lambda i: min(math.dist(wall[i], p) for p in street))
+        gates.append({
+            "id": "sant-vicent",
+            "name": "Portal de Sant Vicent",
+            "vertex": vertex,
+            "placement": "where today's Carrer de Sant Vicent Màrtir meets the ring",
+            "major": True,
+        })
+
+    landmarks = []
+    for name, landmark_id, kind, options in LANDMARKS:
+        candidates = [e for e in by_name.get(name, []) if e["type"] != "node"] or by_name.get(name, [])
+        if not candidates:
+            print(f"warning: landmark not found in OSM data: {name}")
+            continue
+        points = [to_local(p) for p in footprint_points(candidates[0]) or element_points(candidates[0])]
+        xs, zs = [p[0] for p in points], [p[1] for p in points]
+        entry = {
+            "id": landmark_id,
+            "name": name,
+            "kind": kind,
+            "x": round((min(xs) + max(xs)) / 2, 1),
+            "z": round((min(zs) + max(zs)) / 2, 1),
+        }
+        if len(points) >= 3:
+            axis, length, width = principal_axis(points)
+            entry.update(axis=[round(axis[0], 3), round(axis[1], 3)], length=round(length), width=round(width))
+        entry.update(options)
+        landmarks.append(entry)
+
     def rounded(points):
         return [[round(x, 1), round(z, 1)] for x, z in points]
 
@@ -212,6 +302,7 @@ def main():
         "bridges": [{**b, "x": round(b["x"], 1), "z": round(b["z"], 1)} for b in bridges],
         "wall": rounded(wall),
         "gates": gates,
+        "landmarks": landmarks,
     }
     target = ROOT / "data" / "layout.json"
     target.write_text(json.dumps(layout, ensure_ascii=False, indent=1) + "\n")
@@ -234,6 +325,11 @@ def main():
         print(f"gate {gate['id']:11} vertex {gate['vertex']:3} at ({x:7.0f}, {z:7.0f})")
     for bridge in bridges:
         print(f"bridge {bridge['id']:11} at ({bridge['x']:7.0f}, {bridge['z']:7.0f})")
+    for landmark in landmarks:
+        print(
+            f"landmark {landmark['id']:18} {landmark['kind']:9} at ({landmark['x']:6.0f}, {landmark['z']:6.0f})"
+            f" {landmark.get('length', '-')}x{landmark.get('width', '-')} river {distance_to_river((landmark['x'], landmark['z'])):.0f} m"
+        )
 
 
 if __name__ == "__main__":

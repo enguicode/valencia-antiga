@@ -4,7 +4,7 @@ import { createEnvironment } from './environment.js';
 import { createWater } from './water.js';
 import { createWalls } from './walls.js';
 import { createCity } from './city.js';
-import { createBridges } from './bridges.js';
+import { createBridges, createBridgeGuide } from './bridges.js';
 import { createLandmarks, landmarkClearings } from './landmarks.js';
 import { createRiverside } from './riverside.js';
 import { createBoat, DRAW_ORDER } from './boat.js';
@@ -43,7 +43,8 @@ const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
 const environment = createEnvironment(scene, path, landmarkClearings(layout));
 const { sky } = environment;
 const water = createWater(path);
-const boat = createBoat(path);
+const bridgeGuide = createBridgeGuide(layout, path);
+const boat = createBoat(path, bridgeGuide);
 
 // The type of boat is chosen in the settings and remembered between visits.
 const boatSelect = document.getElementById('boat-type');
@@ -64,7 +65,7 @@ boatSelect.addEventListener('change', () => {
 });
 water.mesh.renderOrder = DRAW_ORDER.water;
 const city = createCity(layout);
-const life = createLife(layout, path, city.userData.chimneys);
+const life = createLife(layout, path, city.userData.chimneys, bridgeGuide);
 const nightLights = createNightLights(layout, path);
 scene.add(
   water.mesh,
@@ -251,7 +252,9 @@ function updateOrbit(dt, axes) {
 
 // For a few seconds after entering a ring the camera leaves the stern, steps
 // to one side of the boat and zooms in on the place the card is about.
-const FOCUS = { seconds: 7, back: 13, aside: 8, up: 9, narrowest: 12 };
+const FOCUS = { seconds: 7, back: 13, aside: 8, up: 9, narrowest: 12, speed: 2.2 };
+// Going under a bridge the camera drops and closes up, to stay in the same arch as the boat.
+const UNDER_BRIDGE = { back: 8.5, up: 2.9 };
 const focus = { subject: null, left: 0 };
 
 function updateCamera(dt, snap = false) {
@@ -262,6 +265,8 @@ function updateCamera(dt, snap = false) {
     const dx = subject.x - boat.mesh.position.x;
     const dz = subject.z - boat.mesh.position.z;
     const distance = Math.hypot(dx, dz) || 1;
+    // Too close to step back from: the place is all around the boat already.
+    if (distance < 25) focus.left = 0;
     viewDirection.set(dx / distance, 0, dz / distance);
     cameraGoal
       .copy(boat.mesh.position)
@@ -273,15 +278,19 @@ function updateCamera(dt, snap = false) {
     const fitting = THREE.MathUtils.radToDeg(2 * Math.atan(subject.span / 2 / distance));
     wantedFov = THREE.MathUtils.clamp(fitting / Math.min(camera.aspect, 1), FOCUS.narrowest, baseFov);
   } else {
-    const angle = boat.state.heading + orbit.yaw;
+    const tucked = THREE.MathUtils.smoothstep(boat.state.underBridge, 0.3, 0.75);
+    const angle = boat.state.heading + orbit.yaw * (1 - tucked);
     viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
-    cameraGoal.copy(boat.mesh.position).addScaledVector(viewDirection, -CAMERA_BACK);
-    cameraGoal.y = CAMERA_UP + orbit.lift;
+    cameraGoal
+      .copy(boat.mesh.position)
+      .addScaledVector(viewDirection, -THREE.MathUtils.lerp(CAMERA_BACK, UNDER_BRIDGE.back, tucked));
+    cameraGoal.y = THREE.MathUtils.lerp(CAMERA_UP + orbit.lift, UNDER_BRIDGE.up, tucked);
     lookGoal.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
     lookGoal.y = 2;
   }
 
-  const ease = snap ? 1 : 1 - Math.exp(-dt * (orbit.idle < ORBIT.holdSeconds ? 9 : 3));
+  const quick = orbit.idle < ORBIT.holdSeconds || boat.state.underBridge > 0.3;
+  const ease = snap ? 1 : 1 - Math.exp(-dt * (quick ? 9 : 3));
   camera.position.lerp(cameraGoal, ease);
   lookAt.lerp(lookGoal, ease);
   camera.lookAt(lookAt);
@@ -330,7 +339,8 @@ function frame() {
   tourWasActive = tour.active;
 
   atmosphere.update(dt);
-  boat.update(dt, axes, time);
+  // While the camera is showing a place off, the boat idles along.
+  boat.update(dt, axes, time, focus.left > 0 ? FOCUS.speed : Infinity);
   sun.target.position.copy(boat.mesh.position);
   sun.position.copy(boat.mesh.position).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
   water.update(time, boat.state.row);

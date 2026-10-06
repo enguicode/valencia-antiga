@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { RIVER, createRandom, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
-import { createBoatModel, setSailLight, setLanternLight } from './boat.js';
+import { createBoatModel, setSailLight, setLanternLight, lowerRig, rigFor } from './boat.js';
 import { waveHeight } from './water.js';
 
 // Things that move or keep the place company: other boats, washerwomen at
 // the water's edge, smoke over the roofs and birds. All of it is decoration
 // with no historical source behind it.
 
-function createTraffic(path, random) {
+function createTraffic(path, random, bridgeGuide) {
   const boats = Array.from({ length: 7 }, (_, i) => {
     const model = createBoatModel(i % 2 ? 'lateen' : 'albufera');
     model.rotation.order = 'YXZ';
@@ -27,8 +27,10 @@ function createTraffic(path, random) {
       boat.s += boat.direction * boat.speed * dt;
       if (boat.s > path.end - 20 || boat.s < path.start + 20) boat.direction *= -1;
       const point = path.pointAt(boat.s);
-      const x = point.x + point.rx * boat.lateral;
-      const z = point.z + point.rz * boat.lateral;
+      const guided = bridgeGuide(boat.s, boat.lateral);
+      lowerRig(boat.model, rigFor(guided.closeness));
+      const x = point.x + point.rx * guided.lateral;
+      const z = point.z + point.rz * guided.lateral;
       boat.model.position.set(x, waveHeight(x, z, time), z);
       boat.model.rotation.y = Math.atan2(point.tx * boat.direction, point.tz * boat.direction);
     }
@@ -199,9 +201,9 @@ function createBirds(random) {
   return { mesh, update };
 }
 
-export function createLife(layout, path, chimneys) {
+export function createLife(layout, path, chimneys, bridgeGuide) {
   const random = createRandom(1957);
-  const traffic = createTraffic(path, random);
+  const traffic = createTraffic(path, random, bridgeGuide);
   const smoke = createSmoke(chimneys, random);
   const birds = createBirds(random);
 

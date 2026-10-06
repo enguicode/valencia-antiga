@@ -136,6 +136,19 @@ export function createWalls(layout) {
           { yaw: -angle },
         );
       }
+
+      // A corbelled gallery below the battlements, a top course, and loopholes
+      const solid = style.round ? lists.round : lists.polygonal;
+      place(solid, frame, towerX, style.height * 0.78, towerZ, {
+        scale: [style.radius * 1.1, style.height * 0.06, style.radius * 1.1],
+      });
+      place(solid, frame, towerX, style.height - 0.5, towerZ, {
+        scale: [style.radius * 1.06, 1, style.radius * 1.06],
+      });
+      const face = towerX + style.radius * (style.round ? 1 : 0.866) + 0.04;
+      for (const level of [0.3, 0.5, 0.66]) {
+        place(lists.slits, frame, face, style.height * level, towerZ, { scale: [1, style.height / 17, 1.4] });
+      }
     }
     const passageHeight = style.height * 0.75;
     const passageDepth = style.radius * 1.2;
@@ -144,6 +157,18 @@ export function createWalls(layout) {
     });
     const archSize = style.radius * 0.9;
     place(lists.arches, frame, 1 + passageDepth / 2 + 0.05, 0.5, 0, { scale: [1, archSize, archSize] });
+    // The front of the passage: pilasters either side of the arch, a cornice
+    // and battlements along the top
+    const front = 1 + passageDepth / 2;
+    for (const side of [-1, 1]) {
+      place(lists.passages, frame, front + 0.3, passageHeight * 0.42, side * archSize * 0.72, {
+        scale: [0.7, passageHeight * 0.84, archSize * 0.22],
+      });
+    }
+    place(lists.passages, frame, front + 0.2, passageHeight * 0.86, 0, { scale: [0.9, 0.7, style.gap * 1.5] });
+    for (let along = -style.gap + 1.8; along <= style.gap - 1.8; along += MERLON.spacing) {
+      place(lists.merlons, frame, front - MERLON.width / 2, passageHeight + MERLON.height / 2, along);
+    }
   });
 
   const group = new THREE.Group();

@@ -17,7 +17,7 @@ const PIN_SIZE = 0.05; // of the viewport's height
 // itself and how wide a view it needs, in metres.
 const SUBJECTS = {
   bridge: { aim: 4, span: 150 },
-  gate: { aim: 12, span: 70 },
+  gate: { aim: 12, span: 52 },
   start: { aim: 2, span: 60 },
   micalet: { aim: 34, span: 110 },
   palace: { aim: 14, span: 150 },

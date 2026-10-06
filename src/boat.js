@@ -257,6 +257,15 @@ function createParts(type) {
     (pieces[material] ??= []).push(piece);
   };
   const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  // The rig is kept apart, measured from the foot of the mast, so that it can
+  // be lowered as one piece to pass under a bridge.
+  const rigPieces = {};
+  const mastFoot = v(...type.mast.foot);
+  const addRig = (material, geometry) => {
+    const piece = geometry.index ? geometry.toNonIndexed() : geometry;
+    piece.translate(-mastFoot.x, -mastFoot.y, -mastFoot.z);
+    (rigPieces[material] ??= []).push(piece);
+  };
   const { halfBeam, sheer } = type;
   const z = (t) => stationZ(type, t);
 
@@ -280,14 +289,13 @@ function createParts(type) {
   }
 
   // Rig: raked mast, yard and a lateen sail sheeted out to port
-  const mastFoot = v(...type.mast.foot);
   const mastHead = v(...type.mast.head);
   const tack = v(...type.sail.tack);
   const peak = v(...type.sail.peak);
   const clew = v(...type.sail.clew);
-  add('trim', spar(mastFoot, mastHead, 0.085));
-  add('trim', spar(tack.clone().lerp(peak, -0.05), peak.clone().lerp(tack, -0.04), 0.05));
-  add('sail', createSailGeometry(tack, peak, clew));
+  addRig('trim', spar(mastFoot, mastHead, 0.085));
+  addRig('trim', spar(tack.clone().lerp(peak, -0.05), peak.clone().lerp(tack, -0.04), 0.05));
+  addRig('sail', createSailGeometry(tack, peak, clew));
 
   // Rudder and tiller
   const { rudder } = type;
@@ -341,10 +349,15 @@ function createParts(type) {
     [clew, v(0.6, sheer(-0.8), z(-0.8))],
     [tack, v(0, sheer(1) + 0.3, z(1))],
   ];
-  const rigging = new THREE.BufferGeometry().setFromPoints(lines.flat());
+  const rigging = new THREE.BufferGeometry().setFromPoints(lines.flat().map((point) => point.clone().sub(mastFoot)));
+  const rigGeometries = Object.fromEntries(
+    Object.entries(rigPieces).map(([material, list]) => [material, mergeGeometries(list)]),
+  );
 
   return {
     geometries,
+    rigGeometries,
+    rigFoot: mastFoot.toArray(),
     rigging,
     lid: createLidGeometry(type),
     lantern: [0, sheer(1) + 0.75, z(1) - 0.05],
@@ -362,7 +375,17 @@ export function createBoatModel(typeName = DEFAULT_BOAT) {
     mesh.receiveShadow = true;
     model.add(mesh);
   }
-  model.add(new THREE.LineSegments(parts.rigging, MATERIALS.rope));
+  const rig = new THREE.Group();
+  rig.position.set(...parts.rigFoot);
+  for (const [material, geometry] of Object.entries(parts.rigGeometries)) {
+    const mesh = new THREE.Mesh(geometry, MATERIALS[material]);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    rig.add(mesh);
+  }
+  rig.add(new THREE.LineSegments(parts.rigging, MATERIALS.rope));
+  model.add(rig);
+  model.userData.rig = rig;
 
   const core = new THREE.Mesh(LANTERN.geometry, LANTERN.core);
   core.position.set(...parts.lantern);
@@ -377,7 +400,15 @@ export function createBoatModel(typeName = DEFAULT_BOAT) {
   return model;
 }
 
-export function createBoat(path) {
+// Lays the mast, yard and sail back over the stern: 0 is standing, 1 is down.
+export function lowerRig(model, amount) {
+  model.userData.rig.rotation.x = -amount;
+}
+
+// How far down the rig should be for a given closeness to a bridge (0 to 1).
+export const rigFor = (closeness) => THREE.MathUtils.smoothstep(closeness, 0.12, 0.55);
+
+export function createBoat(path, bridgeGuide) {
   // The visitor's boat is a holder whose model can be swapped for another type.
   const mesh = new THREE.Group();
   mesh.rotation.order = 'YXZ';
@@ -398,14 +429,17 @@ export function createBoat(path) {
     speed: 0,
     s: path.start + 8, // distance along the river
     row: 0, // nearest centreline sample
+    underBridge: 0, // 0 in open water, 1 right under a bridge
   };
   const limit = RIVER.width / 2 - RIVER.margin;
   const forward = new THREE.Vector3();
 
-  function update(dt, input, time) {
+  function update(dt, input, time, speedLimit = Infinity) {
     state.speed += input.throttle * ACCELERATION * dt;
     state.speed -= state.speed * DRAG * dt;
     state.speed = THREE.MathUtils.clamp(state.speed, MAX_REVERSE, MAX_SPEED);
+    // A limit is eased into rather than snapped to.
+    if (state.speed > speedLimit) state.speed = Math.max(speedLimit, state.speed - 9 * dt);
 
     // The rudder needs way on to bite; keep a little authority at rest so the
     // boat can still be pointed somewhere.
@@ -427,6 +461,14 @@ export function createBoat(path) {
       const intoBank = Math.abs(dirX * sample.rx + dirZ * sample.rz);
       state.speed *= 1 - Math.min(1, 2.5 * intoBank * dt);
     }
+    // Near a bridge the boat is eased into an arch, and its rig comes down.
+    const held = THREE.MathUtils.clamp(lateral, -limit, limit);
+    const guided = bridgeGuide(s, held);
+    state.x += sample.rx * (guided.lateral - held);
+    state.z += sample.rz * (guided.lateral - held);
+    state.underBridge = guided.closeness;
+    lowerRig(model, rigFor(guided.closeness));
+
     const overshoot = s < path.start ? s - path.start : s > path.end ? s - path.end : 0;
     if (overshoot !== 0) {
       state.x -= sample.tx * overshoot;

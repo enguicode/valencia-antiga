@@ -50,6 +50,7 @@ Fuentes: <https://developers.cloudflare.com/durable-objects/platform/pricing/> y
 
 - Módulo nuevo `src/crew.js`: abre la conexión, envía el estado propio y mantiene una barca por cada visitante ajeno, reutilizando `createBoatModel()`.
 - Interpolación entre mensajes para que las barcas ajenas no vayan a saltos.
+- Las barcas ajenas deben pasar por el mismo encauzado de los puentes (`createBridgeGuide`) y la misma animación (`animateBoat`) que las de decorado.
 - Marcar las barcas de visitantes para distinguirlas de las siete de decorado (un gallardete de color, por ejemplo) y mostrar cuánta gente hay en el río.
 - Reconexión automática y degradación limpia: si la sala falla o se agota el cupo, se navega solo, como ahora.
 

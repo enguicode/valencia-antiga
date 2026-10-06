@@ -17,6 +17,7 @@ import { createLife } from './life.js';
 import { createSound } from './sound.js';
 import { createQuality } from './quality.js';
 import { createNightLights } from './lights.js';
+import { t, localized, getLanguage, setLanguage, onLanguageChange } from './i18n.js';
 
 const debug = new URLSearchParams(location.search).has('debug');
 
@@ -114,10 +115,10 @@ const journal = document.getElementById('journal');
 document.getElementById('status').addEventListener('click', () => {
   const entries = guide.entries();
   const foundCount = entries.filter((entry) => entry.found).length;
-  journal.querySelector('.tally').textContent =
-    foundCount === entries.length
-      ? `Los has encontrado todos: ${entries.length} de ${entries.length}.`
-      : `Llevas ${foundCount} de ${entries.length}. Los que faltan te esperan río abajo.`;
+  journal.querySelector('.tally').textContent = t(foundCount === entries.length ? 'journal.all' : 'journal.some', {
+    found: foundCount,
+    total: entries.length,
+  });
   journal.querySelector('ol').replaceChildren(
     ...entries.map((entry) => {
       const item = document.createElement('li');
@@ -127,16 +128,16 @@ document.getElementById('status').addEventListener('click', () => {
       if (!entry.found) {
         item.className = 'unknown';
         title.textContent = '? ? ?';
-        text.textContent = 'Aún por descubrir.';
+        text.textContent = t('journal.unknown');
         return item;
       }
-      title.textContent = entry.title;
-      text.textContent = entry.text;
+      title.textContent = localized(entry.title);
+      text.textContent = localized(entry.text);
       const source = document.createElement('a');
       source.href = entry.source;
       source.target = '_blank';
       source.rel = 'noopener';
-      source.textContent = 'Fuente: Wikipedia';
+      source.textContent = t('card.source');
       item.append(source);
       return item;
     }),
@@ -243,6 +244,27 @@ for (const button of momentButtons) {
 }
 hourSelect.addEventListener('change', showMoment);
 showMoment();
+
+// Language: three buttons on the start screen and a list in the settings.
+const languageSelect = document.getElementById('language');
+const languageButtons = [...document.querySelectorAll('#intro .languages button')];
+const showLanguage = () => {
+  languageSelect.value = getLanguage();
+  for (const button of languageButtons) {
+    button.setAttribute('aria-pressed', String(button.dataset.language === getLanguage()));
+  }
+};
+for (const button of languageButtons) button.addEventListener('click', () => setLanguage(button.dataset.language));
+languageSelect.addEventListener('change', () => setLanguage(languageSelect.value));
+onLanguageChange(showLanguage);
+showLanguage();
+
+// Tapping the map opens it out; tapping again folds it back.
+const minimapCanvas = document.getElementById('minimap');
+minimapCanvas.addEventListener('click', () => {
+  minimapCanvas.classList.toggle('large');
+  minimap.resize();
+});
 
 startButton.addEventListener('click', () => start(false));
 startTourButton.addEventListener('click', () => start(true));
@@ -448,7 +470,8 @@ boat.update(0, input.update(), 0);
 updateCamera(0, true);
 renderer.setAnimationLoop(frame);
 
-startButton.textContent = 'Navegar';
+startButton.dataset.i18n = 'start.go';
+startButton.textContent = t('start.go');
 startButton.disabled = false;
 startTourButton.disabled = false;
 window.__valenciaReady = true;

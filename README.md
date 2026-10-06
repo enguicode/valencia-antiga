@@ -2,136 +2,165 @@
 
 Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700, hecho para el navegador.
 
-El visitante navega en barca por el río, que entonces hacía de foso natural, y ve la ciudad desde fuera: la muralla, sus puertas, los puentes y el perfil de torres y campanarios.
+**Publicado en <https://valencia-antiga.pages.dev/>**
 
-> **Estado:** v1.0 publicada en <https://valencia-antiga.pages.dev/>. Hechas todas las versiones del plan; lo que queda abierto está en «Pendiente tras la v1.0». El río, la muralla, las puertas, los puentes y los edificios singulares están donde les toca según el callejero actual, con formas esquemáticas; falta cotejarlos con el plano de Tosca y probar la fluidez en un móvil real. Detalle en [docs/sources.md](docs/sources.md).
+El visitante baja en barca por el viejo cauce del río, que entonces hacía de foso natural, y ve la ciudad desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Por el camino hay doce puntos de interés que descubrir, cada uno con su ficha de historia.
 
-## Enfoque
+Es una reconstrucción aproximada: los sitios están donde estaban, las formas son un esbozo. El detalle de qué es fiable y qué no está en [docs/sources.md](docs/sources.md).
 
-- **Época:** hacia 1700. Es la fecha mejor documentada de la ciudad amurallada gracias al plano del Padre Tosca (1704), que la dibuja edificio a edificio.
-- **Aspecto:** estilizado, tipo low-poly. Toda la geometría se genera con código; no hay modelos 3D hechos a mano.
-- **Tecnología:** una página estática con [three.js](https://threejs.org/). Sin backend ni paso de compilación en las primeras versiones.
-- **Idioma:** código y comentarios en inglés; textos visibles en español (con topónimos en valenciano donde sea lo natural).
+## Qué se puede hacer
 
-## Plan por versiones
+| | |
+| --- | --- |
+| **Navegar** | 2,4 km de río, desde antes del Pont de Sant Josep hasta pasado el de la Mar. La barca frena contra las orillas y se encauza sola por los arcos de los puentes, abatiendo la vela. |
+| **Encontrar los puntos de interés** | Junto a cada sitio con historia flota un aro claro sobre el agua. Al entrar en él sale la ficha, la cámara enfoca el sitio (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Son doce; una flecha en el borde de la pantalla lleva al más cercano que falte. |
+| **Repasar lo encontrado** | Tocar la cuenta de arriba a la izquierda abre un cuaderno con los doce puntos; los no descubiertos aparecen en blanco. |
+| **Recorrido guiado** | La barca baja sola por el centro del río y pasa por los doce aros. Arrastrar solo mueve la cámara. |
+| **Cambiar la hora** | Día, atardecer o noche desde la portada o el menú; más horas en los ajustes. De noche se encienden ventanas, faroles y luciérnagas. |
+| **Elegir barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. |
+| **Elegir idioma** | Castellano, valenciano o inglés, en la portada y en los ajustes. |
 
-Cada versión deja algo que se puede abrir y recorrer. No se empieza una hasta dar por buena la anterior.
+## Controles
 
-### v0.1 — El río navegable
+| Dispositivo | Barca | Cámara |
+| --- | --- | --- |
+| Teclado | `W` `S` o flechas arriba y abajo para avanzar y ciar; `A` `D` o izquierda y derecha para el timón | — |
+| Ratón | Arrastrar con el botón izquierdo | Arrastrar con el botón derecho |
+| Pantalla táctil | Mando de abajo a la izquierda | Mando de abajo a la derecha, el del ojo |
 
-Lo mínimo para comprobar que la idea funciona.
+En pantalla táctil también vale arrastrar en cualquier parte: el primer dedo lleva la barca y el segundo gira la cámara.
 
-- Tramo de río con agua sencilla, orillas y cielo.
-- Barca con control por teclado (y táctil en móvil).
-- Una muralla recta de prueba con unas pocas torres repetidas.
-- Cámara en tercera persona siguiendo la barca.
+La interfaz deja la pantalla casi libre: arriba a la izquierda, la cuenta de puntos y los metros recorridos; arriba a la derecha, un minimapa que se amplía al tocarlo y, debajo, el botón «Menú», que despliega el momento del día, el recorrido guiado, el sonido, los ajustes y la ayuda.
 
-**Se da por buena si:** se puede recorrer el tramo de punta a punta con fluidez en un móvil de gama media.
+## Qué hay en la escena
 
-### v0.2 — El trazado real
+- **El río:** el curso real del viejo cauce, con agua animada, pretiles de piedra con bolas, escaleras y un azud que cierra el extremo de aguas arriba.
+- **La muralla:** el perímetro completo, unos 4,7 km, con una torre cada 70 m y siete puertas: Portal Nou, Serrans, Trinitat, Real y de la Mar en el lado del río, más Quart y Sant Vicent.
+- **Los cinco puentes históricos:** Sant Josep, Serrans, Trinitat, Real y de la Mar, con sus arcos, tajamares y rampas.
+- **Edificios singulares:** el Micalet, la Seu, la Lonja, el Palau del Real, los conventos de la Trinitat, Sant Pius V, Sant Doménec y la Saïdia, y quince iglesias.
+- **Relleno y vida:** 2.600 casas, árboles, siete barcas más, lavanderas, humo de chimeneas y pájaros.
+- **Luz y sonido:** hora del día a elegir, sombras, reflejo del cielo en el agua, luces nocturnas, y agua y campana sintetizadas.
 
-La ciudad pasa de decorado genérico a tener la forma de València.
+## Cómo está hecho
 
-- Curso del Turia y perímetro de la muralla cristiana (1356) según el plano de Tosca.
-- Las puertas que dan al río en su sitio, con las Torres de Serranos reconocibles.
-- Los cinco puentes históricos: Sant Josep, Serrans, Trinitat, Real y del Mar.
-- Relleno de casas genéricas dentro de la muralla para dar volumen.
+Una página estática con [three.js](https://threejs.org/), cargado desde una CDN. No hay backend ni paso de compilación, ni ficheros de imagen o de sonido: las texturas se pintan por código al arrancar y el sonido se sintetiza en el navegador.
 
-**Se da por buena si:** alguien que conoce València reconoce dónde está sin leer ningún cartel.
+```
+valencia-antiga/
+├── index.html      # página, estilos e interfaz
+├── src/            # módulos de la escena
+├── data/           # layout.json (trazado) y points.json (fichas, en tres idiomas)
+├── scripts/        # build-layout.py y deploy.sh
+└── docs/           # fuentes y planes
+```
 
-### v0.3 — Los edificios que se reconocen
+| Módulo | Qué hace |
+| --- | --- |
+| `main.js` | Arranque, bucle, cámara (seguimiento, enfoque, vuelo, paso bajo puentes) y cableado de la interfaz |
+| `config.js` | Medidas, colores y utilidades comunes |
+| `path.js` | Línea central del río y geometría que se barre a lo largo de ella |
+| `water.js`, `environment.js`, `riverside.js` | Agua; cielo, luces, orillas y árboles; pretiles, escaleras y azud |
+| `walls.js`, `bridges.js`, `city.js`, `landmarks.js` | Muralla y puertas; puentes y paso por los arcos; casas; edificios singulares |
+| `materials.js` | Texturas pintadas por código y su proyección por posición |
+| `boat.js` | Los dos tipos de barca, su manejo y su animación |
+| `guide.js` | Puntos de interés (aros, fichas, cuenta) y piloto del recorrido guiado |
+| `atmosphere.js`, `lights.js`, `life.js`, `sound.js` | Hora del día; luces nocturnas; barcas, lavanderas, humo y pájaros; sonido |
+| `input.js`, `minimap.js`, `quality.js`, `i18n.js` | Controles; minimapa; calidad gráfica; idiomas |
+| `instancing.js` | Agrupa piezas repetidas por celdas para no dibujar lo que tapa la niebla |
 
-- Siluetas propias para el Micalet y la Seu, la Lonja, el Palacio del Real y los conventos de la orilla izquierda.
-- Torres de Quart y resto de puertas grandes (Sant Vicent, la del Mar).
-- Pretiles del río, escaleras y azudes.
+Convenciones: código y comentarios en inglés; los textos visibles salen de `src/i18n.js` y de `data/points.json`.
 
-### v0.4 — La historia
+### El trazado
 
-- Puntos de interés: al acercarse a un puente, puerta o edificio aparece una ficha breve con su historia.
-- Minimapa basado en el plano de Tosca con la posición de la barca.
-- Recorrido guiado opcional, además de la navegación libre.
+`data/layout.json` se genera con `scripts/build-layout.py` a partir de OpenStreetMap: el río sale de la posición de los puentes actuales sobre el viejo cauce, y la muralla, de las calles de ronda que la sustituyeron tras el derribo. Las coordenadas están en metros desde las Torres dels Serrans, con x hacia el este y z hacia el sur.
 
-### v0.5 — Ambiente
+```bash
+python3 scripts/build-layout.py
+```
 
-- Ciclo de día y noche, niebla de río y reflejos en el agua.
-- Vida en la escena: otras barcas, lavanderas, humo de chimeneas, pájaros.
-- Sonido ambiente (agua, campanas).
+### Calidad gráfica
 
-### v1.0 — Publicación
+En automático parte de una estimación según el dispositivo y baja un nivel si los fps se mantienen bajos; no vuelve a subir sola. También se puede fijar a mano en los ajustes. Las sombras solo se activan en calidad alta.
 
-- Pantalla de inicio, ayuda de controles y créditos con las fuentes.
-- Ajuste de rendimiento y de calidad gráfica según el dispositivo.
-- Despliegue como página pública.
+## Desarrollo
 
-### Pendiente tras la v1.0
+Basta con servir la carpeta:
 
-- Probar en móviles reales: fluidez, gesto de dos dedos y sonido. Hasta ahora solo se ha probado en un navegador automatizado.
-- Cotejar el trazado con el plano de Tosca y las fichas con fuentes mejores que Wikipedia.
-- Los pilares de los puentes no frenan la barca.
-- Las sombras y las texturas han subido el coste gráfico; falta medirlo en móviles. Las sombras solo se activan en calidad alta.
+```bash
+python3 -m http.server 8080
+```
 
-### Ideas para después
+y abrir `http://localhost:8080`. Dos parámetros ayudan a probar:
 
-- Un barco por cada persona conectada: plan detallado en [docs/multiplayer-plan.md](docs/multiplayer-plan.md), sin empezar.
+- `?debug` muestra fps, draw calls, triángulos y nivel de calidad.
+- `?touch` fuerza los mandos táctiles en un ordenador.
 
-- Bajar de la barca y entrar andando por una puerta.
-- Comparar épocas: València musulmana, la de 1700 y la actual.
-- La riada de 1957 y el desvío del río.
+Al cambiar código conviene recargar sin caché: el servidor de Python no la invalida.
+
+## Publicación
+
+La página está en Cloudflare Pages:
+
+```bash
+bash scripts/deploy.sh
+```
+
+El script sube solo `index.html`, `src/` y `data/`. El proyecto de Pages se creó con `wrangler pages project create valencia-antiga --force`; sin `--force`, wrangler crea un Worker en vez de un proyecto de Pages.
 
 ## Rigor histórico
 
 Lo que más cuesta de este proyecto no es el 3D sino colocar cada cosa donde estaba. Reglas:
 
 - Todo dato histórico que aparezca en la escena o en las fichas lleva fuente, anotada en [docs/sources.md](docs/sources.md).
-- Donde no haya documentación se inventa con criterio y se marca como reconstrucción libre.
-- Fuente principal: plano de Tomás Vicente Tosca, *Valentia Edetanorum* (1704).
+- Donde no hay documentación se inventa con criterio y se marca como reconstrucción libre.
+- La época elegida, hacia 1700, es la mejor documentada de la ciudad amurallada gracias al plano de Tomás Vicente Tosca, *Valentia Edetanorum* (1704). **Ese plano todavía no se ha usado:** el trazado actual sale solo del callejero moderno.
 
-Datos de partida de la muralla, todavía de memoria salvo donde se indica (los de las fichas sí están contrastados, ver [docs/sources.md](docs/sources.md)):
+Estado de los datos:
 
-| Dato | Valor |
+| Qué | Estado |
 | --- | --- |
-| Muralla cristiana | Levantada en 1356; derribo iniciado en 1865 (de memoria). La Puerta del Mar cayó en 1868 (Wikipedia) |
-| Puertas | 12 en total; 4 grandes: Serrans, Quart, Sant Vicent y la del Mar |
-| Restos en pie | Torres de Serranos y Torres de Quart |
-| Puentes históricos | Sant Josep, Serrans, Trinitat, Real y del Mar |
+| Posición de puentes, puertas y edificios | De OpenStreetMap: fiable |
+| Curso del río y perímetro de la muralla | Aproximados y suavizados |
+| Datos de las doce fichas | Contrastados con Wikipedia en español, una fuente secundaria |
+| Muralla cristiana: levantada en 1356, derribo iniciado en 1865 | De memoria; solo consta en Wikipedia que la Puerta del Mar cayó en 1868 |
+| Forma de los edificios, texturas, barcas, torres, casas, luces | Esbozo o invención |
+| Traducciones al valenciano y al inglés | Hechas sin revisión de un hablante nativo |
 
-## Estructura prevista
+## Historia del proyecto
 
-```
-valencia-antiga/
-├── index.html      # página y arranque de la escena
-├── src/            # módulos de la escena (path, water, walls, city, bridges, landmarks, riverside, atmosphere, life, sound, quality, boat…)
-├── data/           # layout.json (trazado en metros) y points.json (fichas de historia)
-├── scripts/        # build-layout.py (genera el trazado) y deploy.sh
-└── docs/           # fuentes y notas históricas
-```
+Se hizo por versiones, cada una navegable:
 
-## Desarrollo
+| Versión | Qué añadió |
+| --- | --- |
+| v0.1 | Río recto de prueba, barca y muralla genérica |
+| v0.2 | Trazado real del río y de la muralla, puertas y los cinco puentes |
+| v0.3 | Edificios singulares, pretiles, escaleras y azud |
+| v0.4 | Fichas de historia, minimapa y recorrido guiado |
+| v0.5 | Día y noche, otras barcas, lavanderas, humo, pájaros y sonido |
+| v1.0 | Portada, ayuda, créditos y calidad gráfica |
 
-Al ser una página estática basta con servir la carpeta:
+Después de la v1.0:
 
-```bash
-python3 -m http.server 8080
-```
+- Barca detallada, texturas, sombras y reflejo del cielo.
+- Hora fija a elegir, botón del sol y luces de noche.
+- Barca tipo Albufera, con barquero que mueve la percha y arría la vela.
+- Puntos de interés como aros a los que hay que acercarse, con cámara que enfoca o vuela al sitio y cuaderno de recapitulación.
+- Paso real bajo los puentes y más detalle en edificios, puertas y puentes.
+- Interfaz nueva: mandos táctiles, menú desplegable bajo el mapa, mapa ampliable.
+- Tres idiomas.
 
-y abrir `http://localhost:8080`. Con `?debug` al final de la URL se muestran los fps, las draw calls y los triángulos.
+## Pendiente
 
-Controles: `W`/`S` o flechas para avanzar y ciar, `A`/`D` para el timón, botón derecho para girar la cámara. En pantalla táctil, un dedo mueve la barca y un segundo dedo gira la cámara.
+- **Probar en móviles reales.** Casi todo se ha comprobado en un navegador automatizado, lento y sin sonido: faltan la fluidez, los mandos táctiles y cómo suena.
+- **Medir el coste gráfico.** Las texturas, las sombras y el detalle han subido mucho la carga; lo primero a recortar serían los árboles.
+- **Cotejar con el plano de Tosca** el trazado, las puertas y los puentes.
+- **Mejores fuentes** que Wikipedia para las fichas, y contrastar el número de arcos de Sant Josep, Trinitat y Real.
+- **Fichas que faltan:** Portal Nou, Portal de la Trinitat y Portal del Real no tienen porque no se encontró fuente.
+- **Revisar las traducciones** con alguien que hable valenciano e inglés.
 
-## Publicación
+## Ideas para después
 
-La página está en Cloudflare Pages: <https://valencia-antiga.pages.dev/>
-
-```bash
-bash scripts/deploy.sh
-```
-
-El script sube solo `index.html`, `src/` y `data/`.
-
-## Regenerar el trazado
-
-```bash
-python3 scripts/build-layout.py
-```
-
-Descarga los datos de OpenStreetMap y reescribe `data/layout.json`.
+- Un barco por cada persona conectada: plan en [docs/multiplayer-plan.md](docs/multiplayer-plan.md), sin empezar.
+- Bajar de la barca y entrar andando por una puerta.
+- Comparar épocas: València musulmana, la de 1700 y la actual.
+- La riada de 1957 y el desvío del río.

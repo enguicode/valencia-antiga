@@ -28,7 +28,7 @@ function createTraffic(path, random, bridgeGuide) {
       if (boat.s > path.end - 20 || boat.s < path.start + 20) boat.direction *= -1;
       const point = path.pointAt(boat.s);
       const guided = bridgeGuide(boat.s, boat.lateral);
-      animateBoat(boat.model, dt, time, { closeness: guided.closeness, speed: boat.speed });
+      animateBoat(boat.model, dt, time, { closeness: guided.closeness, speed: boat.speed, underSail: true });
       const x = point.x + point.rx * guided.lateral;
       const z = point.z + point.rz * guided.lateral;
       boat.model.position.set(x, waveHeight(x, z, time), z);

@@ -2,6 +2,8 @@
 // often, a bell. It starts switched off and only creates the audio
 // context when asked, as browsers require.
 
+import { t, onLanguageChange } from './i18n.js';
+
 const BELL_EVERY_SECONDS = 90;
 const BELL_PARTIALS = [
   [0.5, 0.5, 4.5],
@@ -17,7 +19,6 @@ const ICONS = {
   on: `${SPEAKER}<path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11"/>`,
   off: `${SPEAKER}<path d="M16 9.5l5 5M21 9.5l-5 5"/>`,
 };
-const LABELS = { on: 'Sonido activado. Silenciar', off: 'Sonido apagado. Activar' };
 
 export function createSound(button) {
   let context = null;
@@ -28,12 +29,13 @@ export function createSound(button) {
 
   const showState = () => {
     const key = enabled ? 'on' : 'off';
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[key]}</svg><span class="label">${enabled ? 'Sonido activado' : 'Sonido apagado'}</span>`;
-    button.setAttribute('aria-label', LABELS[key]);
-    button.title = LABELS[key];
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[key]}</svg><span class="label">${t(`sound.${key}`)}</span>`;
+    button.setAttribute('aria-label', t(`sound.${key}.next`));
+    button.title = t(`sound.${key}.next`);
     button.classList.toggle('active', enabled);
   };
   showState();
+  onLanguageChange(showState);
 
   function build() {
     context = new AudioContext();

@@ -1,86 +1,228 @@
 [
   {
     "id": "pretils",
-    "at": { "type": "start", "offset": 150 },
-    "title": "Los pretiles del río",
-    "text": "Los muros que encauzan el Turia son obra de la Fàbrica Nova del Riu, creada en 1590 para proteger la ciudad de las riadas.",
+    "at": {
+      "type": "start",
+      "offset": 150
+    },
+    "title": {
+      "es": "Los pretiles del río",
+      "ca": "Els pretils del riu",
+      "en": "The river walls"
+    },
+    "text": {
+      "es": "Los muros que encauzan el Turia son obra de la Fàbrica Nova del Riu, creada en 1590 para proteger la ciudad de las riadas.",
+      "ca": "Els murs que canalitzen el Túria són obra de la Fàbrica Nova del Riu, creada el 1590 per a protegir la ciutat de les riuades.",
+      "en": "The walls that channel the Turia were built by the Fàbrica Nova del Riu, a body set up in 1590 to protect the city from floods."
+    },
     "source": "https://es.wikipedia.org/wiki/Puente_del_Real_(Valencia)"
   },
   {
     "id": "pont-sant-josep",
-    "at": { "type": "bridge", "id": "sant-josep", "offset": -55 },
-    "title": "Pont de Sant Josep",
-    "text": "El último de los cinco puentes históricos en hacerse de piedra, entre 1604 y 1607.",
+    "at": {
+      "type": "bridge",
+      "id": "sant-josep",
+      "offset": -55
+    },
+    "title": {
+      "es": "Pont de Sant Josep",
+      "ca": "Pont de Sant Josep",
+      "en": "Pont de Sant Josep"
+    },
+    "text": {
+      "es": "El último de los cinco puentes históricos en hacerse de piedra, entre 1604 y 1607.",
+      "ca": "L'últim dels cinc ponts històrics a fer-se de pedra, entre 1604 i 1607.",
+      "en": "The last of the five historic bridges to be rebuilt in stone, between 1604 and 1607."
+    },
     "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
   },
   {
     "id": "torres-serrans",
-    "at": { "type": "gate", "id": "serrans", "offset": 45 },
-    "title": "Torres dels Serrans",
-    "text": "La entrada principal de la ciudad, por donde llegaba el camino de Aragón y Cataluña. Las levantó Pere Balaguer entre 1392 y 1398. Desde 1586 eran, además, prisión de nobles y caballeros.",
+    "at": {
+      "type": "gate",
+      "id": "serrans",
+      "offset": 45
+    },
+    "title": {
+      "es": "Torres dels Serrans",
+      "ca": "Torres dels Serrans",
+      "en": "Torres dels Serrans"
+    },
+    "text": {
+      "es": "La entrada principal de la ciudad, por donde llegaba el camino de Aragón y Cataluña. Las levantó Pere Balaguer entre 1392 y 1398. Desde 1586 eran, además, prisión de nobles y caballeros.",
+      "ca": "L'entrada principal de la ciutat, per on arribava el camí d'Aragó i Catalunya. Les va alçar Pere Balaguer entre 1392 i 1398. Des de 1586 eren, a més, presó de nobles i cavallers.",
+      "en": "The main entrance to the city, where the road from Aragon and Catalonia came in. Pere Balaguer built the towers between 1392 and 1398. From 1586 they also served as a prison for nobles and knights."
+    },
     "source": "https://es.wikipedia.org/wiki/Torres_de_Serranos"
   },
   {
     "id": "pont-serrans",
-    "at": { "type": "bridge", "id": "serrans", "offset": -55 },
-    "title": "Pont dels Serrans",
-    "text": "Reedificado en 1518, un año después de que una riada lo dañara gravemente. Tiene nueve arcos y casi 160 metros de largo.",
+    "at": {
+      "type": "bridge",
+      "id": "serrans",
+      "offset": -55
+    },
+    "title": {
+      "es": "Pont dels Serrans",
+      "ca": "Pont dels Serrans",
+      "en": "Pont dels Serrans"
+    },
+    "text": {
+      "es": "Reedificado en 1518, un año después de que una riada lo dañara gravemente. Tiene nueve arcos y casi 160 metros de largo.",
+      "ca": "Reedificat el 1518, un any després que una riuada el danyara greument. Té nou arcs i quasi 160 metres de llarg.",
+      "en": "Rebuilt in 1518, a year after a flood badly damaged it. It has nine arches and is almost 160 metres long."
+    },
     "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
   },
   {
     "id": "micalet",
-    "at": { "type": "landmark", "id": "micalet", "offset": -150 },
-    "title": "El Micalet y la Seu",
-    "text": "Al fondo, el campanario de la catedral, levantado entre 1381 y 1429: un prisma octogonal tan alto hasta la terraza como largo es su perímetro. A su lado asoma el cimborrio gótico de la Seu.",
+    "at": {
+      "type": "landmark",
+      "id": "micalet",
+      "offset": -150
+    },
+    "title": {
+      "es": "El Micalet y la Seu",
+      "ca": "El Micalet i la Seu",
+      "en": "The Micalet and the cathedral"
+    },
+    "text": {
+      "es": "Al fondo, el campanario de la catedral, levantado entre 1381 y 1429: un prisma octogonal tan alto hasta la terraza como largo es su perímetro. A su lado asoma el cimborrio gótico de la Seu.",
+      "ca": "Al fons, el campanar de la catedral, alçat entre 1381 i 1429: un prisma octogonal tan alt fins a la terrassa com llarg és el seu perímetre. Al costat sobreïx el cimbori gòtic de la Seu.",
+      "en": "In the distance, the cathedral's bell tower, built between 1381 and 1429: an octagonal prism as tall, up to its terrace, as its perimeter is long. Beside it rises the Gothic lantern of the cathedral."
+    },
     "source": "https://es.wikipedia.org/wiki/El_Miguelete"
   },
   {
     "id": "pont-trinitat",
-    "at": { "type": "bridge", "id": "trinitat", "offset": -55 },
-    "title": "Pont de la Trinitat",
-    "text": "El primero de los cinco puentes históricos en levantarse en piedra, entre 1356 y 1402.",
+    "at": {
+      "type": "bridge",
+      "id": "trinitat",
+      "offset": -55
+    },
+    "title": {
+      "es": "Pont de la Trinitat",
+      "ca": "Pont de la Trinitat",
+      "en": "Pont de la Trinitat"
+    },
+    "text": {
+      "es": "El primero de los cinco puentes históricos en levantarse en piedra, entre 1356 y 1402.",
+      "ca": "El primer dels cinc ponts històrics a alçar-se en pedra, entre 1356 i 1402.",
+      "en": "The first of the five historic bridges to be built in stone, between 1356 and 1402."
+    },
     "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
   },
   {
     "id": "monestir-trinitat",
-    "at": { "type": "landmark", "id": "trinitat", "offset": 160 },
-    "title": "Monestir de la Trinitat",
-    "text": "En la orilla izquierda. Convento de clarisas desde 1444 por deseo de la reina María, esposa de Alfonso el Magnánimo, que está enterrada aquí. Fue su abadesa Sor Isabel de Villena, autora de la Vita Christi.",
+    "at": {
+      "type": "landmark",
+      "id": "trinitat",
+      "offset": 160
+    },
+    "title": {
+      "es": "Monestir de la Trinitat",
+      "ca": "Monestir de la Trinitat",
+      "en": "Monastery of the Trinitat"
+    },
+    "text": {
+      "es": "En la orilla izquierda. Convento de clarisas desde 1444 por deseo de la reina María, esposa de Alfonso el Magnánimo, que está enterrada aquí. Fue su abadesa Sor Isabel de Villena, autora de la Vita Christi.",
+      "ca": "A la riba esquerra. Convent de clarisses des de 1444 per desig de la reina Maria, esposa d'Alfons el Magnànim, que hi està soterrada. En va ser abadessa Sor Isabel de Villena, autora de la Vita Christi.",
+      "en": "On the left bank. A convent of Poor Clares since 1444 at the wish of Queen María, wife of Alfonso the Magnanimous, who is buried here. Its abbess Sor Isabel de Villena wrote the Vita Christi."
+    },
     "source": "https://es.wikipedia.org/wiki/Real_monasterio_de_la_Trinidad_(Valencia)"
   },
   {
     "id": "sant-pius",
-    "at": { "type": "landmark", "id": "sant-pius", "offset": 130 },
-    "title": "Col·legi de Sant Pius V",
-    "text": "En la orilla izquierda. Lo fundó el arzobispo Rocabertí y lo proyectó Juan Pérez Castiel en 1683. Hacia 1700 seguía en obras: no se terminó hasta bien entrado el siglo XVIII.",
+    "at": {
+      "type": "landmark",
+      "id": "sant-pius",
+      "offset": 130
+    },
+    "title": {
+      "es": "Col·legi de Sant Pius V",
+      "ca": "Col·legi de Sant Pius V",
+      "en": "College of Sant Pius V"
+    },
+    "text": {
+      "es": "En la orilla izquierda. Lo fundó el arzobispo Rocabertí y lo proyectó Juan Pérez Castiel en 1683. Hacia 1700 seguía en obras: no se terminó hasta bien entrado el siglo XVIII.",
+      "ca": "A la riba esquerra. El va fundar l'arquebisbe Rocabertí i el va projectar Juan Pérez Castiel el 1683. Cap al 1700 continuava en obres: no es va acabar fins ben entrat el segle XVIII.",
+      "en": "On the left bank. Founded by Archbishop Rocabertí and designed by Juan Pérez Castiel in 1683. Around 1700 it was still being built: it was not finished until well into the eighteenth century."
+    },
     "source": "https://es.wikipedia.org/wiki/Museo_de_Bellas_Artes_de_Valencia"
   },
   {
     "id": "pont-real",
-    "at": { "type": "bridge", "id": "real", "offset": -55 },
-    "title": "Pont del Real",
-    "text": "Reconstruido tras la riada de 1589 y acabado con prisas en 1598, para la boda de Felipe III con Margarita de Austria.",
+    "at": {
+      "type": "bridge",
+      "id": "real",
+      "offset": -55
+    },
+    "title": {
+      "es": "Pont del Real",
+      "ca": "Pont del Real",
+      "en": "Pont del Real"
+    },
+    "text": {
+      "es": "Reconstruido tras la riada de 1589 y acabado con prisas en 1598, para la boda de Felipe III con Margarita de Austria.",
+      "ca": "Reconstruït després de la riuada de 1589 i acabat a correcuita el 1598, per a les noces de Felip III amb Margarida d'Àustria.",
+      "en": "Rebuilt after the flood of 1589 and finished in a hurry in 1598, for the wedding of Philip III and Margaret of Austria."
+    },
     "source": "https://es.wikipedia.org/wiki/Puente_del_Real_(Valencia)"
   },
   {
     "id": "palau-real",
-    "at": { "type": "landmark", "id": "palau-real", "offset": 190 },
-    "title": "Palau del Real",
-    "text": "En la orilla izquierda. Nació en el siglo XI como finca de recreo de los reyes de la taifa. Lo llamaban el palacio de las 300 llaves, por sus habitaciones. Fue derribado en 1810, durante la Guerra de la Independencia.",
+    "at": {
+      "type": "landmark",
+      "id": "palau-real",
+      "offset": 190
+    },
+    "title": {
+      "es": "Palau del Real",
+      "ca": "Palau del Real",
+      "en": "Palau del Real"
+    },
+    "text": {
+      "es": "En la orilla izquierda. Nació en el siglo XI como finca de recreo de los reyes de la taifa. Lo llamaban el palacio de las 300 llaves, por sus habitaciones. Fue derribado en 1810, durante la Guerra de la Independencia.",
+      "ca": "A la riba esquerra. Va nàixer al segle XI com a finca d'esbarjo dels reis de la taifa. L'anomenaven el palau de les 300 claus, per les seues habitacions. Va ser enderrocat el 1810, durant la Guerra del Francés.",
+      "en": "On the left bank. It began in the eleventh century as a pleasure estate of the taifa kings. It was known as the palace of the 300 keys, for its many rooms. It was pulled down in 1810, during the Peninsular War."
+    },
     "source": "https://es.wikipedia.org/wiki/Palacio_del_Real_de_Valencia"
   },
   {
     "id": "portal-mar",
-    "at": { "type": "gate", "id": "mar" },
-    "title": "Portal de la Mar",
-    "text": "Abierta en la muralla en 1356, daba salida al camino del Grau, el puerto. Cayó en 1868, con el resto de la muralla.",
+    "at": {
+      "type": "gate",
+      "id": "mar"
+    },
+    "title": {
+      "es": "Portal de la Mar",
+      "ca": "Portal de la Mar",
+      "en": "Portal de la Mar"
+    },
+    "text": {
+      "es": "Abierta en la muralla en 1356, daba salida al camino del Grau, el puerto. Cayó en 1868, con el resto de la muralla.",
+      "ca": "Obert en la muralla el 1356, donava eixida al camí del Grau, el port. Va caure el 1868, amb la resta de la muralla.",
+      "en": "Opened in the wall in 1356, it led out to the road to the Grau, the port. It came down in 1868 with the rest of the wall."
+    },
     "source": "https://es.wikipedia.org/wiki/Plaza_de_la_Puerta_del_Mar_(Valencia)"
   },
   {
     "id": "pont-mar",
-    "at": { "type": "bridge", "id": "mar", "offset": -55 },
-    "title": "Pont de la Mar",
-    "text": "La riada de 1589 arrasó el puente anterior. El de piedra, diseñado por Francesc Figuerola, se acabó en 1596 con diez arcos.",
+    "at": {
+      "type": "bridge",
+      "id": "mar",
+      "offset": -55
+    },
+    "title": {
+      "es": "Pont de la Mar",
+      "ca": "Pont de la Mar",
+      "en": "Pont de la Mar"
+    },
+    "text": {
+      "es": "La riada de 1589 arrasó el puente anterior. El de piedra, diseñado por Francesc Figuerola, se acabó en 1596 con diez arcos.",
+      "ca": "La riuada de 1589 va arrasar el pont anterior. El de pedra, dissenyat per Francesc Figuerola, es va acabar el 1596 amb deu arcs.",
+      "en": "The flood of 1589 swept away the earlier bridge. The stone one, designed by Francesc Figuerola, was finished in 1596 with ten arches."
+    },
     "source": "https://es.wikipedia.org/wiki/Puente_de_la_Mar_(Valencia)"
   }
 ]

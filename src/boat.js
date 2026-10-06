@@ -435,9 +435,11 @@ const SAILING_SPEED = 3.2;
 // Moves what moves on a boat. The rig is laid back over the stern near a
 // bridge and, where the boatman poles, whenever the boat is going too slowly
 // to sail; then he works the pole, the faster the boat the quicker.
-export function animateBoat(model, dt, time, { closeness, speed }) {
+// `underSail` keeps the sail up whatever the speed, as on the boats that are
+// only scenery.
+export function animateBoat(model, dt, time, { closeness, speed, underSail = false }) {
   const data = model.userData;
-  const poling = Boolean(data.stroke) && Math.abs(speed) < SAILING_SPEED;
+  const poling = Boolean(data.stroke) && !underSail && Math.abs(speed) < SAILING_SPEED;
   const wanted = Math.max(THREE.MathUtils.smoothstep(closeness, 0.12, 0.55), poling ? 1 : 0);
   data.rigDown += (wanted - data.rigDown) * (1 - Math.exp(-dt * 2.2));
   data.rig.rotation.x = -data.rigDown;

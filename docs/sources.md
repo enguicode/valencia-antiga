@@ -1,5 +1,7 @@
 # Fuentes y grado de fiabilidad
 
+> Actualizado el 6 de octubre de 2026. Los títulos de sección conservan la versión en que se introdujo cada cosa; el contenido describe el estado actual.
+
 Cada dato de la escena lleva aquí su origen y lo fiable que es. Lo que no tenga fuente contrastada se marca como tal.
 
 ## Trazado (v0.2)
@@ -35,7 +37,7 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 
 ## Fichas de historia (v0.4)
 
-Los textos están en `data/points.json`; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las doce es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
+Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las doce es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
 
 | Ficha | Datos que afirma | Artículo |
 | --- | --- | --- |
@@ -59,13 +61,15 @@ Discrepancias vistas y cómo se han resuelto:
 
 El minimapa se dibuja con el mismo trazado que la escena; no reproduce el plano de Tosca.
 
+Las versiones en valenciano y en inglés de las fichas y de la interfaz son traducciones del texto castellano hechas sin revisión de un hablante nativo. Los nombres de puentes, puertas y edificios se dejan en valenciano en los tres idiomas. El enlace de cada ficha lleva siempre al artículo en castellano, que es el que se contrastó.
+
 ## Ambiente (v0.5)
 
 Todo lo de esta versión es decorado, sin fuente histórica detrás:
 
 - **Hora del día:** se elige con el botón del sol (día, atardecer, noche) o en los ajustes, y no avanza sola. Colores, niebla y posición del sol elegidos a ojo. El sol sale por el este y se pone por el oeste, algo al norte en los extremos, como en verano; de noche la misma luz hace de luna.
 - **Reflejos del agua:** no son reflejos reales de la escena. El agua toma un tinte del cielo y brilla con el sol.
-- **Otras barcas, lavanderas, humo y pájaros:** colocados al azar. Las lavanderas están junto a las escaleras inventadas de la v0.3.
+- **Otras barcas, lavanderas, humo y pájaros:** colocados al azar. Las barcas de decorado van siempre a vela. Las lavanderas están junto a las escaleras inventadas de la v0.3.
 - **Luces de noche:** ventanas encendidas, faroles en puentes, pretiles y barcas, antorchas en las puertas, luna y luciérnagas. Son adorno: hacia 1700 la ciudad no tenía alumbrado público.
 - **Sonido:** sintetizado en el navegador (ruido filtrado para el agua y una campana aditiva). La campana da tres toques cada minuto y medio; no reproduce ninguna campana real.
 
@@ -87,3 +91,5 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 - Cotejar muralla, puertas y puentes con el plano de Tomás Vicente Tosca (1704). Todavía no se ha usado: el trazado actual sale solo del callejero moderno.
 - Contrastar el número de arcos de Sant Josep, Trinitat y Real, y los datos de la muralla en la tabla del README (no se encontró artículo de la muralla cristiana).
 - Sustituir Wikipedia por fuentes primarias o bibliografía donde importe.
+- Revisar las traducciones al valenciano y al inglés con hablantes nativos.
+- Contrastar la forma de la barca de la Albufera y si tiene sentido en el Turia.

@@ -59,6 +59,19 @@
       white-space: nowrap;
       cursor: pointer;
       pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    #status svg {
+      flex: none;
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
     }
 
     /* The logbook: every point of interest, the ones not yet found as blanks. */
@@ -188,6 +201,17 @@
       width: 84px;
       height: 84px;
       padding: 0;
+      cursor: zoom-in;
+      pointer-events: auto;
+    }
+
+    /* Tapped, the map opens out over the top of the screen. */
+    #minimap.large {
+      z-index: 2;
+      width: min(340px, calc(100vw - 20px), calc(100vh - 140px));
+      height: min(340px, calc(100vw - 20px), calc(100vh - 140px));
+      background: rgba(244, 233, 210, 0.95);
+      cursor: zoom-out;
     }
 
     /* History card: only while the boat is in, or just past, a ring. */
@@ -385,15 +409,15 @@
       line-height: 1.5;
     }
 
-    #intro .moments {
+    #intro .choice {
       display: inline-flex;
-      margin-bottom: 14px;
+      margin: 0 3px 12px;
       border: 1px solid var(--rule);
       border-radius: 3px;
       overflow: hidden;
     }
 
-    #intro .moments button {
+    #intro .choice button {
       padding: 7px 14px;
       font: inherit;
       font-size: 0.9rem;
@@ -404,9 +428,9 @@
       cursor: pointer;
     }
 
-    #intro .moments button:first-child { border-left: 0; }
+    #intro .choice button:first-child { border-left: 0; }
 
-    #intro .moments button[aria-pressed="true"] {
+    #intro .choice button[aria-pressed="true"] {
       background: var(--ink);
       color: #f4e9d2;
     }
@@ -609,46 +633,49 @@
 <body>
   <canvas id="scene"></canvas>
 
-  <button id="status" class="panel" type="button" title="Ver los puntos de interés"><strong id="found">0 de 12</strong> puntos · <span id="distance">0</span> m de <span id="total">…</span></button>
+  <button id="status" class="panel" type="button" title="Ver los puntos de interés" data-i18n-label="status.title">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    <span><strong id="found">0 de 12</strong> <span data-i18n="status.points">puntos</span> · <span id="distance">0</span> <span data-i18n="status.of">m de</span> <span id="total">…</span></span>
+  </button>
 
   <canvas id="minimap" class="panel"></canvas>
 
   <article id="card" class="panel">
     <h2></h2>
     <p class="text"></p>
-    <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
+    <a target="_blank" rel="noopener" data-i18n="card.source">Fuente: Wikipedia</a>
     <span class="tally"></span>
   </article>
 
   <div id="help" class="panel">
-    <span class="keys"><kbd>W</kbd> <kbd>S</kbd> avanzar y ciar · <kbd>A</kbd> <kbd>D</kbd> timón · también con las flechas o arrastrando · botón derecho: girar la cámara</span>
-    <span class="touch">Mando izquierdo: la barca. Mando derecho, el del ojo: la cámara</span>
+    <span class="keys" data-i18n-html="hint.keys"></span>
+    <span class="touch" data-i18n="hint.touch">Mando izquierdo: la barca. Mando derecho, el del ojo: la cámara</span>
   </div>
 
   <button id="menu-toggle" type="button" aria-expanded="false" aria-controls="controls">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-    <span>Menú</span>
+    <span data-i18n="menu">Menú</span>
   </button>
 
   <div id="controls">
     <button id="sky" type="button"></button>
     <button id="tour" type="button">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2.2 5.4-5.4 2.2 2.2-5.4z"/></svg>
-      <span class="label">Recorrido guiado</span>
+      <span class="label" data-i18n="tour">Recorrido guiado</span>
     </button>
     <button id="sound" type="button"></button>
     <!-- gear outline adapted from Feather Icons (MIT) -->
     <button type="button" data-open="settings-section">
       <svg viewBox="0 0 24 24" aria-hidden="true"><g transform="translate(1.8 1.8) scale(0.85)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></svg>
-      <span class="label">Ajustes</span>
+      <span class="label" data-i18n="menu.settings">Ajustes</span>
     </button>
     <button type="button" data-open="help-section">
       <span class="glyph">?</span>
-      <span class="label">Ayuda y créditos</span>
+      <span class="label" data-i18n="menu.help">Ayuda y créditos</span>
     </button>
   </div>
 
-  <div id="tour-notice" class="panel" role="status">Recorrido guiado: arrastra para mirar alrededor. Para manejar la barca, detén el recorrido desde el menú.</div>
+  <div id="tour-notice" class="panel" role="status" data-i18n="tour.notice"></div>
 
   <div id="pointer">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5l16 7-16 7 4-7z" fill="#f4e9d2" stroke="#5a4a36" stroke-width="1.6" stroke-linejoin="round"/></svg>
@@ -656,89 +683,101 @@
   </div>
 
   <dialog id="journal">
-    <h2>Puntos de interés</h2>
+    <h2 data-i18n="journal.title">Puntos de interés</h2>
     <p class="tally"></p>
     <ol></ol>
-    <button id="close-journal" class="close" type="button">Seguir navegando</button>
+    <button id="close-journal" class="close" type="button" data-i18n="journal.close">Seguir navegando</button>
   </dialog>
 
   <div id="debug" class="panel" hidden></div>
 
   <section id="intro">
     <div class="sheet">
-      <p class="eyebrow">El Turia hacia 1700</p>
+      <p class="eyebrow" data-i18n="intro.eyebrow">El Turia hacia 1700</p>
       <h1>València Antiga</h1>
-      <p>Baja en barca por el viejo cauce del Turia y mira la ciudad amurallada desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios.</p>
-      <div class="moments" role="group" aria-label="Momento del día">
-        <button type="button" data-hour="18">Día</button>
-        <button type="button" data-hour="20">Atardecer</button>
-        <button type="button" data-hour="23.5">Noche</button>
+      <p data-i18n="intro.lead"></p>
+      <div class="choice languages" role="group" aria-label="Idioma" data-i18n-label="intro.language">
+        <button type="button" data-language="es" lang="es">Castellano</button>
+        <button type="button" data-language="ca" lang="ca-valencia">Valencià</button>
+        <button type="button" data-language="en" lang="en">English</button>
+      </div>
+      <div class="choice moments" role="group" aria-label="Momento del día" data-i18n-label="intro.moment">
+        <button type="button" data-hour="18" data-i18n="sky.day">Día</button>
+        <button type="button" data-hour="20" data-i18n="sky.dusk">Atardecer</button>
+        <button type="button" data-hour="23.5" data-i18n="sky.night">Noche</button>
       </div>
       <div class="actions">
-        <button id="start" type="button" disabled>Cargando…</button>
-        <button id="start-tour" type="button" disabled>Recorrido guiado</button>
+        <button id="start" type="button" disabled data-i18n="start.loading">Cargando…</button>
+        <button id="start-tour" type="button" disabled data-i18n="tour">Recorrido guiado</button>
       </div>
-      <p><button class="link" type="button" data-open="help-section">Controles</button> · <button class="link" type="button" data-open="credits-section">Créditos y fuentes</button></p>
-      <p class="note">Es una reconstrucción aproximada: los sitios están donde estaban, las formas son un esbozo.</p>
+      <p><button class="link" type="button" data-open="help-section" data-i18n="intro.controls">Controles</button> · <button class="link" type="button" data-open="credits-section" data-i18n="intro.credits">Créditos y fuentes</button></p>
+      <p class="note" data-i18n="intro.note"></p>
     </div>
   </section>
 
   <dialog id="info">
-    <h2 id="help-section">Controles</h2>
+    <h2 id="help-section" data-i18n="help.title">Controles</h2>
     <ul>
-      <li><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
-      <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
-      <li><strong>Pantalla táctil:</strong> el mando de abajo a la izquierda lleva la barca (arriba para avanzar, a los lados para virar) y el de abajo a la derecha, el del ojo, gira la cámara. También puedes arrastrar en cualquier parte de la pantalla.</li>
-      <li><strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro claro sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha: la cámara se vuelve unos segundos hacia el sitio para enseñártelo de cerca, y regresa sola (o antes, si mueves tú la cámara); la flecha del borde de la pantalla lleva al más cercano que te falte. Hay doce; toca la cuenta de arriba a la izquierda para repasarlos.</li>
-      <li><strong>Puentes:</strong> al acercarte, la barca se encauza sola hacia el arco más cercano y abate la vela para pasar por debajo.</li>
-      <li><strong>Menú:</strong> el botón que hay bajo el mapa despliega el momento del día, el sonido, el recorrido guiado, los ajustes y esta ayuda.</li>
-      <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez «Recorrido guiado» en el menú.</li>
+      <li data-i18n-html="help.keyboard"></li>
+      <li data-i18n-html="help.mouse"></li>
+      <li data-i18n-html="help.touch"></li>
+      <li data-i18n-html="help.points"></li>
+      <li data-i18n-html="help.bridges"></li>
+      <li data-i18n-html="help.menu"></li>
+      <li data-i18n-html="help.tour"></li>
     </ul>
-    <h2 id="settings-section">Ajustes</h2>
-    <p>En el menú, el botón del sol pasa de día a atardecer y a noche. Aquí hay más horas:</p>
-    <p><label>Hora del día:
+    <h2 id="settings-section" data-i18n="settings.title">Ajustes</h2>
+    <p><label><span data-i18n="settings.language">Idioma:</span>
+      <select id="language">
+        <option value="es" lang="es">Castellano</option>
+        <option value="ca" lang="ca-valencia">Valencià</option>
+        <option value="en" lang="en">English</option>
+      </select>
+    </label></p>
+    <p data-i18n="settings.sun"></p>
+    <p><label><span data-i18n="settings.hour">Hora del día:</span>
       <select id="hour">
-        <option value="6.6">Alba</option>
-        <option value="10">Mañana</option>
-        <option value="13">Mediodía</option>
-        <option value="18">Tarde</option>
-        <option value="20">Ocaso</option>
-        <option value="23.5">Noche</option>
+        <option value="6.6" data-i18n="hour.dawn">Alba</option>
+        <option value="10" data-i18n="hour.morning">Mañana</option>
+        <option value="13" data-i18n="hour.noon">Mediodía</option>
+        <option value="18" data-i18n="hour.afternoon">Tarde</option>
+        <option value="20" data-i18n="hour.sunset">Ocaso</option>
+        <option value="23.5" data-i18n="hour.night">Noche</option>
       </select>
     </label></p>
-    <p><label>Barca:
+    <p><label><span data-i18n="settings.boat">Barca:</span>
       <select id="boat-type">
-        <option value="albufera">De la Albufera, con percha</option>
-        <option value="lateen">De río, con timonel sentado</option>
+        <option value="albufera" data-i18n="boat.albufera">De la Albufera, con percha</option>
+        <option value="lateen" data-i18n="boat.lateen">De río, con timonel sentado</option>
       </select>
     </label></p>
-    <p><button id="reset-found" type="button">Volver a empezar los puntos de interés</button></p>
-    <p><label>Calidad gráfica:
+    <p><button id="reset-found" type="button" data-i18n="settings.reset">Volver a empezar los puntos de interés</button></p>
+    <p><label><span data-i18n="settings.quality">Calidad gráfica:</span>
       <select id="quality">
-        <option value="auto">Automática</option>
-        <option value="high">Alta</option>
-        <option value="medium">Media</option>
-        <option value="low">Baja</option>
+        <option value="auto" data-i18n="quality.auto">Automática</option>
+        <option value="high" data-i18n="quality.high">Alta</option>
+        <option value="medium" data-i18n="quality.medium">Media</option>
+        <option value="low" data-i18n="quality.low">Baja</option>
       </select>
     </label></p>
 
-    <h2 id="credits-section">Créditos y fuentes</h2>
+    <h2 id="credits-section" data-i18n="credits.title">Créditos y fuentes</h2>
     <ul>
-      <li><strong>Trazado:</strong> el curso del río, el perímetro de la muralla y la posición de puentes, puertas y edificios salen de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© sus colaboradores, licencia ODbL).</li>
-      <li><strong>Fichas de historia:</strong> sus datos están contrastados con Wikipedia en español (licencia CC BY-SA); cada ficha enlaza el artículo.</li>
-      <li><strong>Motor 3D:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (licencia MIT).</li>
-      <li><strong>Sonido:</strong> sintetizado en el navegador; no hay grabaciones.</li>
-      <li><strong>Código:</strong> <a href="https://github.com/enguicode/valencia-antiga" target="_blank" rel="noopener">github.com/enguicode/valencia-antiga</a>.</li>
+      <li data-i18n-html="credits.layout"></li>
+      <li data-i18n-html="credits.cards"></li>
+      <li data-i18n-html="credits.engine"></li>
+      <li data-i18n-html="credits.sound"></li>
+      <li data-i18n-html="credits.code"></li>
     </ul>
 
-    <h2>Qué es fiable y qué no</h2>
+    <h2 data-i18n="reliable.title">Qué es fiable y qué no</h2>
     <ul>
-      <li><strong>Fiable:</strong> dónde está cada cosa. Puentes, puertas, iglesias y palacios ocupan el lugar que ocupan hoy, o sus restos.</li>
-      <li><strong>Aproximado:</strong> la muralla sigue las calles de ronda que la sustituyeron, y el río, la línea de los puentes actuales.</li>
-      <li><strong>Esbozado o inventado:</strong> la forma de los edificios y sus texturas, la barca, el número y el sitio de las torres, las casas, las escaleras, el azud, y todo lo que se mueve.</li>
+      <li data-i18n-html="reliable.yes"></li>
+      <li data-i18n-html="reliable.roughly"></li>
+      <li data-i18n-html="reliable.no"></li>
     </ul>
-    <p>Versión 1.0.</p>
-    <button id="close-info" class="close" type="button">Cerrar</button>
+    <p data-i18n="version">Versión 1.0.</p>
+    <button id="close-info" class="close" type="button" data-i18n="close">Cerrar</button>
   </dialog>
 
   <script>
@@ -746,9 +785,19 @@
     // leaving it on "Cargando…" for ever.
     const reportFailure = () => {
       if (window.__valenciaReady) return;
-      document.getElementById('start').textContent = 'No se ha podido cargar';
-      document.querySelector('#intro .note').textContent =
-        'Hace falta un navegador con gráficos 3D (WebGL) y conexión para descargar la escena.';
+      const language = document.documentElement.lang.slice(0, 2);
+      const messages = {
+        es: ['No se ha podido cargar', 'Hace falta un navegador con gráficos 3D (WebGL) y conexión para descargar la escena.'],
+        ca: ["No s'ha pogut carregar", "Cal un navegador amb gràfics 3D (WebGL) i connexió per a descarregar l'escena."],
+        en: ['Could not load', 'You need a browser with 3D graphics (WebGL) and a connection to download the scene.'],
+      };
+      const [title, note] = messages[language] ?? messages.es;
+      const start = document.getElementById('start');
+      start.removeAttribute('data-i18n');
+      start.textContent = title;
+      const hint = document.querySelector('#intro .note');
+      hint.removeAttribute('data-i18n');
+      hint.textContent = note;
     };
     addEventListener('error', reportFailure, true);
     addEventListener('unhandledrejection', reportFailure);
@@ -756,12 +805,12 @@
 
   <div id="joystick"><div class="knob"></div></div>
 
-  <div id="move-stick" class="stick" role="img" aria-label="Mover la barca">
+  <div id="move-stick" class="stick" role="img" aria-label="Mover la barca" data-i18n-label="stick.move">
     <div class="knob">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>
     </div>
   </div>
-  <div id="look-stick" class="stick" role="img" aria-label="Mirar alrededor">
+  <div id="look-stick" class="stick" role="img" aria-label="Mirar alrededor" data-i18n-label="stick.look">
     <div class="knob">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
     </div>

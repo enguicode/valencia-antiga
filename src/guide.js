@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BANK } from './config.js';
 import { PRETIL } from './riverside.js';
+import { t, localized, onLanguageChange } from './i18n.js';
 
 // Points of interest. Each one has a pale ring floating on the river beside
 // the place it talks about, with a pin over it so it can be seen from afar.
@@ -145,7 +146,7 @@ export function createGuide(points, layout, path, camera, elements) {
   });
 
   const showCount = () => {
-    counter.textContent = `${found.size} de ${markers.length}`;
+    counter.textContent = t('count', { found: found.size, total: markers.length });
   };
   showCount();
 
@@ -174,14 +175,24 @@ export function createGuide(points, layout, path, camera, elements) {
       showCount();
     }
     onEnter?.(marker);
-    card.querySelector('h2').textContent = marker.title;
-    card.querySelector('.text').textContent = marker.text;
-    card.querySelector('a').href = marker.source;
-    card.querySelector('.tally').textContent =
-      found.size === markers.length
-        ? `Has encontrado los ${markers.length} puntos.`
-        : `${found.size} de ${markers.length}${first ? '' : ' · ya lo tenías'}`;
+    marker.repeat = !first;
+    write(marker);
   }
+
+  function write(marker) {
+    card.querySelector('h2').textContent = localized(marker.title);
+    card.querySelector('.text').textContent = localized(marker.text);
+    card.querySelector('a').href = marker.source;
+    const total = markers.length;
+    card.querySelector('.tally').textContent =
+      found.size === total
+        ? t('card.all', { total })
+        : t('count', { found: found.size, total }) + (marker.repeat ? t('card.again') : '');
+  }
+  onLanguageChange(() => {
+    showCount();
+    if (shown) write(shown);
+  });
 
   function reset() {
     found.clear();
@@ -274,11 +285,11 @@ export function createTour(path, button) {
 
   const set = (value) => {
     active = value;
-    const label = active ? 'Detener el recorrido guiado' : 'Recorrido guiado';
-    button.querySelector('.label').textContent = label;
+    button.querySelector('.label').textContent = t(active ? 'tour.stop' : 'tour');
     button.classList.toggle('active', active);
   };
   button.addEventListener('click', () => set(!active));
+  onLanguageChange(() => set(active));
 
   function drive(state) {
     if (state.s >= path.end - 2) {

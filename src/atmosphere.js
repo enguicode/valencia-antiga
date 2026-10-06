@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { FOG, COLORS } from './config.js';
+import { t, onLanguageChange } from './i18n.js';
 
 // Time of day. A handful of keyframes drive the sky, the fog, both lights and
 // the tint of the water; everything in between is interpolated. The hour
@@ -38,8 +39,6 @@ const ICONS = {
   dusk: '<path d="M6.2 16a5.8 5.8 0 0 1 11.6 0M2.5 16h19M5 20h14M12 4.5v3M4.6 8.6l2.1 2.1M19.4 8.6l-2.1 2.1"/>',
   night: '<path d="M19.5 14.2A8 8 0 0 1 9.8 4.5a8 8 0 1 0 9.7 9.7z"/>',
 };
-const LABELS = { day: 'Es de día. Pasar al atardecer', dusk: 'Atardece. Pasar a la noche', night: 'Es de noche. Volver al día' };
-const NAMES = { day: 'Día', dusk: 'Atardecer', night: 'Noche' };
 const phaseOf = (hour) => (hour >= 21 || hour < 5.5 ? 'night' : hour >= 19 || hour < 7.5 ? 'dusk' : 'day');
 
 const lerp = THREE.MathUtils.lerp;
@@ -69,11 +68,12 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
 
   const showPhase = () => {
     const phase = phaseOf(chosenHour);
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[phase]}</svg><span class="label">${NAMES[phase]}</span>`;
-    button.setAttribute('aria-label', LABELS[phase]);
-    button.title = LABELS[phase];
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[phase]}</svg><span class="label">${t(`sky.${phase}`)}</span>`;
+    button.setAttribute('aria-label', t(`sky.${phase}.next`));
+    button.title = t(`sky.${phase}.next`);
   };
   showPhase();
+  onLanguageChange(showPhase);
 
   // One press moves on to the next of day, dusk and night.
   button.addEventListener('click', () => {

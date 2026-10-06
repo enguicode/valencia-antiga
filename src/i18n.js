@@ -1,0 +1,326 @@
+// Languages: Spanish, Valencian and English. Static text in the page carries
+// a data-i18n attribute naming its string; modules that build text themselves
+// call t() and listen for a change of language.
+
+const STORAGE_KEY = 'valencia-antiga.language';
+const HTML_LANG = { es: 'es', ca: 'ca-valencia', en: 'en' };
+const KBD = (key) => `<kbd>${key}</kbd>`;
+
+const STRINGS = {
+  es: {
+    'count': '{found} de {total}',
+    'status.points': 'puntos',
+    'status.of': 'm de',
+    'status.title': 'Ver los puntos de interés',
+    'card.source': 'Fuente: Wikipedia',
+    'card.all': 'Has encontrado los {total} puntos.',
+    'card.again': ' · ya lo tenías',
+    'hint.keys': `${KBD('W')} ${KBD('S')} avanzar y ciar · ${KBD('A')} ${KBD('D')} timón · también con las flechas o arrastrando · botón derecho: girar la cámara`,
+    'hint.touch': 'Mando izquierdo: la barca. Mando derecho, el del ojo: la cámara',
+    'menu': 'Menú',
+    'menu.settings': 'Ajustes',
+    'menu.help': 'Ayuda y créditos',
+    'tour': 'Recorrido guiado',
+    'tour.stop': 'Detener el recorrido guiado',
+    'tour.notice': 'Recorrido guiado: arrastra para mirar alrededor. Para manejar la barca, detén el recorrido desde el menú.',
+    'sky.day': 'Día',
+    'sky.dusk': 'Atardecer',
+    'sky.night': 'Noche',
+    'sky.day.next': 'Es de día. Pasar al atardecer',
+    'sky.dusk.next': 'Atardece. Pasar a la noche',
+    'sky.night.next': 'Es de noche. Volver al día',
+    'sound.on': 'Sonido activado',
+    'sound.off': 'Sonido apagado',
+    'sound.on.next': 'Sonido activado. Silenciar',
+    'sound.off.next': 'Sonido apagado. Activar',
+    'journal.title': 'Puntos de interés',
+    'journal.close': 'Seguir navegando',
+    'journal.all': 'Los has encontrado todos: {total} de {total}.',
+    'journal.some': 'Llevas {found} de {total}. Los que faltan te esperan río abajo.',
+    'journal.unknown': 'Aún por descubrir.',
+    'intro.eyebrow': 'El Turia hacia 1700',
+    'intro.lead': 'Baja en barca por el viejo cauce del Turia y mira la ciudad amurallada desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios.',
+    'intro.moment': 'Momento del día',
+    'intro.language': 'Idioma',
+    'intro.controls': 'Controles',
+    'intro.credits': 'Créditos y fuentes',
+    'intro.note': 'Es una reconstrucción aproximada: los sitios están donde estaban, las formas son un esbozo.',
+    'start.loading': 'Cargando…',
+    'start.go': 'Navegar',
+    'start.failed': 'No se ha podido cargar',
+    'start.failed.note': 'Hace falta un navegador con gráficos 3D (WebGL) y conexión para descargar la escena.',
+    'help.title': 'Controles',
+    'help.keyboard': `<strong>Teclado:</strong> ${KBD('W')} ${KBD('S')} o las flechas arriba y abajo para avanzar y ciar; ${KBD('A')} ${KBD('D')} o izquierda y derecha para el timón.`,
+    'help.mouse': '<strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.',
+    'help.touch': '<strong>Pantalla táctil:</strong> el mando de abajo a la izquierda lleva la barca (arriba para avanzar, a los lados para virar) y el de abajo a la derecha, el del ojo, gira la cámara. También puedes arrastrar en cualquier parte de la pantalla.',
+    'help.points': '<strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro claro sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha: la cámara se vuelve unos segundos hacia el sitio, o vuela hasta él si está lejos, y regresa sola (o antes, si mueves tú la cámara). Mientras tanto la barca va despacio. La flecha del borde de la pantalla lleva al más cercano que te falte. Hay doce; toca la cuenta de arriba a la izquierda para repasarlos.',
+    'help.bridges': '<strong>Puentes:</strong> al acercarte, la barca se encauza sola hacia el arco más cercano y abate la vela para pasar por debajo.',
+    'help.menu': '<strong>Menú:</strong> el botón que hay bajo el mapa despliega el momento del día, el recorrido guiado, el sonido, los ajustes y esta ayuda.',
+    'help.tour': '<strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez «Recorrido guiado» en el menú.',
+    'settings.title': 'Ajustes',
+    'settings.sun': 'En el menú, el botón del sol pasa de día a atardecer y a noche. Aquí hay más horas:',
+    'settings.language': 'Idioma:',
+    'settings.hour': 'Hora del día:',
+    'hour.dawn': 'Alba',
+    'hour.morning': 'Mañana',
+    'hour.noon': 'Mediodía',
+    'hour.afternoon': 'Tarde',
+    'hour.sunset': 'Ocaso',
+    'hour.night': 'Noche',
+    'settings.boat': 'Barca:',
+    'boat.albufera': 'De la Albufera, con percha',
+    'boat.lateen': 'De río, con timonel sentado',
+    'settings.reset': 'Volver a empezar los puntos de interés',
+    'settings.quality': 'Calidad gráfica:',
+    'quality.auto': 'Automática',
+    'quality.high': 'Alta',
+    'quality.medium': 'Media',
+    'quality.low': 'Baja',
+    'credits.title': 'Créditos y fuentes',
+    'credits.layout': '<strong>Trazado:</strong> el curso del río, el perímetro de la muralla y la posición de puentes, puertas y edificios salen de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© sus colaboradores, licencia ODbL).',
+    'credits.cards': '<strong>Fichas de historia:</strong> sus datos están contrastados con Wikipedia en español (licencia CC BY-SA); cada ficha enlaza el artículo.',
+    'credits.engine': '<strong>Motor 3D:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (licencia MIT).',
+    'credits.sound': '<strong>Sonido:</strong> sintetizado en el navegador; no hay grabaciones.',
+    'credits.code': '<strong>Código:</strong> <a href="https://github.com/enguicode/valencia-antiga" target="_blank" rel="noopener">github.com/enguicode/valencia-antiga</a>.',
+    'reliable.title': 'Qué es fiable y qué no',
+    'reliable.yes': '<strong>Fiable:</strong> dónde está cada cosa. Puentes, puertas, iglesias y palacios ocupan el lugar que ocupan hoy, o sus restos.',
+    'reliable.roughly': '<strong>Aproximado:</strong> la muralla sigue las calles de ronda que la sustituyeron, y el río, la línea de los puentes actuales.',
+    'reliable.no': '<strong>Esbozado o inventado:</strong> la forma de los edificios y sus texturas, las barcas, el número y el sitio de las torres, las casas, las escaleras, el azud, y todo lo que se mueve.',
+    'version': 'Versión 1.0.',
+    'close': 'Cerrar',
+    'stick.move': 'Mover la barca',
+    'stick.look': 'Mirar alrededor',
+  },
+
+  ca: {
+    'count': '{found} de {total}',
+    'status.points': 'punts',
+    'status.of': 'm de',
+    'status.title': "Veure els punts d'interés",
+    'card.source': 'Font: Viquipèdia (en castellà)',
+    'card.all': 'Has trobat els {total} punts.',
+    'card.again': ' · ja el tenies',
+    'hint.keys': `${KBD('W')} ${KBD('S')} avançar i ciar · ${KBD('A')} ${KBD('D')} timó · també amb les fletxes o arrossegant · botó dret: girar la càmera`,
+    'hint.touch': "Comandament esquerre: la barca. Comandament dret, el de l'ull: la càmera",
+    'menu': 'Menú',
+    'menu.settings': 'Ajustos',
+    'menu.help': 'Ajuda i crèdits',
+    'tour': 'Recorregut guiat',
+    'tour.stop': 'Aturar el recorregut guiat',
+    'tour.notice': 'Recorregut guiat: arrossega per a mirar al voltant. Per a portar la barca, atura el recorregut des del menú.',
+    'sky.day': 'Dia',
+    'sky.dusk': 'Capvespre',
+    'sky.night': 'Nit',
+    'sky.day.next': 'És de dia. Passar al capvespre',
+    'sky.dusk.next': 'Es fa de vesprada. Passar a la nit',
+    'sky.night.next': 'És de nit. Tornar al dia',
+    'sound.on': 'So activat',
+    'sound.off': 'So apagat',
+    'sound.on.next': 'So activat. Silenciar',
+    'sound.off.next': 'So apagat. Activar',
+    'journal.title': "Punts d'interés",
+    'journal.close': 'Continuar navegant',
+    'journal.all': 'Els has trobat tots: {total} de {total}.',
+    'journal.some': "Portes {found} de {total}. Els que falten t'esperen riu avall.",
+    'journal.unknown': 'Encara per descobrir.',
+    'intro.eyebrow': 'El Túria cap al 1700',
+    'intro.lead': "Baixa en barca pel vell llit del Túria i mira la ciutat emmurallada des de l'aigua: la muralla i els seus portals, els cinc ponts de pedra i el perfil de torres i campanars.",
+    'intro.moment': 'Moment del dia',
+    'intro.language': 'Idioma',
+    'intro.controls': 'Controls',
+    'intro.credits': 'Crèdits i fonts',
+    'intro.note': 'És una reconstrucció aproximada: els llocs estan on estaven, les formes són un esbós.',
+    'start.loading': 'Carregant…',
+    'start.go': 'Navegar',
+    'start.failed': "No s'ha pogut carregar",
+    'start.failed.note': "Cal un navegador amb gràfics 3D (WebGL) i connexió per a descarregar l'escena.",
+    'help.title': 'Controls',
+    'help.keyboard': `<strong>Teclat:</strong> ${KBD('W')} ${KBD('S')} o les fletxes amunt i avall per a avançar i ciar; ${KBD('A')} ${KBD('D')} o esquerra i dreta per al timó.`,
+    'help.mouse': '<strong>Ratolí:</strong> arrossega amb el botó esquerre per a portar la barca i amb el dret per a girar la càmera.',
+    'help.touch': "<strong>Pantalla tàctil:</strong> el comandament de baix a l'esquerra porta la barca (amunt per a avançar, als costats per a virar) i el de baix a la dreta, el de l'ull, gira la càmera. També pots arrossegar en qualsevol part de la pantalla.",
+    'help.points': "<strong>Punts d'interés:</strong> al costat de cada lloc amb història hi ha un cercle clar sobre l'aigua, amb un senyal damunt. Entra en el cercle amb la barca per a llegir-ne la fitxa: la càmera es gira uns segons cap al lloc, o hi vola si està lluny, i torna sola (o abans, si la mous tu). Mentrestant la barca va a espai. La fletxa de la vora de la pantalla porta al més pròxim que et falte. N'hi ha dotze; toca el compte de dalt a l'esquerra per a repassar-los.",
+    'help.bridges': "<strong>Ponts:</strong> en acostar-te, la barca s'encamina sola cap a l'arc més pròxim i abat la vela per a passar per davall.",
+    'help.menu': "<strong>Menú:</strong> el botó que hi ha davall del mapa desplega el moment del dia, el recorregut guiat, el so, els ajustos i esta ajuda.",
+    'help.tour': '<strong>Recorregut guiat:</strong> la barca baixa sola pel centre del riu i arrossegar només mou la càmera. Per a tornar a portar-la, toca una altra vegada «Recorregut guiat» en el menú.',
+    'settings.title': 'Ajustos',
+    'settings.sun': 'En el menú, el botó del sol passa de dia a capvespre i a nit. Ací hi ha més hores:',
+    'settings.language': 'Idioma:',
+    'settings.hour': 'Hora del dia:',
+    'hour.dawn': 'Alba',
+    'hour.morning': 'Matí',
+    'hour.noon': 'Migdia',
+    'hour.afternoon': 'Vesprada',
+    'hour.sunset': 'Posta de sol',
+    'hour.night': 'Nit',
+    'settings.boat': 'Barca:',
+    'boat.albufera': "De l'Albufera, amb perxa",
+    'boat.lateen': 'De riu, amb timoner assegut',
+    'settings.reset': "Tornar a començar els punts d'interés",
+    'settings.quality': 'Qualitat gràfica:',
+    'quality.auto': 'Automàtica',
+    'quality.high': 'Alta',
+    'quality.medium': 'Mitjana',
+    'quality.low': 'Baixa',
+    'credits.title': 'Crèdits i fonts',
+    'credits.layout': '<strong>Traçat:</strong> el curs del riu, el perímetre de la muralla i la posició de ponts, portals i edificis ixen d\'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© els seus col·laboradors, llicència ODbL).',
+    'credits.cards': "<strong>Fitxes d'història:</strong> les dades estan contrastades amb la Viquipèdia en castellà (llicència CC BY-SA); cada fitxa enllaça l'article.",
+    'credits.engine': '<strong>Motor 3D:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (llicència MIT).',
+    'credits.sound': '<strong>So:</strong> sintetitzat en el navegador; no hi ha gravacions.',
+    'credits.code': '<strong>Codi:</strong> <a href="https://github.com/enguicode/valencia-antiga" target="_blank" rel="noopener">github.com/enguicode/valencia-antiga</a>.',
+    'reliable.title': 'Què és fiable i què no',
+    'reliable.yes': '<strong>Fiable:</strong> on està cada cosa. Ponts, portals, esglésies i palaus ocupen el lloc que ocupen hui, o les seues restes.',
+    'reliable.roughly': '<strong>Aproximat:</strong> la muralla seguix els carrers de ronda que la van substituir, i el riu, la línia dels ponts actuals.',
+    'reliable.no': "<strong>Esbossat o inventat:</strong> la forma dels edificis i les seues textures, les barques, el nombre i el lloc de les torres, les cases, les escales, l'assut, i tot el que es mou.",
+    'version': 'Versió 1.0.',
+    'close': 'Tancar',
+    'stick.move': 'Moure la barca',
+    'stick.look': 'Mirar al voltant',
+  },
+
+  en: {
+    'count': '{found} of {total}',
+    'status.points': 'points',
+    'status.of': 'm of',
+    'status.title': 'See the points of interest',
+    'card.source': 'Source: Wikipedia (in Spanish)',
+    'card.all': 'You have found all {total} points.',
+    'card.again': ' · already found',
+    'hint.keys': `${KBD('W')} ${KBD('S')} ahead and astern · ${KBD('A')} ${KBD('D')} rudder · arrow keys or dragging work too · right button: turn the camera`,
+    'hint.touch': 'Left stick: the boat. Right stick, the one with the eye: the camera',
+    'menu': 'Menu',
+    'menu.settings': 'Settings',
+    'menu.help': 'Help and credits',
+    'tour': 'Guided tour',
+    'tour.stop': 'Stop the guided tour',
+    'tour.notice': 'Guided tour: drag to look around. To steer the boat, stop the tour from the menu.',
+    'sky.day': 'Day',
+    'sky.dusk': 'Dusk',
+    'sky.night': 'Night',
+    'sky.day.next': 'It is day. Switch to dusk',
+    'sky.dusk.next': 'It is dusk. Switch to night',
+    'sky.night.next': 'It is night. Back to day',
+    'sound.on': 'Sound on',
+    'sound.off': 'Sound off',
+    'sound.on.next': 'Sound on. Mute',
+    'sound.off.next': 'Sound off. Turn on',
+    'journal.title': 'Points of interest',
+    'journal.close': 'Keep sailing',
+    'journal.all': 'You have found them all: {total} of {total}.',
+    'journal.some': 'You have {found} of {total}. The rest are waiting downstream.',
+    'journal.unknown': 'Yet to be discovered.',
+    'intro.eyebrow': 'The Turia around 1700',
+    'intro.lead': 'Sail down the old bed of the Turia and see the walled city from the water: the wall and its gates, the five stone bridges and the skyline of towers and belfries.',
+    'intro.moment': 'Time of day',
+    'intro.language': 'Language',
+    'intro.controls': 'Controls',
+    'intro.credits': 'Credits and sources',
+    'intro.note': 'This is an approximate reconstruction: places are where they stood, shapes are a sketch.',
+    'start.loading': 'Loading…',
+    'start.go': 'Set sail',
+    'start.failed': 'Could not load',
+    'start.failed.note': 'You need a browser with 3D graphics (WebGL) and a connection to download the scene.',
+    'help.title': 'Controls',
+    'help.keyboard': `<strong>Keyboard:</strong> ${KBD('W')} ${KBD('S')} or the up and down arrows to go ahead and astern; ${KBD('A')} ${KBD('D')} or left and right for the rudder.`,
+    'help.mouse': '<strong>Mouse:</strong> drag with the left button to steer the boat and with the right one to turn the camera.',
+    'help.touch': '<strong>Touch screen:</strong> the stick at the bottom left steers the boat (up to go ahead, sideways to turn) and the one at the bottom right, with the eye, turns the camera. You can also drag anywhere on the screen.',
+    'help.points': '<strong>Points of interest:</strong> beside every place with a story there is a pale ring on the water, with a marker above it. Sail into the ring to read its card: the camera turns to the place for a few seconds, or flies to it if it is far away, and comes back by itself (or sooner, if you move the camera). Meanwhile the boat goes slowly. The arrow at the edge of the screen leads to the nearest one you are missing. There are twelve; tap the tally at the top left to go over them.',
+    'help.bridges': '<strong>Bridges:</strong> as you approach, the boat lines itself up with the nearest arch and lowers its sail to pass underneath.',
+    'help.menu': '<strong>Menu:</strong> the button under the map unfolds the time of day, the guided tour, the sound, the settings and this help.',
+    'help.tour': '<strong>Guided tour:</strong> the boat goes down the middle of the river by itself and dragging only moves the camera. To steer again, tap “Guided tour” in the menu once more.',
+    'settings.title': 'Settings',
+    'settings.sun': 'In the menu, the sun button goes from day to dusk to night. More times of day here:',
+    'settings.language': 'Language:',
+    'settings.hour': 'Time of day:',
+    'hour.dawn': 'Dawn',
+    'hour.morning': 'Morning',
+    'hour.noon': 'Midday',
+    'hour.afternoon': 'Afternoon',
+    'hour.sunset': 'Sunset',
+    'hour.night': 'Night',
+    'settings.boat': 'Boat:',
+    'boat.albufera': 'Albufera boat, poled',
+    'boat.lateen': 'River boat, helmsman seated',
+    'settings.reset': 'Start the points of interest again',
+    'settings.quality': 'Graphics quality:',
+    'quality.auto': 'Automatic',
+    'quality.high': 'High',
+    'quality.medium': 'Medium',
+    'quality.low': 'Low',
+    'credits.title': 'Credits and sources',
+    'credits.layout': '<strong>Layout:</strong> the course of the river, the line of the wall and the position of bridges, gates and buildings come from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© its contributors, ODbL licence).',
+    'credits.cards': '<strong>History cards:</strong> their facts were checked against Spanish Wikipedia (CC BY-SA licence); each card links to its article.',
+    'credits.engine': '<strong>3D engine:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (MIT licence).',
+    'credits.sound': '<strong>Sound:</strong> synthesised in the browser; there are no recordings.',
+    'credits.code': '<strong>Code:</strong> <a href="https://github.com/enguicode/valencia-antiga" target="_blank" rel="noopener">github.com/enguicode/valencia-antiga</a>.',
+    'reliable.title': 'What can be trusted and what cannot',
+    'reliable.yes': '<strong>Reliable:</strong> where everything is. Bridges, gates, churches and palaces stand where they stand today, or where their remains are.',
+    'reliable.roughly': '<strong>Approximate:</strong> the wall follows the ring streets that replaced it, and the river, the line of today’s bridges.',
+    'reliable.no': '<strong>Sketched or made up:</strong> the shape of the buildings and their textures, the boats, the number and position of the towers, the houses, the stairs, the weir, and everything that moves.',
+    'version': 'Version 1.0.',
+    'close': 'Close',
+    'stick.move': 'Steer the boat',
+    'stick.look': 'Look around',
+  },
+};
+
+export const LANGUAGES = Object.keys(STRINGS);
+
+function initialLanguage() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored in STRINGS) return stored;
+  } catch {
+    // Storage unavailable: fall through to the browser's languages.
+  }
+  for (const preferred of navigator.languages ?? [navigator.language ?? 'es']) {
+    const code = preferred.toLowerCase().split('-')[0];
+    if (code in STRINGS) return code;
+    if (code === 'va') return 'ca';
+  }
+  return 'es';
+}
+
+let current = initialLanguage();
+
+export const getLanguage = () => current;
+
+// A string in the current language, with {name} placeholders filled in.
+export function t(key, values = {}) {
+  const text = STRINGS[current][key] ?? STRINGS.es[key] ?? key;
+  return text.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? '');
+}
+
+// Picks the current language out of a { es, ca, en } record, as used in the data files.
+export const localized = (record) => (typeof record === 'string' ? record : record[current] ?? record.es);
+
+function applyToPage() {
+  document.documentElement.lang = HTML_LANG[current];
+  for (const element of document.querySelectorAll('[data-i18n]')) element.textContent = t(element.dataset.i18n);
+  for (const element of document.querySelectorAll('[data-i18n-html]')) element.innerHTML = t(element.dataset.i18nHtml);
+  for (const element of document.querySelectorAll('[data-i18n-label]')) {
+    const label = t(element.dataset.i18nLabel);
+    element.setAttribute('aria-label', label);
+    if (element.hasAttribute('title')) element.title = label;
+  }
+}
+
+const listeners = [];
+
+// Modules that build text themselves ask to be called when the language changes.
+export function onLanguageChange(listener) {
+  listeners.push(listener);
+}
+
+export function setLanguage(language) {
+  if (!(language in STRINGS)) return;
+  current = language;
+  try {
+    localStorage.setItem(STORAGE_KEY, language);
+  } catch {
+    // Private browsing: the choice simply lasts for this visit.
+  }
+  applyToPage();
+  for (const listener of listeners) listener(language);
+}
+
+applyToPage();

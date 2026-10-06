@@ -35,7 +35,7 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 
 ## Fichas de historia (v0.4)
 
-Los textos están en `data/points.json`; cada ficha enlaza su fuente. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
+Los textos están en `data/points.json`; cada ficha enlaza su fuente. Las fichas ya no aparecen solas: cada una se abre al tocar la señal dorada que flota sobre su sitio, y encontrar las doce es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
 
 | Ficha | Datos que afirma | Artículo |
 | --- | --- | --- |

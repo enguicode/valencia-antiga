@@ -18,7 +18,9 @@ const JOYSTICK_RADIUS = 56;
 
 const clamp = (value) => Math.max(-1, Math.min(1, value));
 
-export function createInput(surface, joystickElement) {
+const TAP = { pixels: 10, milliseconds: 450 };
+
+export function createInput(surface, joystickElement, onTap) {
   const pressed = new Set();
   const drag = { id: null, originX: 0, originY: 0, throttle: 0, steer: 0 };
   const knob = joystickElement.querySelector('.knob');
@@ -38,7 +40,12 @@ export function createInput(surface, joystickElement) {
 
   surface.addEventListener('contextmenu', (event) => event.preventDefault());
 
+  // A quick press that does not travel is a tap, whatever else it started.
+  const presses = new Map();
+
   surface.addEventListener('pointerdown', (event) => {
+    // Event timestamps say when the finger moved, even if a slow frame delayed the handler.
+    presses.set(event.pointerId, { x: event.clientX, y: event.clientY, at: event.timeStamp });
     if (event.button === 2 || drag.id !== null || lookOnly) {
       if (look.id !== null) return;
       lookStarted = true;
@@ -73,6 +80,16 @@ export function createInput(surface, joystickElement) {
   });
 
   const release = (event) => {
+    const press = presses.get(event.pointerId);
+    presses.delete(event.pointerId);
+    if (
+      press &&
+      event.type === 'pointerup' &&
+      event.timeStamp - press.at < TAP.milliseconds &&
+      Math.hypot(event.clientX - press.x, event.clientY - press.y) < TAP.pixels
+    ) {
+      onTap(event.clientX, event.clientY);
+    }
     if (event.pointerId === look.id) look.id = null;
     if (event.pointerId !== drag.id) return;
     drag.id = null;

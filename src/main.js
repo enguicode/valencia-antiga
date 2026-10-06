@@ -78,14 +78,23 @@ scene.add(
   boat.mesh,
 );
 
-const input = createInput(canvas, document.getElementById('joystick'));
+const input = createInput(canvas, document.getElementById('joystick'), (x, y) => {
+  if (started) guide.tap(x, y);
+});
 const distanceLabel = document.getElementById('distance');
 document.getElementById('total').textContent = Math.round(path.end - path.start);
 const helpPanel = document.getElementById('help');
 const debugPanel = document.getElementById('debug');
-const guide = createGuide(points, layout, path, document.getElementById('card'));
+const guide = createGuide(points, layout, path, camera, {
+  dialog: document.getElementById('poi'),
+  counter: document.getElementById('found'),
+  pointer: document.getElementById('pointer'),
+});
+scene.add(guide.group);
+document.getElementById('close-poi').addEventListener('click', () => document.getElementById('poi').close());
+document.getElementById('reset-found').addEventListener('click', () => guide.reset());
 const tour = createTour(path, document.getElementById('tour'));
-const minimap = createMinimap(document.getElementById('minimap'), layout, path, guide.stations);
+const minimap = createMinimap(document.getElementById('minimap'), layout, path, guide);
 // Everything is lit by the sky as well as by the sun: the sky dome is
 // rendered into an environment map whenever the atmosphere asks for it.
 const pmrem = new THREE.PMREMGenerator(renderer);
@@ -283,7 +292,7 @@ function frame() {
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
   renderer.render(scene, camera);
-  guide.update(boat.state.s);
+  guide.update(time, boat.state);
   minimap.update(boat.state);
 
   const distance = Math.round(boat.state.s - path.start);

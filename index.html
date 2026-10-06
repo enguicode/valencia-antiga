@@ -144,40 +144,90 @@
       border-radius: 2px;
     }
 
-    #card { display: none; }
+    #mission {
+      margin: 10px 0 0;
+      font-size: 0.86rem;
+      line-height: 1.35;
+    }
 
-    body.has-card #card {
+    #mission strong { font-variant-numeric: tabular-nums; }
+
+    /* Arrow at the edge of the screen towards the nearest point still to find. */
+    #pointer {
+      position: fixed;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transform: translate(-50%, -50%);
+      color: #2e2418;
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      pointer-events: none;
+    }
+
+    body.started #pointer.visible { display: flex; }
+
+    #pointer svg {
+      width: 34px;
+      height: 34px;
+      filter: drop-shadow(0 1px 2px rgba(46, 36, 24, 0.5));
+    }
+
+    #pointer span {
+      padding: 1px 6px;
+      background: var(--parchment);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+    }
+
+    #poi {
+      width: min(440px, calc(100% - 28px));
+      padding: 20px 22px;
+      color: var(--ink);
+      font: inherit;
+      line-height: 1.5;
+      background: #f4e9d2;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    #poi::backdrop { background: rgba(46, 36, 24, 0.4); }
+
+    #poi h2 {
+      margin: 0 0 8px;
+      font-size: 1.2rem;
+    }
+
+    #poi p { margin: 0 0 10px; }
+
+    #poi a { color: inherit; font-size: 0.85rem; }
+
+    #poi .tally {
+      margin: 14px 0 0;
+      padding-top: 10px;
+      border-top: 1px solid var(--rule);
+      font-size: 0.88rem;
+      font-style: italic;
+    }
+
+    #poi .close,
+    #reset-found {
+      padding: 8px 16px;
+      font: inherit;
+      color: #f4e9d2;
+      background: var(--ink);
+      border: 0;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #poi .close {
       display: block;
-      animation: story-in 0.5s ease;
+      margin: 14px 0 0 auto;
     }
-
-    body.has-card #title { display: none; }
-
-    body:not(.has-card) #title { animation: story-in 0.5s ease; }
-
-    @keyframes story-in {
-      from { opacity: 0; transform: translateY(-4px); }
-    }
-
-    #card h2 {
-      margin: 0 0 4px;
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-
-    #card p {
-      margin: 0 0 6px;
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-
-    #card a {
-      font-size: 0.75rem;
-      color: inherit;
-      opacity: 0.75;
-    }
-
-    #card a { pointer-events: auto; }
 
     #controls {
       position: fixed;
@@ -397,10 +447,6 @@
       color: #f4e9d2;
     }
 
-    @media (max-width: 640px) {
-      #card p { font-size: 0.84rem; line-height: 1.35; }
-    }
-
     #debug {
       bottom: calc(max(22px, env(safe-area-inset-bottom)) + 54px);
       left: max(14px, env(safe-area-inset-left));
@@ -451,11 +497,7 @@
         <div class="name">València Antiga</div>
         <p>El Turia hacia 1700</p>
       </div>
-      <article id="card">
-        <h2></h2>
-        <p></p>
-        <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
-      </article>
+      <p id="mission">Puntos de interés: <strong id="found">0 de 12</strong><br>Toca las señales doradas.</p>
     </div>
     <div id="side">
       <div id="progress"><span id="distance">0</span> m de <span id="total">…</span></div>
@@ -482,6 +524,19 @@
   </div>
 
   <div id="tour-notice" class="panel" role="status">Recorrido guiado: arrastra para mirar alrededor. Toca otra vez la brújula para manejar la barca.</div>
+
+  <div id="pointer">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5l16 7-16 7 4-7z" fill="#e2a52e" stroke="#2e2418" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <span></span>
+  </div>
+
+  <dialog id="poi">
+    <h2></h2>
+    <p class="text"></p>
+    <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
+    <p class="tally"></p>
+    <button id="close-poi" class="close" type="button">Seguir navegando</button>
+  </dialog>
 
   <div id="debug" class="panel" hidden></div>
 
@@ -510,6 +565,7 @@
       <li><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
       <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
       <li><strong>Pantalla táctil:</strong> el primer dedo lleva la barca (arriba para avanzar, a los lados para virar); un segundo dedo gira la cámara.</li>
+      <li><strong>Puntos de interés:</strong> sobre cada sitio con historia flota una señal dorada. Tócala para leer su ficha; la flecha del borde de la pantalla lleva a la más cercana que te falte. Hay doce.</li>
       <li><strong>Barra de abajo:</strong> el sol cambia el momento del día; el altavoz, el sonido; la brújula inicia el recorrido guiado; la rueda abre los ajustes.</li>
       <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez la brújula.</li>
     </ul>
@@ -531,6 +587,7 @@
         <option value="lateen">De río, con timonel sentado</option>
       </select>
     </label></p>
+    <p><button id="reset-found" type="button">Volver a empezar los puntos de interés</button></p>
     <p><label>Calidad gráfica:
       <select id="quality">
         <option value="auto">Automática</option>

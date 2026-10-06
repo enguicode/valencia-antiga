@@ -5,7 +5,7 @@ import { RIVER, COLORS } from './config.js';
 
 const hex = (value) => `#${value.toString(16).padStart(6, '0')}`;
 
-export function createMinimap(canvas, layout, path, stations) {
+export function createMinimap(canvas, layout, path, guide) {
   const size = canvas.clientWidth;
   const ratio = Math.min(window.devicePixelRatio, 2);
   canvas.width = size * ratio;
@@ -59,17 +59,20 @@ export function createMinimap(canvas, layout, path, stations) {
     pen.stroke();
   }
 
-  pen.fillStyle = '#2e2418';
-  for (const station of stations) {
-    const sample = path.sampleAt(station.s);
-    pen.beginPath();
-    pen.arc(px(sample.x), py(sample.z), 1.6 * ratio, 0, Math.PI * 2);
-    pen.fill();
-  }
 
   function update(state) {
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(base, 0, 0);
+    // Points of interest: gold while pending, green once found.
+    for (const marker of guide.markers) {
+      context.beginPath();
+      context.arc(px(marker.x), py(marker.z), 2.4 * ratio, 0, Math.PI * 2);
+      context.fillStyle = guide.found.has(marker.id) ? '#4a7a4e' : '#e2a52e';
+      context.fill();
+      context.lineWidth = 0.8 * ratio;
+      context.strokeStyle = '#2e2418';
+      context.stroke();
+    }
     context.save();
     context.translate(px(state.x), py(state.z));
     context.rotate(-state.heading + Math.PI); // heading 0 points south on the map

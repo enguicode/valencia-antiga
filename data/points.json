@@ -1,0 +1,86 @@
+[
+  {
+    "id": "pretils",
+    "at": { "type": "start", "offset": 150 },
+    "title": "Los pretiles del río",
+    "text": "Los muros que encauzan el Turia son obra de la Fàbrica Nova del Riu, creada en 1590 para proteger la ciudad de las riadas.",
+    "source": "https://es.wikipedia.org/wiki/Puente_del_Real_(Valencia)"
+  },
+  {
+    "id": "pont-sant-josep",
+    "at": { "type": "bridge", "id": "sant-josep" },
+    "title": "Pont de Sant Josep",
+    "text": "El último de los cinco puentes históricos en hacerse de piedra, entre 1604 y 1607.",
+    "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
+  },
+  {
+    "id": "torres-serrans",
+    "at": { "type": "gate", "id": "serrans", "offset": -150 },
+    "title": "Torres dels Serrans",
+    "text": "La entrada principal de la ciudad, por donde llegaba el camino de Aragón y Cataluña. Las levantó Pere Balaguer entre 1392 y 1398. Desde 1586 eran, además, prisión de nobles y caballeros.",
+    "source": "https://es.wikipedia.org/wiki/Torres_de_Serranos"
+  },
+  {
+    "id": "pont-serrans",
+    "at": { "type": "bridge", "id": "serrans" },
+    "title": "Pont dels Serrans",
+    "text": "Reedificado en 1518, un año después de que una riada lo dañara gravemente. Tiene nueve arcos y casi 160 metros de largo.",
+    "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
+  },
+  {
+    "id": "micalet",
+    "at": { "type": "landmark", "id": "micalet", "offset": -150 },
+    "title": "El Micalet y la Seu",
+    "text": "Al fondo, el campanario de la catedral, levantado entre 1381 y 1429: un prisma octogonal tan alto hasta la terraza como largo es su perímetro. A su lado asoma el cimborrio gótico de la Seu.",
+    "source": "https://es.wikipedia.org/wiki/El_Miguelete"
+  },
+  {
+    "id": "pont-trinitat",
+    "at": { "type": "bridge", "id": "trinitat" },
+    "title": "Pont de la Trinitat",
+    "text": "El primero de los cinco puentes históricos en levantarse en piedra, entre 1356 y 1402.",
+    "source": "https://es.wikipedia.org/wiki/Puente_de_Serranos"
+  },
+  {
+    "id": "monestir-trinitat",
+    "at": { "type": "landmark", "id": "trinitat", "offset": 160 },
+    "title": "Monestir de la Trinitat",
+    "text": "En la orilla izquierda. Convento de clarisas desde 1444 por deseo de la reina María, esposa de Alfonso el Magnánimo, que está enterrada aquí. Fue su abadesa Sor Isabel de Villena, autora de la Vita Christi.",
+    "source": "https://es.wikipedia.org/wiki/Real_monasterio_de_la_Trinidad_(Valencia)"
+  },
+  {
+    "id": "sant-pius",
+    "at": { "type": "landmark", "id": "sant-pius", "offset": 130 },
+    "title": "Col·legi de Sant Pius V",
+    "text": "En la orilla izquierda. Lo fundó el arzobispo Rocabertí y lo proyectó Juan Pérez Castiel en 1683. Hacia 1700 seguía en obras: no se terminó hasta bien entrado el siglo XVIII.",
+    "source": "https://es.wikipedia.org/wiki/Museo_de_Bellas_Artes_de_Valencia"
+  },
+  {
+    "id": "pont-real",
+    "at": { "type": "bridge", "id": "real" },
+    "title": "Pont del Real",
+    "text": "Reconstruido tras la riada de 1589 y acabado con prisas en 1598, para la boda de Felipe III con Margarita de Austria.",
+    "source": "https://es.wikipedia.org/wiki/Puente_del_Real_(Valencia)"
+  },
+  {
+    "id": "palau-real",
+    "at": { "type": "landmark", "id": "palau-real", "offset": 190 },
+    "title": "Palau del Real",
+    "text": "En la orilla izquierda. Nació en el siglo XI como finca de recreo de los reyes de la taifa. Lo llamaban el palacio de las 300 llaves, por sus habitaciones. Fue derribado en 1810, durante la Guerra de la Independencia.",
+    "source": "https://es.wikipedia.org/wiki/Palacio_del_Real_de_Valencia"
+  },
+  {
+    "id": "portal-mar",
+    "at": { "type": "gate", "id": "mar" },
+    "title": "Portal de la Mar",
+    "text": "Abierta en la muralla en 1356, daba salida al camino del Grau, el puerto. Cayó en 1868, con el resto de la muralla.",
+    "source": "https://es.wikipedia.org/wiki/Plaza_de_la_Puerta_del_Mar_(Valencia)"
+  },
+  {
+    "id": "pont-mar",
+    "at": { "type": "bridge", "id": "mar" },
+    "title": "Pont de la Mar",
+    "text": "La riada de 1589 arrasó el puente anterior. El de piedra, diseñado por Francesc Figuerola, se acabó en 1596 con diez arcos.",
+    "source": "https://es.wikipedia.org/wiki/Puente_de_la_Mar_(Valencia)"
+  }
+]

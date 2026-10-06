@@ -10,10 +10,14 @@ import { createRiverside } from './riverside.js';
 import { createBoat } from './boat.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
+import { createGuide, createTour } from './guide.js';
+import { createMinimap } from './minimap.js';
 
 const debug = new URLSearchParams(location.search).has('debug');
 
-const layout = await (await fetch('./data/layout.json')).json();
+const [layout, points] = await Promise.all(
+  ['./data/layout.json', './data/points.json'].map(async (url) => (await fetch(url)).json()),
+);
 const path = createRiverPath(layout);
 
 const canvas = document.getElementById('scene');
@@ -42,6 +46,9 @@ const distanceLabel = document.getElementById('distance');
 document.getElementById('total').textContent = Math.round(path.end - path.start);
 const helpPanel = document.getElementById('help');
 const debugPanel = document.getElementById('debug');
+const guide = createGuide(points, layout, path, document.getElementById('card'));
+const tour = createTour(path, document.getElementById('tour'));
+const minimap = createMinimap(document.getElementById('minimap'), layout, path, guide.stations);
 
 function resize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -55,18 +62,38 @@ resize();
 // Third-person camera: sits behind and above the boat and eases towards that spot.
 const CAMERA_BACK = 15;
 const CAMERA_UP = 6.5;
+const ORBIT = { yawPerPixel: 0.006, liftPerPixel: 0.06, maxLift: 30, holdSeconds: 2, returnRate: 2 };
 const cameraGoal = new THREE.Vector3();
 const lookGoal = new THREE.Vector3();
 const lookAt = new THREE.Vector3();
+const viewDirection = new THREE.Vector3();
+const orbit = { yaw: 0, lift: 0, idle: ORBIT.holdSeconds };
+
+// Dragging with a second finger swings the camera around the boat and raises
+// it. Once released it stays put for a moment, then drifts back astern.
+function updateOrbit(dt, axes) {
+  if (axes.looking) {
+    orbit.yaw += axes.lookX * ORBIT.yawPerPixel;
+    orbit.lift = THREE.MathUtils.clamp(orbit.lift + axes.lookY * ORBIT.liftPerPixel, -4, ORBIT.maxLift);
+    orbit.idle = 0;
+    return;
+  }
+  orbit.idle += dt;
+  if (orbit.idle < ORBIT.holdSeconds) return;
+  const keep = Math.exp(-dt * ORBIT.returnRate);
+  orbit.yaw = Math.atan2(Math.sin(orbit.yaw), Math.cos(orbit.yaw)) * keep;
+  orbit.lift *= keep;
+}
 
 function updateCamera(dt, snap = false) {
-  const forward = boat.getForward();
-  cameraGoal.copy(boat.mesh.position).addScaledVector(forward, -CAMERA_BACK);
-  cameraGoal.y = CAMERA_UP;
-  lookGoal.copy(boat.mesh.position).addScaledVector(forward, 8);
+  const angle = boat.state.heading + orbit.yaw;
+  viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
+  cameraGoal.copy(boat.mesh.position).addScaledVector(viewDirection, -CAMERA_BACK);
+  cameraGoal.y = CAMERA_UP + orbit.lift;
+  lookGoal.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
   lookGoal.y = 2;
 
-  const ease = snap ? 1 : 1 - Math.exp(-dt * 3);
+  const ease = snap ? 1 : 1 - Math.exp(-dt * (orbit.idle < ORBIT.holdSeconds ? 9 : 3));
   camera.position.lerp(cameraGoal, ease);
   lookAt.lerp(lookGoal, ease);
   camera.lookAt(lookAt);
@@ -82,19 +109,27 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const time = clock.elapsedTime;
   const axes = input.update();
+  if (tour.active) {
+    // Taking the helm ends the guided tour.
+    if (axes.throttle !== 0 || axes.steer !== 0) tour.stop();
+    else Object.assign(axes, tour.drive(boat.state));
+  }
 
   boat.update(dt, axes, time);
   water.update(time, boat.state.row);
+  updateOrbit(dt, axes);
   updateCamera(dt);
   cullInstances(camera);
   renderer.render(scene, camera);
+  guide.update(boat.state.s);
+  minimap.update(boat.state);
 
   const distance = Math.round(boat.state.s - path.start);
   if (distance !== shownDistance) {
     shownDistance = distance;
     distanceLabel.textContent = distance;
   }
-  if (axes.used) helpPanel.classList.add('dismissed');
+  if (axes.used || tour.active) helpPanel.classList.add('dismissed');
 
   if (debug) {
     frames++;
@@ -115,5 +150,5 @@ renderer.setAnimationLoop(frame);
 
 if (debug) {
   debugPanel.hidden = false;
-  window.__valencia = { boat, renderer, scene, camera, path, layout };
+  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour };
 }

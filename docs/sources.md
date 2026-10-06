@@ -14,7 +14,7 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 | Portal dels Serrans y Portal de Quart | Posición en OpenStreetMap de las torres que siguen en pie | Fiable en posición; la forma es esquemática |
 | Portal Nou, de la Trinitat, del Real y de la Mar | Punto de la muralla más cercano al puente correspondiente | Aproximado |
 | Puentes de Sant Josep, Serrans, Trinitat, Real y del Mar | Posición en OpenStreetMap | Fiable en posición; en la escena cruzan el río en perpendicular y todos miden lo mismo |
-| Número de arcos de cada puente | De memoria: 13, 9, 10, 10 y 10 | Sin contrastar |
+| Número de arcos de cada puente | Serrans (9) y Mar (10), contrastados con Wikipedia; Sant Josep (13), Trinitat (10) y Real (10), de memoria | Dos contrastados, tres sin contrastar |
 | Casas | Repartidas al azar dentro de la muralla | Inventado: no hay callejero |
 
 ## Edificios y ribera (v0.3)
@@ -33,7 +33,34 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 | Azud | Cierra el extremo de aguas arriba del tramo navegable | Inventado: no corresponde a ningún azud real |
 | Colores (cúpula azul, tejados) | Orientativos | Inventado |
 
+## Fichas de historia (v0.4)
+
+Los textos están en `data/points.json`; cada ficha enlaza su fuente. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
+
+| Ficha | Datos que afirma | Artículo |
+| --- | --- | --- |
+| Pretiles | Fàbrica Nova del Riu desde 1590, contra las riadas | Puente del Real (Valencia) |
+| Pont de Sant Josep | De piedra entre 1604 y 1607, el último de los cinco | Puente de Serranos |
+| Torres dels Serrans | 1392-1398, Pere Balaguer, entrada principal, prisión de nobles desde 1586 | Torres de Serranos |
+| Pont dels Serrans | Reedificado en 1518 tras la riada de 1517; nueve arcos; 159,7 m | Puente de Serranos |
+| El Micalet y la Seu | 1381-1429; prisma octogonal; altura hasta la terraza igual al perímetro; cimborrio gótico | El Miguelete; Catedral de Santa María (Valencia) |
+| Pont de la Trinitat | De piedra entre 1356 y 1402, el primero de los cinco | Puente de Serranos |
+| Monestir de la Trinitat | Clarisas desde 1444 por la reina María, enterrada allí; Sor Isabel de Villena | Real monasterio de la Trinidad (Valencia) |
+| Sant Pius V | Rocabertí; proyecto de Pérez Castiel en 1683; terminado en el XVIII | Museo de Bellas Artes de Valencia |
+| Pont del Real | Reconstruido tras la riada de 1589; acabado en 1598 para la boda de Felipe III | Puente del Real (Valencia) |
+| Palau del Real | Almunia del siglo XI; «300 llaves»; derribado en 1810 | Palacio del Real de Valencia |
+| Portal de la Mar | Abierta en 1356; camino del Grau; derribada en 1868 | Plaza de la Puerta del Mar (Valencia) |
+| Pont de la Mar | Riada de 1589; Francesc Figuerola; acabado en 1596; diez arcos | Puente de la Mar (Valencia) |
+
+Discrepancias vistas y cómo se han resuelto:
+
+- El artículo del puente de Serranos lo llama «el más antiguo de los existentes» y a la vez fecha el de la Trinitat en 1356-1402. Las fichas no dicen cuál es el más antiguo.
+- El Portal Nou, el de la Trinitat y el del Real no tienen ficha: no se encontró fuente para sus datos.
+
+El minimapa se dibuja con el mismo trazado que la escena; no reproduce el plano de Tosca.
+
 ## Pendiente
 
 - Cotejar muralla, puertas y puentes con el plano de Tomás Vicente Tosca (1704). Todavía no se ha usado: el trazado actual sale solo del callejero moderno.
-- Contrastar los datos históricos de la tabla del README y el número de arcos de los puentes.
+- Contrastar el número de arcos de Sant Josep, Trinitat y Real, y los datos de la muralla en la tabla del README (no se encontró artículo de la muralla cristiana).
+- Sustituir Wikipedia por fuentes primarias o bibliografía donde importe.

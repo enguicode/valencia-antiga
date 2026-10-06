@@ -4,7 +4,7 @@ Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700, he
 
 El visitante navega en barca por el río, que entonces hacía de foso natural, y ve la ciudad desde fuera: la muralla, sus puertas, los puentes y el perfil de torres y campanarios.
 
-> **Estado:** v0.3 hecha. El río, la muralla, las puertas, los puentes y los edificios singulares están donde les toca según el callejero actual, con formas esquemáticas; falta cotejarlos con el plano de Tosca y probar la fluidez en un móvil real. Detalle en [docs/sources.md](docs/sources.md).
+> **Estado:** v0.4 hecha (fichas de historia, minimapa y recorrido guiado). El río, la muralla, las puertas, los puentes y los edificios singulares están donde les toca según el callejero actual, con formas esquemáticas; falta cotejarlos con el plano de Tosca y probar la fluidez en un móvil real. Detalle en [docs/sources.md](docs/sources.md).
 
 ## Enfoque
 
@@ -77,11 +77,11 @@ Lo que más cuesta de este proyecto no es el 3D sino colocar cada cosa donde est
 - Donde no haya documentación se inventa con criterio y se marca como reconstrucción libre.
 - Fuente principal: plano de Tomás Vicente Tosca, *Valentia Edetanorum* (1704).
 
-Datos de partida, pendientes de contrastar antes de modelarlos:
+Datos de partida de la muralla, todavía de memoria salvo donde se indica (los de las fichas sí están contrastados, ver [docs/sources.md](docs/sources.md)):
 
 | Dato | Valor |
 | --- | --- |
-| Muralla cristiana | Levantada en 1356, derribada en 1865 |
+| Muralla cristiana | Levantada en 1356; derribo iniciado en 1865 (de memoria). La Puerta del Mar cayó en 1868 (Wikipedia) |
 | Puertas | 12 en total; 4 grandes: Serrans, Quart, Sant Vicent y la del Mar |
 | Restos en pie | Torres de Serranos y Torres de Quart |
 | Puentes históricos | Sant Josep, Serrans, Trinitat, Real y del Mar |
@@ -92,7 +92,7 @@ Datos de partida, pendientes de contrastar antes de modelarlos:
 valencia-antiga/
 ├── index.html      # página y arranque de la escena
 ├── src/            # módulos de la escena (path, water, walls, city, bridges, landmarks, riverside, boat…)
-├── data/           # layout.json: río, muralla, puertas y puentes en metros
+├── data/           # layout.json (trazado en metros) y points.json (fichas de historia)
 ├── scripts/        # build-layout.py (genera el trazado) y deploy.sh
 └── docs/           # fuentes y notas históricas
 ```
@@ -107,7 +107,7 @@ python3 -m http.server 8080
 
 y abrir `http://localhost:8080`. Con `?debug` al final de la URL se muestran los fps, las draw calls y los triángulos.
 
-Controles: `W`/`S` o flechas para avanzar y ciar, `A`/`D` para el timón; en pantalla táctil, arrastrar el dedo.
+Controles: `W`/`S` o flechas para avanzar y ciar, `A`/`D` para el timón, botón derecho para girar la cámara. En pantalla táctil, un dedo mueve la barca y un segundo dedo gira la cámara.
 
 ## Publicación
 

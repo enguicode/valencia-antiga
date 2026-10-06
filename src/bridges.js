@@ -12,8 +12,8 @@ const ARCH = { spring: 2, rise: 4.5 };
 const PARAPET = { height: 0.9, thickness: 0.5 };
 const FOOT = -3;
 
-// Number of arches of each bridge. From memory, not yet checked against a
-// source: see docs/sources.md.
+// Number of arches of each bridge. Serrans and Mar are checked against a
+// source; the other three are from memory. See docs/sources.md.
 const ARCHES = { 'sant-josep': 13, serrans: 9, trinitat: 10, real: 10, mar: 10 };
 
 function createBridgeGeometry(arches) {

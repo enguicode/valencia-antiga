@@ -95,6 +95,77 @@
       background: rgba(255, 255, 255, 0.45);
     }
 
+    #minimap {
+      top: calc(max(14px, env(safe-area-inset-top)) + 50px);
+      right: max(14px, env(safe-area-inset-right));
+      width: 150px;
+      height: 150px;
+      padding: 0;
+    }
+
+    #card {
+      left: max(14px, env(safe-area-inset-left));
+      bottom: max(22px, env(safe-area-inset-bottom));
+      width: min(360px, calc(100% - 28px));
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    #card.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    #card h2 {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    #card p {
+      margin: 0 0 6px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    #card a {
+      font-size: 0.75rem;
+      color: inherit;
+      opacity: 0.75;
+    }
+
+    #card.visible a { pointer-events: auto; }
+
+    #tour {
+      position: fixed;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(22px, env(safe-area-inset-bottom));
+      padding: 9px 14px;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--ink);
+      background: var(--parchment);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #tour.active {
+      background: var(--ink);
+      color: #f4e9d2;
+    }
+
+    @media (max-width: 640px) {
+      #minimap { width: 104px; height: 104px; }
+      #card { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px); }
+      #help { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px); }
+    }
+
+    @media (min-width: 641px) {
+      #help { bottom: auto; top: max(14px, env(safe-area-inset-top)); }
+    }
+
     #debug {
       top: calc(max(14px, env(safe-area-inset-top)) + 74px);
       left: max(14px, env(safe-area-inset-left));
@@ -136,15 +207,25 @@
 
   <header id="title" class="panel">
     <h1>València Antiga</h1>
-    <p>El Turia hacia 1700 · v0.3</p>
+    <p>El Turia hacia 1700 · v0.4</p>
   </header>
 
   <div id="progress" class="panel"><span id="distance">0</span> m de <span id="total">…</span></div>
 
   <div id="help" class="panel">
-    <span class="keys"><kbd>W</kbd> <kbd>S</kbd> avanzar y ciar · <kbd>A</kbd> <kbd>D</kbd> timón · también con las flechas o arrastrando</span>
-    <span class="touch">Arrastra el dedo: arriba para avanzar, a los lados para virar</span>
+    <span class="keys"><kbd>W</kbd> <kbd>S</kbd> avanzar y ciar · <kbd>A</kbd> <kbd>D</kbd> timón · también con las flechas o arrastrando · botón derecho: girar la cámara</span>
+    <span class="touch">Un dedo mueve la barca: arriba para avanzar, a los lados para virar. Con un segundo dedo giras la cámara</span>
   </div>
+
+  <canvas id="minimap" class="panel"></canvas>
+
+  <article id="card" class="panel">
+    <h2></h2>
+    <p></p>
+    <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
+  </article>
+
+  <button id="tour" type="button">Recorrido guiado</button>
 
   <div id="debug" class="panel" hidden></div>
 

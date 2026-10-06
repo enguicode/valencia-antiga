@@ -393,6 +393,30 @@ const flightSpot = new THREE.Vector3();
 const chasePosition = new THREE.Vector3();
 const chaseLook = new THREE.Vector3();
 
+// Aims a little above the moon so its disc clears the history card. Does
+// nothing when the card is off to one side, as it is on a wide screen.
+function dropMoonBelowCard(fovDeg) {
+  const card = document.getElementById('card').getBoundingClientRect();
+  if (card.height < 2) return;
+  const half = THREE.MathUtils.degToRad(fovDeg) / 2;
+  const radiusPx = (Math.atan(38 / 1080) / (half * 2)) * window.innerHeight;
+  const centerX = window.innerWidth / 2;
+  if (card.right < centerX - radiusPx || card.left > centerX + radiusPx) return;
+  if (card.bottom < window.innerHeight / 2 - radiusPx) return;
+  const floor = window.innerHeight - (document.body.classList.contains('touch') ? 210 : 100);
+  const targetY = Math.min(card.bottom + 16 + radiusPx, floor - radiusPx);
+  const ndcY = 1 - (2 * targetY) / window.innerHeight;
+  const pitch = -Math.atan(Math.tan(half) * ndcY);
+  const span = Math.hypot(MOON_DIRECTION.x, MOON_DIRECTION.z);
+  const elev = THREE.MathUtils.clamp(Math.asin(MOON_DIRECTION.y) + pitch, 0.15, 1.2);
+  viewDirection.set(
+    (MOON_DIRECTION.x / span) * Math.cos(elev),
+    Math.sin(elev),
+    (MOON_DIRECTION.z / span) * Math.cos(elev),
+  );
+  lookGoal.copy(cameraGoal).addScaledVector(viewDirection, 400);
+}
+
 function updateCamera(dt, snap = false) {
   let wantedFov = baseFov;
   focus.left -= dt;
@@ -442,6 +466,10 @@ function updateCamera(dt, snap = false) {
     // Narrow the lens until the place fills the view, however far it is.
     const fitting = THREE.MathUtils.radToDeg(2 * Math.atan(subject.span / 2 / distance));
     wantedFov = THREE.MathUtils.clamp(fitting / Math.min(camera.aspect, 1), FOCUS.narrowest, baseFov);
+    // The history card sits on the upper left. On a phone it is wide enough
+    // to cover a moon framed in the middle, so aim above the disc and let it
+    // sit in the clear band under the card.
+    if (subject.moon) dropMoonBelowCard(wantedFov);
   } else {
     cameraGoal.copy(chasePosition);
     lookGoal.copy(chaseLook);

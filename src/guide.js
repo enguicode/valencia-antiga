@@ -285,8 +285,9 @@ export function createGuide(points, layout, path, camera, elements) {
     else if (shown && !entered && shown.distance > CARD_STAYS_WITHIN && !isShowing?.()) show(null);
 
     // An arrow at the edge of the screen points to the nearest ring still to
-    // be found whenever it is out of view.
-    if (!nearest) {
+    // be found whenever it is out of view. A detail view is looking at one
+    // place already, so the arrow stays out of that shot.
+    if (!nearest || isShowing?.()) {
       pointer.classList.remove('visible');
       return;
     }

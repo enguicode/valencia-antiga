@@ -46,9 +46,22 @@
       pointer-events: none;
     }
 
-    #title {
-      top: max(14px, env(safe-area-inset-top));
-      left: max(14px, env(safe-area-inset-left));
+    /* One framed panel across the top: the title, or the history card that
+       replaces it, on the left; progress and the map in a column on the right. */
+    #top {
+      top: max(12px, env(safe-area-inset-top));
+      left: max(12px, env(safe-area-inset-left));
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      width: min(560px, calc(100% - 24px));
+      padding: 10px;
+    }
+
+    #story {
+      flex: 1;
+      min-width: 0;
+      padding: 2px 4px;
     }
 
     #title .name {
@@ -65,16 +78,26 @@
       opacity: 0.8;
     }
 
+    #side {
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 118px;
+      padding-left: 12px;
+      border-left: 1px solid var(--rule);
+    }
+
     #progress {
-      top: max(14px, env(safe-area-inset-top));
-      right: max(14px, env(safe-area-inset-right));
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-variant-numeric: tabular-nums;
+      text-align: center;
+      white-space: nowrap;
     }
 
     #help {
       left: 50%;
-      bottom: max(22px, env(safe-area-inset-bottom));
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 54px);
       transform: translateX(-50%);
       max-width: calc(100% - 32px);
       font-size: 0.9rem;
@@ -100,31 +123,26 @@
     }
 
     #minimap {
-      top: calc(max(14px, env(safe-area-inset-top)) + 50px);
-      right: max(14px, env(safe-area-inset-right));
-      width: 150px;
-      height: 150px;
-      padding: 0;
+      display: block;
+      width: 104px;
+      height: 104px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
     }
 
-    /* A history card takes the place of the title panel while it shows, so it
-       covers a corner that was already covered. */
-    #card {
-      top: max(14px, env(safe-area-inset-top));
-      left: max(14px, env(safe-area-inset-left));
-      width: min(360px, calc(100% - 28px));
-      opacity: 0;
-      transform: translateY(-8px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
+    #card { display: none; }
+
+    body.has-card #card {
+      display: block;
+      animation: story-in 0.5s ease;
     }
 
-    #title { transition: opacity 0.5s ease; }
+    body.has-card #title { display: none; }
 
-    body.has-card #title { opacity: 0; }
+    body:not(.has-card) #title { animation: story-in 0.5s ease; }
 
-    #card.visible {
-      opacity: 1;
-      transform: none;
+    @keyframes story-in {
+      from { opacity: 0; transform: translateY(-4px); }
     }
 
     #card h2 {
@@ -145,7 +163,7 @@
       opacity: 0.75;
     }
 
-    #card.visible a { pointer-events: auto; }
+    #card a { pointer-events: auto; }
 
     #controls {
       position: fixed;
@@ -153,7 +171,6 @@
       bottom: max(22px, env(safe-area-inset-bottom));
       left: max(14px, env(safe-area-inset-left));
       display: flex;
-      flex-wrap: wrap-reverse;
       justify-content: flex-end;
       gap: 8px;
       pointer-events: none;
@@ -345,8 +362,10 @@
     #controls .icon {
       display: grid;
       place-items: center;
-      width: 40px;
+      width: 42px;
+      height: 42px;
       padding: 0;
+      font-size: 1.05rem;
     }
 
     #controls .icon svg {
@@ -365,19 +384,11 @@
     }
 
     @media (max-width: 640px) {
-      #minimap { width: 104px; height: 104px; }
-      /* leave the minimap's column free */
-      #card { width: calc(100% - 146px); }
-      #card p { font-size: 0.82rem; line-height: 1.35; }
-      #help { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px); }
-    }
-
-    @media (min-width: 641px) {
-      #help { bottom: auto; top: max(14px, env(safe-area-inset-top)); }
+      #card p { font-size: 0.84rem; line-height: 1.35; }
     }
 
     #debug {
-      top: calc(max(14px, env(safe-area-inset-top)) + 74px);
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 54px);
       left: max(14px, env(safe-area-inset-left));
       font: 12px/1.3 ui-monospace, Menlo, Consolas, monospace;
     }
@@ -420,32 +431,40 @@
 <body>
   <canvas id="scene"></canvas>
 
-  <header id="title" class="panel">
-    <div class="name">València Antiga</div>
-    <p>El Turia hacia 1700</p>
+  <header id="top" class="panel">
+    <div id="story">
+      <div id="title">
+        <div class="name">València Antiga</div>
+        <p>El Turia hacia 1700</p>
+      </div>
+      <article id="card">
+        <h2></h2>
+        <p></p>
+        <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
+      </article>
+    </div>
+    <div id="side">
+      <div id="progress"><span id="distance">0</span> m de <span id="total">…</span></div>
+      <canvas id="minimap"></canvas>
+    </div>
   </header>
-
-  <div id="progress" class="panel"><span id="distance">0</span> m de <span id="total">…</span></div>
 
   <div id="help" class="panel">
     <span class="keys"><kbd>W</kbd> <kbd>S</kbd> avanzar y ciar · <kbd>A</kbd> <kbd>D</kbd> timón · también con las flechas o arrastrando · botón derecho: girar la cámara</span>
     <span class="touch">Un dedo mueve la barca: arriba para avanzar, a los lados para virar. Con un segundo dedo giras la cámara</span>
   </div>
 
-  <canvas id="minimap" class="panel"></canvas>
-
-  <article id="card" class="panel">
-    <h2></h2>
-    <p></p>
-    <a target="_blank" rel="noopener">Fuente: Wikipedia</a>
-  </article>
-
   <div id="controls">
     <button id="sky" class="icon" type="button"></button>
     <button id="sound" class="icon" type="button"></button>
-    <button id="tour" type="button">Recorrido guiado</button>
-    <button type="button" data-open="settings-section">Ajustes</button>
-    <button type="button" data-open="help-section" aria-label="Ayuda y créditos">?</button>
+    <button id="tour" class="icon" type="button" aria-label="Recorrido guiado" title="Recorrido guiado">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2.2 5.4-5.4 2.2 2.2-5.4z"/></svg>
+    </button>
+    <!-- gear outline adapted from Feather Icons (MIT) -->
+    <button class="icon" type="button" data-open="settings-section" aria-label="Ajustes" title="Ajustes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><g transform="translate(1.8 1.8) scale(0.85)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></svg>
+    </button>
+    <button class="icon" type="button" data-open="help-section" aria-label="Ayuda y créditos" title="Ayuda y créditos">?</button>
   </div>
 
   <div id="debug" class="panel" hidden></div>
@@ -475,6 +494,7 @@
       <li><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
       <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
       <li><strong>Pantalla táctil:</strong> el primer dedo lleva la barca (arriba para avanzar, a los lados para virar); un segundo dedo gira la cámara.</li>
+      <li><strong>Barra de abajo:</strong> el sol cambia el momento del día; el altavoz, el sonido; la brújula inicia el recorrido guiado; la rueda abre los ajustes.</li>
       <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río. En cuanto tocas el timón, vuelve a ser tuya.</li>
     </ul>
     <h2 id="settings-section">Ajustes</h2>

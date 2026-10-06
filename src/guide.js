@@ -32,7 +32,6 @@ export function createGuide(points, layout, path, card) {
     }
     if (nearest === current) return;
     current = nearest;
-    card.classList.toggle('visible', Boolean(nearest));
     document.body.classList.toggle('has-card', Boolean(nearest));
     if (!nearest) return;
     title.textContent = nearest.title;
@@ -52,7 +51,9 @@ export function createTour(path, button) {
 
   const set = (value) => {
     active = value;
-    button.textContent = active ? 'Detener recorrido' : 'Recorrido guiado';
+    const label = active ? 'Detener el recorrido guiado' : 'Recorrido guiado';
+    button.setAttribute('aria-label', label);
+    button.title = label;
     button.classList.toggle('active', active);
   };
   button.addEventListener('click', () => set(!active));

@@ -390,9 +390,9 @@
   </article>
 
   <div id="controls">
-    <button id="clock" type="button">Hora: 18:00</button>
     <button id="sound" type="button">Sonido: no</button>
     <button id="tour" type="button">Recorrido guiado</button>
+    <button type="button" data-open="settings-section">Ajustes</button>
     <button type="button" data-open="help-section" aria-label="Ayuda y créditos">?</button>
   </div>
 
@@ -418,9 +418,19 @@
       <li><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
       <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
       <li><strong>Pantalla táctil:</strong> el primer dedo lleva la barca (arriba para avanzar, a los lados para virar); un segundo dedo gira la cámara.</li>
-      <li><strong>Hora:</strong> cada pulsación fija el alba, el mediodía, el ocaso o la noche; la siguiente vuelve al reloj automático.</li>
       <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río. En cuanto tocas el timón, vuelve a ser tuya.</li>
     </ul>
+    <h2 id="settings-section">Ajustes</h2>
+    <p><label>Hora del día:
+      <select id="hour">
+        <option value="6.6">Alba</option>
+        <option value="10">Mañana</option>
+        <option value="13">Mediodía</option>
+        <option value="18">Tarde</option>
+        <option value="20">Ocaso</option>
+        <option value="23.5">Noche</option>
+      </select>
+    </label></p>
     <p><label>Calidad gráfica:
       <select id="quality">
         <option value="auto">Automática</option>

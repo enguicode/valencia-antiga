@@ -2,9 +2,12 @@ import * as THREE from 'three';
 import { FOG, COLORS } from './config.js';
 
 // Time of day. A handful of keyframes drive the sky, the fog, both lights and
-// the tint of the water; everything in between is interpolated.
+// the tint of the water; everything in between is interpolated. The hour
+// does not advance on its own: the visitor picks it in the settings.
 
-const CYCLE_SECONDS = 480; // a full day when left on automatic
+const DEFAULT_HOUR = 18;
+const STORAGE_KEY = 'valencia-antiga.hour';
+const SETTLE_RATE = 0.9; // how quickly the light moves to a newly chosen hour
 
 // hour, sky top, horizon and fog, sun colour, sun strength, ambient strength, fog reach, night (0-1)
 const KEYS = [
@@ -28,37 +31,47 @@ const KEYS = [
   night,
 }));
 
-const MODES = [
-  { label: 'Auto', hour: null },
-  { label: 'Alba', hour: 6.6 },
-  { label: 'Mediodía', hour: 13 },
-  { label: 'Ocaso', hour: 20 },
-  { label: 'Noche', hour: 23.5 },
-];
-
 const lerp = THREE.MathUtils.lerp;
 
-export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere }, waterMaterial, button, refreshEnvironment) {
-  const state = { hour: 18, mode: 0, night: 0, light: 1, fogScale: 1, sunDirection: new THREE.Vector3(0, 1, 0) };
+function readHour(select) {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if ([...select.options].some((option) => option.value === stored)) return stored;
+  } catch {
+    // Storage unavailable: fall back to the default.
+  }
+  return String(DEFAULT_HOUR);
+}
+
+export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere }, waterMaterial, select, refreshEnvironment) {
+  select.value = readHour(select);
+  const state = {
+    hour: Number(select.value),
+    night: 0,
+    light: 1,
+    fogScale: 1,
+    sunDirection: new THREE.Vector3(0, 1, 0),
+  };
+  let chosenHour = state.hour;
   let environmentHour = null;
   const waterBase = new THREE.Color(COLORS.water);
 
-  const label = () => {
-    const mode = MODES[state.mode];
-    if (mode.hour !== null) return mode.label;
-    const hours = Math.floor(state.hour);
-    const minutes = Math.floor((state.hour % 1) * 6) * 10;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  };
-  let shown = '';
-
-  button.addEventListener('click', () => {
-    state.mode = (state.mode + 1) % MODES.length;
-    if (MODES[state.mode].hour !== null) state.hour = MODES[state.mode].hour;
+  select.addEventListener('change', () => {
+    chosenHour = Number(select.value);
+    try {
+      localStorage.setItem(STORAGE_KEY, select.value);
+    } catch {
+      // Private browsing: the choice simply lasts for this visit.
+    }
   });
 
   function update(dt) {
-    if (MODES[state.mode].hour === null) state.hour = (state.hour + (dt * 24) / CYCLE_SECONDS) % 24;
+    // Ease towards the chosen hour the short way round the clock, so a change
+    // in the settings is a brief dusk or dawn rather than a jump.
+    const gap = ((chosenHour - state.hour + 36) % 24) - 12;
+    // At least two hours a second, so the last stretch does not drag.
+    const step = Math.sign(gap) * Math.min(Math.abs(gap), Math.max(Math.abs(gap) * SETTLE_RATE, 2) * dt);
+    state.hour = Math.abs(gap) < 0.01 ? chosenHour : (state.hour + step + 24) % 24;
 
     const next = KEYS.findIndex((key) => key.hour > state.hour);
     const a = KEYS[next - 1];
@@ -95,17 +108,13 @@ export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere },
     waterMaterial.color.copy(waterBase).multiplyScalar(THREE.MathUtils.clamp(state.light, 0.4, 1));
 
     // The environment map is what the water and everything else reflects. It
-    // is re-rendered from the sky only when the hour has moved on a little.
+    // is re-rendered from the sky a few times while the hour is changing and
+    // once more when it settles.
     const drift = Math.abs(state.hour - (environmentHour ?? state.hour));
-    if (environmentHour === null || Math.min(drift, 24 - drift) > 0.2) {
+    const settled = state.hour === chosenHour && environmentHour !== state.hour;
+    if (environmentHour === null || settled || Math.min(drift, 24 - drift) > 0.75) {
       environmentHour = state.hour;
       refreshEnvironment();
-    }
-
-    const text = `Hora: ${label()}`;
-    if (text !== shown) {
-      shown = text;
-      button.textContent = text;
     }
   }
 

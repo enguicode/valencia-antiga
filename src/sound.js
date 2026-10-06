@@ -1,8 +1,8 @@
-// Ambient sound, synthesised in the browser: running water and, at a few
-// hours of the day, a bell. It starts switched off and only creates the audio
+// Ambient sound, synthesised in the browser: running water and, every so
+// often, a bell. It starts switched off and only creates the audio
 // context when asked, as browsers require.
 
-const BELL_HOURS = [7, 12, 20];
+const BELL_EVERY_SECONDS = 90;
 const BELL_PARTIALS = [
   [0.5, 0.5, 4.5],
   [1, 1, 3.5],
@@ -17,7 +17,7 @@ export function createSound(button) {
   let master = null;
   let waterGain = null;
   let enabled = false;
-  let lastHour = null;
+  let sinceBell = BELL_EVERY_SECONDS - 12; // the first one comes soon after switching on
 
   function build() {
     context = new AudioContext();
@@ -96,12 +96,15 @@ export function createSound(button) {
     else context.resume();
   });
 
-  function update(boatSpeed, hour) {
+  function update(dt, boatSpeed) {
     if (enabled) {
       waterGain.gain.setTargetAtTime(0.4 + Math.min(Math.abs(boatSpeed), 9) * 0.07, context.currentTime, 0.5);
-      if (lastHour !== null && BELL_HOURS.some((bell) => lastHour < bell && hour >= bell)) ring(3);
+      sinceBell += dt;
+      if (sinceBell >= BELL_EVERY_SECONDS) {
+        sinceBell = 0;
+        ring(3);
+      }
     }
-    lastHour = hour;
   }
 
   return {

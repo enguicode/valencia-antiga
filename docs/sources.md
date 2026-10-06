@@ -63,10 +63,10 @@ El minimapa se dibuja con el mismo trazado que la escena; no reproduce el plano 
 
 Todo lo de esta versión es decorado, sin fuente histórica detrás:
 
-- **Día y noche:** colores, niebla y recorrido del sol elegidos a ojo. El sol sale por el este y se pone por el oeste, algo al norte en los extremos, como en verano; de noche la misma luz hace de luna.
+- **Hora del día:** se elige en los ajustes y no avanza sola. Colores, niebla y posición del sol elegidos a ojo. El sol sale por el este y se pone por el oeste, algo al norte en los extremos, como en verano; de noche la misma luz hace de luna.
 - **Reflejos del agua:** no son reflejos reales de la escena. El agua toma un tinte del cielo y brilla con el sol.
 - **Otras barcas, lavanderas, humo y pájaros:** colocados al azar. Las lavanderas están junto a las escaleras inventadas de la v0.3.
-- **Sonido:** sintetizado en el navegador (ruido filtrado para el agua y una campana aditiva). La campana suena a las 7, las 12 y las 20 del reloj de la escena; no reproduce ninguna campana real.
+- **Sonido:** sintetizado en el navegador (ruido filtrado para el agua y una campana aditiva). La campana da tres toques cada minuto y medio; no reproduce ninguna campana real.
 
 ## Aspecto (texturas, barca y luz)
 

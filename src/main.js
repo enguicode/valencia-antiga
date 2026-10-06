@@ -81,7 +81,7 @@ const atmosphere = createAtmosphere(
   scene,
   environment,
   water.material,
-  document.getElementById('clock'),
+  document.getElementById('hour'),
   refreshEnvironment,
 );
 
@@ -219,7 +219,7 @@ function frame() {
   sun.position.copy(boat.mesh.position).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
   water.update(time, boat.state.row);
   life.update(dt, time, boat.state, atmosphere.state);
-  sound.update(boat.state.speed, atmosphere.state.hour);
+  sound.update(dt, boat.state.speed);
   if (started) updateOrbit(dt, axes);
   updateCamera(dt);
   cullInstances(camera, scene.fog.far);

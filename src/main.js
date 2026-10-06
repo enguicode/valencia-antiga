@@ -100,6 +100,9 @@ const guide = createGuide(points, layout, path, camera, {
   onEnter: (marker, requested) => {
     let { subject } = marker;
     // The moon is not a place: look up at it from wherever the boat is.
+    // By day that look is an empty sky, so the logbook's eye borrows the
+    // night for as long as the card stays up.
+    let borrowed = false;
     if (subject.moon) {
       subject = {
         x: boat.state.x + MOON_DIRECTION.x * 700,
@@ -108,6 +111,7 @@ const guide = createGuide(points, layout, path, camera, {
         span: 90, // narrow, so the lens closes in on it
         moon: true,
       };
+      if (requested) borrowed = borrowNight();
     }
     focus.subject = subject;
     // Places close to the river get a zoom from the boat; far ones, and any
@@ -117,6 +121,7 @@ const guide = createGuide(points, layout, path, camera, {
       (requested || subject.fly || Math.hypot(subject.x - boat.state.x, subject.z - boat.state.z) > FLIGHT.beyond);
     focus.hold = requested ? FLIGHT.hold * 2 : FLIGHT.hold;
     focus.total = focus.flight ? FLIGHT.out + focus.hold + FLIGHT.back : FOCUS.seconds;
+    if (borrowed) focus.total += 2; // the sky needs a moment to fall
     focus.left = focus.total;
   },
   isShowing: () => focus.left > 0,
@@ -266,7 +271,33 @@ for (const button of momentButtons) {
     hourSelect.dispatchEvent(new Event('change'));
   });
 }
-hourSelect.addEventListener('change', showMoment);
+hourSelect.addEventListener('change', () => {
+  showMoment();
+  // Choosing another hour by hand cancels the borrowed night.
+  if (borrowedHour !== null && hourSelect.value !== '23.5') borrowedHour = null;
+});
+
+// The moon achievement, asked for by day, would look at a blank sky. Keep
+// the visitor's hour and lend them the night until that look is over.
+let borrowedHour = null;
+
+function borrowNight() {
+  const hour = Number(hourSelect.value);
+  if (hour >= 21 || hour < 5.5) return false;
+  if (borrowedHour === null) borrowedHour = hourSelect.value;
+  hourSelect.value = '23.5';
+  hourSelect.dispatchEvent(new Event('change'));
+  return true;
+}
+
+function restoreBorrowedNight() {
+  if (borrowedHour === null) return;
+  const hour = borrowedHour;
+  borrowedHour = null;
+  if (hourSelect.value !== '23.5') return;
+  hourSelect.value = hour;
+  hourSelect.dispatchEvent(new Event('change'));
+}
 // The hint on the moon's point brings the night without leaving the ring.
 document.querySelector('#card .night').addEventListener('click', () => {
   hourSelect.value = '23.5';
@@ -473,6 +504,7 @@ function frame() {
   if (started) updateOrbit(dt, axes);
   if (axes.looking) focus.left = 0; // looking around by hand takes the camera back
   updateCamera(dt);
+  if (borrowedHour !== null && focus.left <= 0) restoreBorrowedNight();
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
   renderer.render(scene, camera);

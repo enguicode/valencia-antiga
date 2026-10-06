@@ -17,7 +17,8 @@ const PIN_SIZE = 0.05; // of the viewport's height
 // What the camera turns to on entering a ring: how high to aim on the place
 // itself and how wide a view it needs, in metres.
 const SUBJECTS = {
-  bridge: { aim: 4, span: 150 },
+  // A bridge is always shown whole, from upstream and a little above its deck.
+  bridge: { aim: 4, span: 150, fly: true, standOff: 0.8, above: 8 },
   gate: { aim: 12, span: 52 },
   start: { aim: 2, span: 60 },
   micalet: { aim: 34, span: 110 },
@@ -89,6 +90,10 @@ export function createGuide(points, layout, path, camera, elements) {
 
   // The ring sits on the water at the point of the river nearest the place,
   // pulled towards that bank but still within reach of the middle.
+  const cityCentre = layout.wall
+    .reduce((sum, [x, z]) => [sum[0] + x, sum[1] + z], [0, 0])
+    .map((total) => total / layout.wall.length);
+
   // Also works out the subject: the spot on the place itself to look at.
   const locate = ({ type, id, offset = 0 }) => {
     if (type === 'start') {
@@ -102,12 +107,17 @@ export function createGuide(points, layout, path, camera, elements) {
     let x;
     let z;
     let kind = type;
+    let facing = null;
     if (type === 'gate') {
       [x, z] = layout.wall[layout.gates.find((gate) => gate.id === id).vertex];
+      // A gate is best seen from in front: straight out from the city.
+      const out = Math.hypot(x - cityCentre[0], z - cityCentre[1]);
+      facing = [(x - cityCentre[0]) / out, (z - cityCentre[1]) / out];
     } else if (type === 'bridge') {
       const bridge = layout.bridges.find((item) => item.id === id);
       const { sample } = path.project(bridge.x, bridge.z);
       ({ x, z } = sample);
+      facing = [-sample.tx, -sample.tz];
     } else {
       const landmark = layout.landmarks.find((item) => item.id === id);
       ({ x, z } = landmark);
@@ -117,7 +127,7 @@ export function createGuide(points, layout, path, camera, elements) {
     return {
       s: s + offset,
       side: type === 'bridge' ? 0 : Math.sign(lateral),
-      subject: { ...(SUBJECTS[kind] ?? SUBJECTS.convent), x, z },
+      subject: { ...(SUBJECTS[kind] ?? SUBJECTS.convent), x, z, facing },
     };
   };
 

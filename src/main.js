@@ -101,13 +101,13 @@ const guide = createGuide(points, layout, path, camera, {
     const { subject } = marker;
     focus.subject = subject;
     // Places close to the river get a zoom from the boat; far ones, a flight.
-    focus.flight = Math.hypot(subject.x - boat.state.x, subject.z - boat.state.z) > FLIGHT.beyond;
+    focus.flight = subject.fly || Math.hypot(subject.x - boat.state.x, subject.z - boat.state.z) > FLIGHT.beyond;
     focus.total = focus.flight ? FLIGHT.out + FLIGHT.hold + FLIGHT.back : FOCUS.seconds;
     focus.left = focus.total;
   },
 });
 scene.add(guide.group);
-document.getElementById('reset-found').addEventListener('click', () => guide.reset());
+for (const button of document.querySelectorAll('.reset-found')) button.addEventListener('click', () => guide.reset());
 
 // The logbook: tapping the tally lists every point. Those not yet found are
 // there too, as blanks: known to exist, not what they are.
@@ -347,14 +347,16 @@ function updateCamera(dt, snap = false) {
     const going = THREE.MathUtils.smoothstep(elapsed, 0, FLIGHT.out);
     const returning = THREE.MathUtils.smoothstep(elapsed, FLIGHT.out + FLIGHT.hold, focus.total);
     const away = going - returning; // 0 at the boat, 1 at the place
-    const dx = boat.mesh.position.x - subject.x;
-    const dz = boat.mesh.position.z - subject.z;
+    // Hover in front of the place if it has a front, otherwise on the boat's side of it.
+    let [dx, dz] = subject.facing ?? [boat.mesh.position.x - subject.x, boat.mesh.position.z - subject.z];
     const distance = Math.hypot(dx, dz) || 1;
-    const standOff = subject.span * FLIGHT.standOff;
-    flightSpot.set(subject.x + (dx / distance) * standOff, subject.y + FLIGHT.above, subject.z + (dz / distance) * standOff);
+    dx /= distance;
+    dz /= distance;
+    const standOff = subject.span * (subject.standOff ?? FLIGHT.standOff);
+    flightSpot.set(subject.x + dx * standOff, subject.y + (subject.above ?? FLIGHT.above), subject.z + dz * standOff);
     cameraGoal.lerpVectors(chasePosition, flightSpot, away);
-    // Rise over the roofs on the way there and back.
-    cameraGoal.y += Math.sin(away * Math.PI) * 18;
+    // Rise over the roofs on the way there and back, unless it is a short hop.
+    cameraGoal.y += Math.sin(away * Math.PI) * (subject.fly ? 4 : 18);
     lookGoal.set(subject.x, subject.y, subject.z).lerp(chaseLook, 1 - Math.min(1, away * 2.5));
   } else if (focus.left > 0) {
     const { subject } = focus;

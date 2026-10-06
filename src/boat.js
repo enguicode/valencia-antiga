@@ -303,7 +303,18 @@ function createParts(type) {
   const clew = v(...type.sail.clew);
   addRig('trim', spar(mastFoot, mastHead, 0.085));
   addRig('trim', spar(tack.clone().lerp(peak, -0.05), peak.clone().lerp(tack, -0.04), 0.05));
-  addRig('sail', createSailGeometry(tack, peak, clew));
+  // The sail is built in a frame of its own, lying along the yard, so that it
+  // can be gathered up to the yard instead of trailing in the water when the
+  // rig comes down: x runs from tack to peak, y towards the clew.
+  const along = peak.clone().sub(tack).normalize();
+  const toClew = clew.clone().sub(tack);
+  const across = toClew.sub(along.clone().multiplyScalar(toClew.dot(along))).normalize();
+  const sailFrame = new THREE.Matrix4()
+    .makeBasis(along, across, along.clone().cross(across))
+    .setPosition(tack.clone().sub(mastFoot));
+  const sailGeometry = createSailGeometry(tack, peak, clew);
+  sailGeometry.translate(-mastFoot.x, -mastFoot.y, -mastFoot.z);
+  sailGeometry.applyMatrix4(sailFrame.clone().invert());
 
   // Rudder and tiller
   const { rudder } = type;
@@ -371,6 +382,8 @@ function createParts(type) {
     geometries,
     rigGeometries,
     rigFoot: mastFoot.toArray(),
+    sailGeometry,
+    sailFrame,
     strokeGeometries,
     shoulders: shoulders?.toArray() ?? null,
     rigging,
@@ -398,9 +411,17 @@ export function createBoatModel(typeName = DEFAULT_BOAT) {
     mesh.receiveShadow = true;
     rig.add(mesh);
   }
-  rig.add(new THREE.LineSegments(parts.rigging, MATERIALS.rope));
+  const sailHolder = new THREE.Group();
+  sailHolder.applyMatrix4(parts.sailFrame);
+  const sail = new THREE.Mesh(parts.sailGeometry, MATERIALS.sail);
+  sail.castShadow = true;
+  sailHolder.add(sail);
+  const lines = new THREE.LineSegments(parts.rigging, MATERIALS.rope);
+  rig.add(sailHolder, lines);
   model.add(rig);
   model.userData.rig = rig;
+  model.userData.sail = sail;
+  model.userData.lines = lines;
   model.userData.rigDown = 0;
 
   if (parts.shoulders) {
@@ -442,7 +463,10 @@ export function animateBoat(model, dt, time, { closeness, speed, underSail = fal
   const poling = Boolean(data.stroke) && !underSail && Math.abs(speed) < SAILING_SPEED;
   const wanted = Math.max(THREE.MathUtils.smoothstep(closeness, 0.12, 0.55), poling ? 1 : 0);
   data.rigDown += (wanted - data.rigDown) * (1 - Math.exp(-dt * 2.2));
-  data.rig.rotation.x = -data.rigDown;
+  // Down, the yard lies back over the stern with the sail gathered up to it.
+  data.rig.rotation.x = -data.rigDown * 0.92;
+  data.sail.scale.y = 1 - data.rigDown * 0.93;
+  data.lines.visible = data.rigDown < 0.5;
 
   if (!data.stroke) return;
   const effort = data.rigDown * Math.min(1, Math.abs(speed) / 1.2);

@@ -4,7 +4,7 @@ Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700, he
 
 El visitante navega en barca por el río, que entonces hacía de foso natural, y ve la ciudad desde fuera: la muralla, sus puertas, los puentes y el perfil de torres y campanarios.
 
-> **Estado:** proyecto recién creado. Todavía no hay código; este README recoge el alcance y el plan por versiones.
+> **Estado:** v0.1 hecha (río navegable con muralla de prueba), pendiente de probar en un móvil real. La muralla aún no sigue el trazado histórico.
 
 ## Enfoque
 
@@ -104,4 +104,6 @@ Al ser una página estática basta con servir la carpeta:
 python3 -m http.server 8080
 ```
 
-y abrir `http://localhost:8080`.
+y abrir `http://localhost:8080`. Con `?debug` al final de la URL se muestran los fps, las draw calls y los triángulos.
+
+Controles: `W`/`S` o flechas para avanzar y ciar, `A`/`D` para el timón; en pantalla táctil, arrastrar el dedo.

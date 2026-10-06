@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#f0e2c6">
+  <title>València Antiga</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --ink: #2e2418;
+      --parchment: rgba(244, 233, 210, 0.82);
+      --rule: rgba(46, 36, 24, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #f0e2c6;
+      color: var(--ink);
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #scene {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .panel {
+      position: fixed;
+      padding: 10px 14px;
+      background: var(--parchment);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    #title {
+      top: max(14px, env(safe-area-inset-top));
+      left: max(14px, env(safe-area-inset-left));
+    }
+
+    #title h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    #title p {
+      margin: 2px 0 0;
+      font-size: 0.8rem;
+      font-style: italic;
+      opacity: 0.8;
+    }
+
+    #progress {
+      top: max(14px, env(safe-area-inset-top));
+      right: max(14px, env(safe-area-inset-right));
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #help {
+      left: 50%;
+      bottom: max(22px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      max-width: calc(100% - 32px);
+      font-size: 0.9rem;
+      text-align: center;
+      transition: opacity 0.8s ease;
+    }
+
+    #help.dismissed { opacity: 0; }
+
+    #help .touch { display: none; }
+
+    @media (pointer: coarse) {
+      #help .keys { display: none; }
+      #help .touch { display: inline; }
+    }
+
+    kbd {
+      font: inherit;
+      padding: 0 5px;
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    #debug {
+      top: calc(max(14px, env(safe-area-inset-top)) + 74px);
+      left: max(14px, env(safe-area-inset-left));
+      font: 12px/1.3 ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    #joystick {
+      position: fixed;
+      width: 112px;
+      height: 112px;
+      margin: -56px 0 0 -56px;
+      border: 2px solid rgba(244, 233, 210, 0.7);
+      border-radius: 50%;
+      background: rgba(46, 36, 24, 0.12);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    #joystick.active { opacity: 1; }
+
+    #joystick .knob {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 40px;
+      height: 40px;
+      margin: -20px 0 0 -20px;
+      border-radius: 50%;
+      background: rgba(244, 233, 210, 0.85);
+    }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <header id="title" class="panel">
+    <h1>València Antiga</h1>
+    <p>Tramo de prueba · v0.1</p>
+  </header>
+
+  <div id="progress" class="panel"><span id="distance">0</span> m de 600</div>
+
+  <div id="help" class="panel">
+    <span class="keys"><kbd>W</kbd> <kbd>S</kbd> avanzar y ciar · <kbd>A</kbd> <kbd>D</kbd> timón · también con las flechas o arrastrando</span>
+    <span class="touch">Arrastra el dedo: arriba para avanzar, a los lados para virar</span>
+  </div>
+
+  <div id="debug" class="panel" hidden></div>
+
+  <div id="joystick"><div class="knob"></div></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

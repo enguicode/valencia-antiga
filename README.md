@@ -107,3 +107,13 @@ python3 -m http.server 8080
 y abrir `http://localhost:8080`. Con `?debug` al final de la URL se muestran los fps, las draw calls y los triángulos.
 
 Controles: `W`/`S` o flechas para avanzar y ciar, `A`/`D` para el timón; en pantalla táctil, arrastrar el dedo.
+
+## Publicación
+
+La página está en Cloudflare Pages: <https://valencia-antiga.pages.dev/>
+
+```bash
+bash scripts/deploy.sh
+```
+
+El script sube solo `index.html` y `src/`.

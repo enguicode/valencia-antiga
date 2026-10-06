@@ -267,6 +267,11 @@ for (const button of momentButtons) {
   });
 }
 hourSelect.addEventListener('change', showMoment);
+// The hint on the moon's point brings the night without leaving the ring.
+document.querySelector('#card .night').addEventListener('click', () => {
+  hourSelect.value = '23.5';
+  hourSelect.dispatchEvent(new Event('change'));
+});
 showMoment();
 
 // Language: three buttons on the start screen and a list in the settings.

@@ -284,7 +284,25 @@
 
     #card a { color: inherit; }
 
-    #card.visible a { pointer-events: auto; }
+    #card.visible a,
+    #card.visible .night { pointer-events: auto; }
+
+    /* By day the moon's point is only a hint, with a button to bring the night. */
+    #card:not(.hint) .night,
+    #card.hint a,
+    #card.hint .tally { display: none; }
+
+    #card .night {
+      margin-top: 4px;
+      padding: 6px 12px;
+      font: inherit;
+      font-size: 0.82rem;
+      color: #f4e9d2;
+      background: var(--ink);
+      border: 0;
+      border-radius: 3px;
+      cursor: pointer;
+    }
 
     #card .tally {
       float: right;
@@ -865,6 +883,7 @@
     <p class="text"></p>
     <a target="_blank" rel="noopener" data-i18n="card.source">Fuente: Wikipedia</a>
     <span class="tally"></span>
+    <button class="night" type="button" data-i18n="moon.night">Hacer de noche</button>
   </article>
 
   <div id="help" class="panel">

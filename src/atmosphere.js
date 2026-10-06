@@ -6,8 +6,6 @@ import { t, onLanguageChange } from './i18n.js';
 // the tint of the water; everything in between is interpolated. The hour
 // does not advance on its own: the visitor picks it in the settings.
 
-const DEFAULT_HOUR = 18;
-const STORAGE_KEY = 'valencia-antiga.hour';
 const SETTLE_RATE = 0.9; // how quickly the light moves to a newly chosen hour
 
 // hour, sky top, horizon and fog, sun colour, sun strength, ambient strength, fog reach, night (0-1)
@@ -43,18 +41,16 @@ const phaseOf = (hour) => (hour >= 21 || hour < 5.5 ? 'night' : hour >= 19 || ho
 
 const lerp = THREE.MathUtils.lerp;
 
-function readHour(select) {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if ([...select.options].some((option) => option.value === stored)) return stored;
-  } catch {
-    // Storage unavailable: fall back to the default.
-  }
-  return String(DEFAULT_HOUR);
+// Each visit starts at the moment of day it is on the visitor's own clock:
+// day, dusk or night. From there on it only changes by hand.
+function clockHour() {
+  const now = new Date();
+  const phase = phaseOf(now.getHours() + now.getMinutes() / 60);
+  return String(QUICK_HOURS[['day', 'dusk', 'night'].indexOf(phase)]);
 }
 
 export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisphere }, waterMaterial, select, button, refreshEnvironment) {
-  select.value = readHour(select);
+  select.value = clockHour();
   const state = {
     hour: Number(select.value),
     night: 0,
@@ -86,11 +82,6 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
   select.addEventListener('change', () => {
     chosenHour = Number(select.value);
     showPhase();
-    try {
-      localStorage.setItem(STORAGE_KEY, select.value);
-    } catch {
-      // Private browsing: the choice simply lasts for this visit.
-    }
   });
 
   function update(dt) {

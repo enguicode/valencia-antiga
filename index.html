@@ -107,6 +107,20 @@
 
     #help.dismissed { opacity: 0; }
 
+    #tour-notice {
+      left: 50%;
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 54px);
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100% - 32px);
+      font-size: 0.9rem;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    #tour-notice.visible { opacity: 1; }
+
     #help .touch { display: none; }
 
     @media (pointer: coarse) {
@@ -467,6 +481,8 @@
     <button class="icon" type="button" data-open="help-section" aria-label="Ayuda y créditos" title="Ayuda y créditos">?</button>
   </div>
 
+  <div id="tour-notice" class="panel" role="status">Recorrido guiado: arrastra para mirar alrededor. Toca otra vez la brújula para manejar la barca.</div>
+
   <div id="debug" class="panel" hidden></div>
 
   <section id="intro">
@@ -495,7 +511,7 @@
       <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
       <li><strong>Pantalla táctil:</strong> el primer dedo lleva la barca (arriba para avanzar, a los lados para virar); un segundo dedo gira la cámara.</li>
       <li><strong>Barra de abajo:</strong> el sol cambia el momento del día; el altavoz, el sonido; la brújula inicia el recorrido guiado; la rueda abre los ajustes.</li>
-      <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río. En cuanto tocas el timón, vuelve a ser tuya.</li>
+      <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez la brújula.</li>
     </ul>
     <h2 id="settings-section">Ajustes</h2>
     <p>El botón del sol, abajo a la derecha, pasa de día a atardecer y a noche. Aquí hay más horas:</p>
@@ -507,6 +523,12 @@
         <option value="18">Tarde</option>
         <option value="20">Ocaso</option>
         <option value="23.5">Noche</option>
+      </select>
+    </label></p>
+    <p><label>Barca:
+      <select id="boat-type">
+        <option value="albufera">De la Albufera, con percha</option>
+        <option value="lateen">De río, con timonel sentado</option>
       </select>
     </label></p>
     <p><label>Calidad gráfica:

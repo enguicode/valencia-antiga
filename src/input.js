@@ -23,7 +23,9 @@ export function createInput(surface, joystickElement) {
   const drag = { id: null, originX: 0, originY: 0, throttle: 0, steer: 0 };
   const knob = joystickElement.querySelector('.knob');
   const look = { id: null, lastX: 0, lastY: 0, dx: 0, dy: 0 };
-  const input = { throttle: 0, steer: 0, lookX: 0, lookY: 0, looking: false, used: false };
+  const input = { throttle: 0, steer: 0, lookX: 0, lookY: 0, looking: false, lookStarted: false, used: false };
+  let lookOnly = false; // while set, every drag looks around and none steers
+  let lookStarted = false;
 
   window.addEventListener('keydown', (event) => {
     if (!(event.code in KEY_AXES)) return;
@@ -37,8 +39,9 @@ export function createInput(surface, joystickElement) {
   surface.addEventListener('contextmenu', (event) => event.preventDefault());
 
   surface.addEventListener('pointerdown', (event) => {
-    if (event.button === 2 || drag.id !== null) {
+    if (event.button === 2 || drag.id !== null || lookOnly) {
       if (look.id !== null) return;
+      lookStarted = true;
       look.id = event.pointerId;
       look.lastX = event.clientX;
       look.lastY = event.clientY;
@@ -94,10 +97,24 @@ export function createInput(surface, joystickElement) {
     input.lookX = look.dx;
     input.lookY = look.dy;
     input.looking = look.id !== null;
+    input.lookStarted = lookStarted;
+    lookStarted = false;
     look.dx = 0;
     look.dy = 0;
     return input;
   }
 
-  return { update };
+  // Hands every drag to the camera, letting go of the joystick if it is held.
+  function setLookOnly(value) {
+    if (value === lookOnly) return;
+    lookOnly = value;
+    if (!value || drag.id === null) return;
+    drag.id = null;
+    drag.throttle = 0;
+    drag.steer = 0;
+    knob.style.transform = '';
+    joystickElement.classList.remove('active');
+  }
+
+  return { update, setLookOnly };
 }

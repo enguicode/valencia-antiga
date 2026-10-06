@@ -44,6 +44,24 @@ const environment = createEnvironment(scene, path, landmarkClearings(layout));
 const { sky } = environment;
 const water = createWater(path);
 const boat = createBoat(path);
+
+// The type of boat is chosen in the settings and remembered between visits.
+const boatSelect = document.getElementById('boat-type');
+try {
+  const stored = localStorage.getItem('valencia-antiga.boat');
+  if ([...boatSelect.options].some((option) => option.value === stored)) boatSelect.value = stored;
+} catch {
+  // Storage unavailable: keep the default.
+}
+boat.setType(boatSelect.value);
+boatSelect.addEventListener('change', () => {
+  boat.setType(boatSelect.value);
+  try {
+    localStorage.setItem('valencia-antiga.boat', boatSelect.value);
+  } catch {
+    // Private browsing: the choice simply lasts for this visit.
+  }
+});
 water.mesh.renderOrder = DRAW_ORDER.water;
 const city = createCity(layout);
 const life = createLife(layout, path, city.userData.chimneys);
@@ -214,6 +232,15 @@ function updateCamera(dt, snap = false) {
   sky.position.copy(camera.position);
 }
 
+const tourNotice = document.getElementById('tour-notice');
+let tourWasActive = false;
+let tourNoticeTimer = 0;
+function showTourNotice() {
+  tourNotice.classList.add('visible');
+  clearTimeout(tourNoticeTimer);
+  tourNoticeTimer = setTimeout(() => tourNotice.classList.remove('visible'), 4500);
+}
+
 const clock = new THREE.Clock();
 let shownDistance = -1;
 let frames = 0;
@@ -222,6 +249,7 @@ let fpsWindowStart = performance.now();
 function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const time = clock.elapsedTime;
+  input.setLookOnly(tour.active);
   const axes = input.update();
   if (!started) {
     axes.throttle = 0;
@@ -232,10 +260,14 @@ function frame() {
     orbit.idle = 0;
   }
   if (tour.active) {
-    // Taking the helm ends the guided tour.
-    if (axes.throttle !== 0 || axes.steer !== 0) tour.stop();
-    else Object.assign(axes, tour.drive(boat.state));
+    // On the guided tour the boat steers itself and dragging only looks
+    // around. Trying to steer brings up a reminder of how to take the helm.
+    if (!tourWasActive || axes.throttle !== 0 || axes.steer !== 0 || axes.lookStarted) showTourNotice();
+    Object.assign(axes, tour.drive(boat.state));
+  } else if (tourWasActive) {
+    tourNotice.classList.remove('visible');
   }
+  tourWasActive = tour.active;
 
   atmosphere.update(dt);
   boat.update(dt, axes, time);

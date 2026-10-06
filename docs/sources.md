@@ -72,7 +72,7 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 ## Aspecto (texturas, barca y luz)
 
 - **Texturas:** pintadas por código en el navegador (sillares, tejas, enlucido con ventanas, tablas, lona). No salen de fotografías ni de ningún edificio real: el despiece de la piedra, el número de plantas y la forma de las ventanas son inventados.
-- **Barca:** una barca de vela latina genérica, con barquero y carga. No reproduce ningún tipo documentado del Turia.
+- **Barcas:** dos tipos, a elegir en los ajustes. La «de la Albufera» imita de memoria las barcas tradicionales del lago (fondo plano, casco bajo y embreado, dos puntas, vela latina grande y barquero empujando con la percha); no se ha contrastado con ninguna fuente ni con planos, y no consta que navegaran por el Turia. La «de río» es una barca de vela latina genérica.
 - **Sombras y reflejos:** las sombras son las del sol de la escena; el agua refleja el cielo, no la ciudad.
 
 ## Pendiente

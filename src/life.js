@@ -10,7 +10,8 @@ import { waveHeight } from './water.js';
 
 function createTraffic(path, random) {
   const boats = Array.from({ length: 7 }, (_, i) => {
-    const model = createBoatModel();
+    const model = createBoatModel(i % 2 ? 'lateen' : 'albufera');
+    model.rotation.order = 'YXZ';
     model.scale.setScalar(0.8 + random() * 0.3);
     return {
       model,

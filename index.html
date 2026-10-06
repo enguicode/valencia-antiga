@@ -413,6 +413,62 @@
       font: 12px/1.3 ui-monospace, Menlo, Consolas, monospace;
     }
 
+    /* Touch layout: a stick to sail at the bottom left and one to look around
+       at the bottom right, above the row of buttons. */
+    .stick {
+      position: fixed;
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 56px);
+      display: none;
+      width: 112px;
+      height: 112px;
+      border: 2px solid rgba(244, 233, 210, 0.55);
+      border-radius: 50%;
+      background: rgba(46, 36, 24, 0.16);
+      touch-action: none;
+    }
+
+    #move-stick { left: max(14px, env(safe-area-inset-left)); }
+
+    #look-stick { right: max(14px, env(safe-area-inset-right)); }
+
+    body.touch.started .stick { display: block; }
+
+    .stick.held { background: rgba(46, 36, 24, 0.26); }
+
+    .stick .knob {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      display: grid;
+      place-items: center;
+      width: 50px;
+      height: 50px;
+      margin: -25px 0 0 -25px;
+      color: var(--ink);
+      background: rgba(244, 233, 210, 0.88);
+      border: 1px solid var(--rule);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .stick svg {
+      width: 26px;
+      height: 26px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Hints sit above the sticks instead of between them. */
+    body.touch #help,
+    body.touch #tour-notice { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 180px); }
+
+    body.touch #help .keys { display: none; }
+
+    body.touch #help .touch { display: inline; }
+
     #joystick {
       position: fixed;
       width: 112px;
@@ -464,7 +520,7 @@
 
   <div id="help" class="panel">
     <span class="keys"><kbd>W</kbd> <kbd>S</kbd> avanzar y ciar · <kbd>A</kbd> <kbd>D</kbd> timón · también con las flechas o arrastrando · botón derecho: girar la cámara</span>
-    <span class="touch">Un dedo mueve la barca: arriba para avanzar, a los lados para virar. Con un segundo dedo giras la cámara</span>
+    <span class="touch">Mando izquierdo: la barca. Mando derecho, el del ojo: la cámara</span>
   </div>
 
   <div id="controls">
@@ -513,7 +569,7 @@
     <ul>
       <li><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
       <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
-      <li><strong>Pantalla táctil:</strong> el primer dedo lleva la barca (arriba para avanzar, a los lados para virar); un segundo dedo gira la cámara.</li>
+      <li><strong>Pantalla táctil:</strong> el mando de abajo a la izquierda lleva la barca (arriba para avanzar, a los lados para virar) y el de abajo a la derecha, el del ojo, gira la cámara. También puedes arrastrar en cualquier parte de la pantalla.</li>
       <li><strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro claro sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha; la flecha del borde de la pantalla lleva al más cercano que te falte. Hay doce.</li>
       <li><strong>Barra de abajo:</strong> el sol cambia el momento del día; el altavoz, el sonido; la brújula inicia el recorrido guiado; la rueda abre los ajustes.</li>
       <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez la brújula.</li>
@@ -579,6 +635,17 @@
   </script>
 
   <div id="joystick"><div class="knob"></div></div>
+
+  <div id="move-stick" class="stick" role="img" aria-label="Mover la barca">
+    <div class="knob">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>
+    </div>
+  </div>
+  <div id="look-stick" class="stick" role="img" aria-label="Mirar alrededor">
+    <div class="knob">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+    </div>
+  </div>
 
   <script type="module" src="./src/main.js"></script>
 </body>

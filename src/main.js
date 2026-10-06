@@ -78,7 +78,14 @@ scene.add(
   boat.mesh,
 );
 
-const input = createInput(canvas, document.getElementById('joystick'));
+const input = createInput(canvas, document.getElementById('joystick'), {
+  moveStick: document.getElementById('move-stick'),
+  lookStick: document.getElementById('look-stick'),
+});
+// Phones and tablets get the two fixed sticks; "?touch" forces them on elsewhere.
+if (matchMedia('(pointer: coarse)').matches || new URLSearchParams(location.search).has('touch')) {
+  document.body.classList.add('touch');
+}
 const distanceLabel = document.getElementById('distance');
 document.getElementById('total').textContent = Math.round(path.end - path.start);
 const helpPanel = document.getElementById('help');
@@ -256,7 +263,7 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const time = clock.elapsedTime;
   input.setLookOnly(tour.active);
-  const axes = input.update();
+  const axes = input.update(dt);
   if (!started) {
     axes.throttle = 0;
     axes.steer = 0;

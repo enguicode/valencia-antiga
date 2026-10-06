@@ -19,8 +19,56 @@ const JOYSTICK_RADIUS = 56;
 const clamp = (value) => Math.max(-1, Math.min(1, value));
 
 const TAP = { pixels: 10, milliseconds: 450 };
+const STICK_LOOK_SPEED = 320; // a full push on the look stick, in drag pixels per second
 
-export function createInput(surface, joystickElement, onTap) {
+// A fixed on-screen stick: reports where its knob is, from -1 to 1 on each axis.
+function createStick(element, onPress) {
+  const knob = element.querySelector('.knob');
+  const state = { x: 0, y: 0, held: false };
+  let pointer = null;
+
+  const move = (event) => {
+    const box = element.getBoundingClientRect();
+    const reach = box.width / 2 - knob.offsetWidth / 4;
+    let dx = (event.clientX - (box.left + box.width / 2)) / reach;
+    let dy = (event.clientY - (box.top + box.height / 2)) / reach;
+    const length = Math.hypot(dx, dy);
+    if (length > 1) {
+      dx /= length;
+      dy /= length;
+    }
+    state.x = dx;
+    state.y = dy;
+    knob.style.transform = `translate(${dx * reach}px, ${dy * reach}px)`;
+  };
+  const release = (event) => {
+    if (event.pointerId !== pointer) return;
+    pointer = null;
+    state.x = 0;
+    state.y = 0;
+    state.held = false;
+    knob.style.transform = '';
+    element.classList.remove('held');
+  };
+
+  element.addEventListener('pointerdown', (event) => {
+    if (pointer !== null) return;
+    pointer = event.pointerId;
+    element.setPointerCapture(event.pointerId);
+    state.held = true;
+    element.classList.add('held');
+    onPress();
+    move(event);
+  });
+  element.addEventListener('pointermove', (event) => {
+    if (event.pointerId === pointer) move(event);
+  });
+  element.addEventListener('pointerup', release);
+  element.addEventListener('pointercancel', release);
+  return state;
+}
+
+export function createInput(surface, joystickElement, { moveStick, lookStick, onTap } = {}) {
   const pressed = new Set();
   const drag = { id: null, originX: 0, originY: 0, throttle: 0, steer: 0 };
   const knob = joystickElement.querySelector('.knob');
@@ -101,9 +149,19 @@ export function createInput(surface, joystickElement, onTap) {
   surface.addEventListener('pointerup', release);
   surface.addEventListener('pointercancel', release);
 
-  function update() {
-    let throttle = drag.throttle;
-    let steer = drag.steer;
+  // The two fixed sticks of the touch layout: the left one sails, the right
+  // one turns the camera for as long as it is held over.
+  const sail = createStick(moveStick, () => {
+    input.used = true;
+  });
+  const gaze = createStick(lookStick, () => {
+    input.used = true;
+    lookStarted = true;
+  });
+
+  function update(dt = 0) {
+    let throttle = drag.throttle - sail.y;
+    let steer = drag.steer + sail.x;
     for (const code of pressed) {
       const [axis, value] = KEY_AXES[code];
       if (axis === 'throttle') throttle += value;
@@ -111,9 +169,10 @@ export function createInput(surface, joystickElement, onTap) {
     }
     input.throttle = clamp(throttle);
     input.steer = clamp(steer);
-    input.lookX = look.dx;
-    input.lookY = look.dy;
-    input.looking = look.id !== null;
+    // Pushing the look stick right turns the view right, and up raises it.
+    input.lookX = look.dx - gaze.x * STICK_LOOK_SPEED * dt;
+    input.lookY = look.dy - gaze.y * STICK_LOOK_SPEED * dt;
+    input.looking = look.id !== null || gaze.held;
     input.lookStarted = lookStarted;
     lookStarted = false;
     look.dx = 0;

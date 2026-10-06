@@ -39,7 +39,7 @@ const MODES = [
 const lerp = THREE.MathUtils.lerp;
 
 export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere }, waterMaterial, button) {
-  const state = { hour: 18, mode: 0, night: 0, light: 1 };
+  const state = { hour: 18, mode: 0, night: 0, light: 1, fogScale: 1 };
   const waterBase = new THREE.Color(COLORS.water);
 
   const label = () => {
@@ -67,7 +67,7 @@ export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere },
     skyMaterial.uniforms.topColor.value.lerpColors(a.top, b.top, t);
     skyMaterial.uniforms.horizonColor.value.lerpColors(a.horizon, b.horizon, t);
     scene.fog.color.copy(skyMaterial.uniforms.horizonColor.value);
-    scene.fog.far = lerp(a.reach, b.reach, t);
+    scene.fog.far = lerp(a.reach, b.reach, t) * state.fogScale;
     scene.fog.near = scene.fog.far * 0.18;
 
     sun.color.lerpColors(a.sun, b.sun, t);

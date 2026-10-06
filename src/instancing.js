@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { FOG } from './config.js';
 
 const CELL = 400;
 const chunks = [];
@@ -30,9 +29,9 @@ export function createInstances(geometry, material, items) {
   return group;
 }
 
-export function cullInstances(camera) {
+export function cullInstances(camera, reach) {
   for (const mesh of chunks) {
     const sphere = mesh.boundingSphere;
-    mesh.visible = sphere.center.distanceTo(camera.position) < FOG.far + sphere.radius;
+    mesh.visible = sphere.center.distanceTo(camera.position) < reach + sphere.radius;
   }
 }

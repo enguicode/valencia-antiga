@@ -4,8 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#f0e2c6">
-  <title>València Antiga</title>
-  <link rel="icon" href="data:,">
+  <title>València Antiga · el Turia hacia 1700</title>
+  <meta name="description" content="Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700: la muralla, sus puertas, los cinco puentes históricos y el perfil de la ciudad, vistos desde una barca.">
+  <meta property="og:title" content="València Antiga">
+  <meta property="og:description" content="Baja en barca por el viejo cauce del Turia y mira la València amurallada de hacia 1700.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%235a9a96'/%3E%3Cpath d='M16 5v17M17 6l8 14h-8z' fill='%23f3e9d2' stroke='%237a5230' stroke-width='1.5'/%3E%3Cpath d='M6 22h20l-3 5H9z' fill='%237a5230'/%3E%3C/svg%3E">
   <style>
     :root {
       --ink: #2e2418;
@@ -47,7 +51,7 @@
       left: max(14px, env(safe-area-inset-left));
     }
 
-    #title h1 {
+    #title .name {
       margin: 0;
       font-size: 1.15rem;
       font-weight: 600;
@@ -141,8 +145,157 @@
       position: fixed;
       right: max(14px, env(safe-area-inset-right));
       bottom: max(22px, env(safe-area-inset-bottom));
+      left: max(14px, env(safe-area-inset-left));
       display: flex;
+      flex-wrap: wrap-reverse;
+      justify-content: flex-end;
       gap: 8px;
+      pointer-events: none;
+    }
+
+    #controls button { pointer-events: auto; }
+
+    /* Nothing of the cockpit shows until the visitor sets off. */
+    body:not(.started) .panel,
+    body:not(.started) #controls { visibility: hidden; }
+
+    body.started #intro { display: none; }
+
+    #intro {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: radial-gradient(ellipse at center, rgba(46, 36, 24, 0.15), rgba(46, 36, 24, 0.55));
+    }
+
+    #intro .sheet {
+      width: min(460px, 100%);
+      padding: 28px 28px 22px;
+      background: rgba(244, 233, 210, 0.93);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    #intro .eyebrow {
+      margin: 0;
+      font-size: 0.85rem;
+      font-style: italic;
+      letter-spacing: 0.06em;
+      opacity: 0.8;
+    }
+
+    #intro h1 {
+      margin: 4px 0 12px;
+      font-size: clamp(2rem, 8vw, 2.8rem);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      line-height: 1.1;
+    }
+
+    #intro p {
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+
+    #intro .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    #intro .actions button {
+      padding: 11px 20px;
+      font: inherit;
+      font-size: 1rem;
+      color: var(--ink);
+      background: transparent;
+      border: 1px solid var(--ink);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #intro .actions button:first-child {
+      background: var(--ink);
+      color: #f4e9d2;
+    }
+
+    #intro .actions button:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    #intro .note {
+      margin: 0;
+      font-size: 0.8rem;
+      opacity: 0.75;
+    }
+
+    .link {
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      text-decoration: underline;
+      background: none;
+      border: 0;
+      cursor: pointer;
+    }
+
+    #info {
+      width: min(560px, calc(100% - 28px));
+      max-height: calc(100% - 40px);
+      padding: 22px 24px;
+      color: var(--ink);
+      font: inherit;
+      line-height: 1.5;
+      background: #f4e9d2;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    #info::backdrop { background: rgba(46, 36, 24, 0.55); }
+
+    #info h2 {
+      margin: 18px 0 6px;
+      font-size: 1.1rem;
+    }
+
+    #info h2:first-of-type { margin-top: 0; }
+
+    #info ul {
+      margin: 0 0 8px;
+      padding-left: 20px;
+    }
+
+    #info li { margin-bottom: 4px; }
+
+    #info a { color: inherit; }
+
+    #info select {
+      padding: 4px 6px;
+      font: inherit;
+      color: var(--ink);
+      background: #fffaf0;
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+    }
+
+    #info .close {
+      display: block;
+      margin: 18px 0 0 auto;
+      padding: 8px 16px;
+      font: inherit;
+      color: #f4e9d2;
+      background: var(--ink);
+      border: 0;
+      border-radius: 3px;
+      cursor: pointer;
     }
 
     #controls button {
@@ -212,8 +365,8 @@
   <canvas id="scene"></canvas>
 
   <header id="title" class="panel">
-    <h1>València Antiga</h1>
-    <p>El Turia hacia 1700 · v0.5</p>
+    <div class="name">València Antiga</div>
+    <p>El Turia hacia 1700</p>
   </header>
 
   <div id="progress" class="panel"><span id="distance">0</span> m de <span id="total">…</span></div>
@@ -235,9 +388,73 @@
     <button id="clock" type="button">Hora: 18:00</button>
     <button id="sound" type="button">Sonido: no</button>
     <button id="tour" type="button">Recorrido guiado</button>
+    <button type="button" data-open="help-section" aria-label="Ayuda y créditos">?</button>
   </div>
 
   <div id="debug" class="panel" hidden></div>
+
+  <section id="intro">
+    <div class="sheet">
+      <p class="eyebrow">El Turia hacia 1700</p>
+      <h1>València Antiga</h1>
+      <p>Baja en barca por el viejo cauce del Turia y mira la ciudad amurallada desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios.</p>
+      <div class="actions">
+        <button id="start" type="button" disabled>Cargando…</button>
+        <button id="start-tour" type="button" disabled>Recorrido guiado</button>
+      </div>
+      <p><button class="link" type="button" data-open="help-section">Controles</button> · <button class="link" type="button" data-open="credits-section">Créditos y fuentes</button></p>
+      <p class="note">Es una reconstrucción aproximada: los sitios están donde estaban, las formas son un esbozo.</p>
+    </div>
+  </section>
+
+  <dialog id="info">
+    <h2 id="help-section">Controles</h2>
+    <ul>
+      <li><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
+      <li><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
+      <li><strong>Pantalla táctil:</strong> el primer dedo lleva la barca (arriba para avanzar, a los lados para virar); un segundo dedo gira la cámara.</li>
+      <li><strong>Hora:</strong> cada pulsación fija el alba, el mediodía, el ocaso o la noche; la siguiente vuelve al reloj automático.</li>
+      <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río. En cuanto tocas el timón, vuelve a ser tuya.</li>
+    </ul>
+    <p><label>Calidad gráfica:
+      <select id="quality">
+        <option value="auto">Automática</option>
+        <option value="high">Alta</option>
+        <option value="medium">Media</option>
+        <option value="low">Baja</option>
+      </select>
+    </label></p>
+
+    <h2 id="credits-section">Créditos y fuentes</h2>
+    <ul>
+      <li><strong>Trazado:</strong> el curso del río, el perímetro de la muralla y la posición de puentes, puertas y edificios salen de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© sus colaboradores, licencia ODbL).</li>
+      <li><strong>Fichas de historia:</strong> sus datos están contrastados con Wikipedia en español (licencia CC BY-SA); cada ficha enlaza el artículo.</li>
+      <li><strong>Motor 3D:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (licencia MIT).</li>
+      <li><strong>Sonido:</strong> sintetizado en el navegador; no hay grabaciones.</li>
+    </ul>
+
+    <h2>Qué es fiable y qué no</h2>
+    <ul>
+      <li><strong>Fiable:</strong> dónde está cada cosa. Puentes, puertas, iglesias y palacios ocupan el lugar que ocupan hoy, o sus restos.</li>
+      <li><strong>Aproximado:</strong> la muralla sigue las calles de ronda que la sustituyeron, y el río, la línea de los puentes actuales.</li>
+      <li><strong>Esbozado o inventado:</strong> la forma de los edificios, el número y el sitio de las torres, las casas, las escaleras, el azud, y todo lo que se mueve.</li>
+    </ul>
+    <p>Versión 1.0.</p>
+    <button id="close-info" class="close" type="button">Cerrar</button>
+  </dialog>
+
+  <script>
+    // If the scene cannot start, say so on the start screen instead of
+    // leaving it on "Cargando…" for ever.
+    const reportFailure = () => {
+      if (window.__valenciaReady) return;
+      document.getElementById('start').textContent = 'No se ha podido cargar';
+      document.querySelector('#intro .note').textContent =
+        'Hace falta un navegador con gráficos 3D (WebGL) y conexión para descargar la escena.';
+    };
+    addEventListener('error', reportFailure, true);
+    addEventListener('unhandledrejection', reportFailure);
+  </script>
 
   <div id="joystick"><div class="knob"></div></div>
 

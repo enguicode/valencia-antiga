@@ -15,6 +15,7 @@ import { createMinimap } from './minimap.js';
 import { createAtmosphere } from './atmosphere.js';
 import { createLife } from './life.js';
 import { createSound } from './sound.js';
+import { createQuality } from './quality.js';
 
 const debug = new URLSearchParams(location.search).has('debug');
 
@@ -24,8 +25,13 @@ const [layout, points] = await Promise.all(
 const path = createRiverPath(layout);
 
 const canvas = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Dense screens hide jagged edges on their own, so antialiasing is only worth
+// its cost on the others.
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: window.devicePixelRatio < 2,
+  powerPreference: 'high-performance',
+});
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
 const scene = new THREE.Scene();
@@ -66,7 +72,36 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
-resize();
+
+const quality = createQuality(document.getElementById('quality'), (level) => {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, level.pixelRatio));
+  atmosphere.state.fogScale = level.fogScale;
+  life.setExtras(level.extras);
+  resize();
+});
+
+// Start screen: until the visitor sets off, the boat stays moored and the
+// camera drifts around it.
+let started = false;
+const startButton = document.getElementById('start');
+const startTourButton = document.getElementById('start-tour');
+const infoDialog = document.getElementById('info');
+
+function start(withTour) {
+  started = true;
+  document.body.classList.add('started');
+  orbit.idle = ORBIT.holdSeconds;
+  if (withTour) document.getElementById('tour').click();
+}
+startButton.addEventListener('click', () => start(false));
+startTourButton.addEventListener('click', () => start(true));
+for (const opener of document.querySelectorAll('[data-open]')) {
+  opener.addEventListener('click', () => {
+    infoDialog.showModal();
+    document.getElementById(opener.dataset.open).scrollIntoView();
+  });
+}
+document.getElementById('close-info').addEventListener('click', () => infoDialog.close());
 
 // Third-person camera: sits behind and above the boat and eases towards that spot.
 const CAMERA_BACK = 15;
@@ -118,6 +153,14 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const time = clock.elapsedTime;
   const axes = input.update();
+  if (!started) {
+    axes.throttle = 0;
+    axes.steer = 0;
+    axes.used = false;
+    orbit.yaw += dt * 0.06;
+    orbit.lift = 2;
+    orbit.idle = 0;
+  }
   if (tour.active) {
     // Taking the helm ends the guided tour.
     if (axes.throttle !== 0 || axes.steer !== 0) tour.stop();
@@ -129,9 +172,10 @@ function frame() {
   water.update(time, boat.state.row);
   life.update(dt, time, boat.state, atmosphere.state);
   sound.update(boat.state.speed, atmosphere.state.hour);
-  updateOrbit(dt, axes);
+  if (started) updateOrbit(dt, axes);
   updateCamera(dt);
-  cullInstances(camera);
+  cullInstances(camera, scene.fog.far);
+  quality.update(dt);
   renderer.render(scene, camera);
   guide.update(boat.state.s);
   minimap.update(boat.state);
@@ -149,7 +193,7 @@ function frame() {
     if (now - fpsWindowStart >= 500) {
       const fps = Math.round((frames * 1000) / (now - fpsWindowStart));
       const { calls, triangles } = renderer.info.render;
-      debugPanel.textContent = `${fps} fps · ${calls} draw calls · ${triangles.toLocaleString('es-ES')} triángulos`;
+      debugPanel.textContent = `${fps} fps · ${calls} draw calls · ${triangles.toLocaleString('es-ES')} triángulos · ${quality.describe()}`;
       frames = 0;
       fpsWindowStart = now;
     }
@@ -159,6 +203,11 @@ function frame() {
 boat.update(0, input.update(), 0);
 updateCamera(0, true);
 renderer.setAnimationLoop(frame);
+
+startButton.textContent = 'Navegar';
+startButton.disabled = false;
+startTourButton.disabled = false;
+window.__valenciaReady = true;
 
 if (debug) {
   debugPanel.hidden = false;

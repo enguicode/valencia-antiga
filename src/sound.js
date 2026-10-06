@@ -90,6 +90,12 @@ export function createSound(button) {
     button.classList.toggle('active', enabled);
   });
 
+  document.addEventListener('visibilitychange', () => {
+    if (!context || !enabled) return;
+    if (document.hidden) context.suspend();
+    else context.resume();
+  });
+
   function update(boatSpeed, hour) {
     if (enabled) {
       waterGain.gain.setTargetAtTime(0.4 + Math.min(Math.abs(boatSpeed), 9) * 0.07, context.currentTime, 0.5);

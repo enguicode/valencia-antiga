@@ -4,7 +4,7 @@ Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700, he
 
 El visitante navega en barca por el río, que entonces hacía de foso natural, y ve la ciudad desde fuera: la muralla, sus puertas, los puentes y el perfil de torres y campanarios.
 
-> **Estado:** v0.5 hecha (día y noche, otras barcas, lavanderas, humo, pájaros y sonido). El río, la muralla, las puertas, los puentes y los edificios singulares están donde les toca según el callejero actual, con formas esquemáticas; falta cotejarlos con el plano de Tosca y probar la fluidez en un móvil real. Detalle en [docs/sources.md](docs/sources.md).
+> **Estado:** v1.0 publicada en <https://valencia-antiga.pages.dev/>. Hechas todas las versiones del plan; lo que queda abierto está en «Pendiente tras la v1.0». El río, la muralla, las puertas, los puentes y los edificios singulares están donde les toca según el callejero actual, con formas esquemáticas; falta cotejarlos con el plano de Tosca y probar la fluidez en un móvil real. Detalle en [docs/sources.md](docs/sources.md).
 
 ## Enfoque
 
@@ -63,6 +63,13 @@ La ciudad pasa de decorado genérico a tener la forma de València.
 - Ajuste de rendimiento y de calidad gráfica según el dispositivo.
 - Despliegue como página pública.
 
+### Pendiente tras la v1.0
+
+- Probar en móviles reales: fluidez, gesto de dos dedos y sonido. Hasta ahora solo se ha probado en un navegador automatizado.
+- Cotejar el trazado con el plano de Tosca y las fichas con fuentes mejores que Wikipedia.
+- Los pilares de los puentes no frenan la barca.
+- De noche no hay luces en las ventanas ni faroles.
+
 ### Ideas para después
 
 - Bajar de la barca y entrar andando por una puerta.
@@ -91,7 +98,7 @@ Datos de partida de la muralla, todavía de memoria salvo donde se indica (los d
 ```
 valencia-antiga/
 ├── index.html      # página y arranque de la escena
-├── src/            # módulos de la escena (path, water, walls, city, bridges, landmarks, riverside, atmosphere, life, sound, boat…)
+├── src/            # módulos de la escena (path, water, walls, city, bridges, landmarks, riverside, atmosphere, life, sound, quality, boat…)
 ├── data/           # layout.json (trazado en metros) y points.json (fichas de historia)
 ├── scripts/        # build-layout.py (genera el trazado) y deploy.sh
 └── docs/           # fuentes y notas históricas

@@ -207,12 +207,22 @@ export function createLife(layout, path, chimneys) {
   const group = new THREE.Group();
   group.add(...traffic.models, createWasherwomen(layout, path, random), smoke.points, birds.mesh);
 
+  let extras = true;
+
   function update(dt, time, boatState, atmosphere) {
     traffic.update(dt, time);
+    setSailLight(THREE.MathUtils.clamp(atmosphere.light, 0.15, 1));
+    smoke.points.visible = extras;
+    birds.mesh.visible = extras;
+    if (!extras) return;
     smoke.update(time, THREE.MathUtils.clamp(atmosphere.light, 0.25, 1));
     birds.update(time, boatState, atmosphere.night);
-    setSailLight(THREE.MathUtils.clamp(atmosphere.light, 0.15, 1));
   }
 
-  return { group, update };
+  // Smoke and birds are the first things to go on slow devices.
+  const setExtras = (value) => {
+    extras = value;
+  };
+
+  return { group, update, setExtras };
 }

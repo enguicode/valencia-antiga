@@ -310,6 +310,23 @@
       white-space: nowrap;
     }
 
+    #sky {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      padding: 0 !important;
+    }
+
+    #sky svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     #controls button.active {
       background: var(--ink);
       color: #f4e9d2;
@@ -390,6 +407,7 @@
   </article>
 
   <div id="controls">
+    <button id="sky" type="button"></button>
     <button id="sound" type="button">Sonido: no</button>
     <button id="tour" type="button">Recorrido guiado</button>
     <button type="button" data-open="settings-section">Ajustes</button>
@@ -421,6 +439,7 @@
       <li><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río. En cuanto tocas el timón, vuelve a ser tuya.</li>
     </ul>
     <h2 id="settings-section">Ajustes</h2>
+    <p>El botón del sol, abajo a la derecha, pasa de día a atardecer y a noche. Aquí hay más horas:</p>
     <p><label>Hora del día:
       <select id="hour">
         <option value="6.6">Alba</option>

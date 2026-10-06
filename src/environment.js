@@ -59,7 +59,16 @@ function createSky() {
   );
   stars.frustumCulled = false;
   sky.add(stars);
-  return { sky, stars };
+
+  // The moon sits where the night light comes from.
+  const moon = new THREE.Mesh(
+    new THREE.CircleGeometry(38, 32),
+    new THREE.MeshBasicMaterial({ color: 0xf4f0dc, fog: false, transparent: true, opacity: 0, depthWrite: false }),
+  );
+  moon.position.set(-0.4, 0.8, -0.3).normalize().multiplyScalar(1080);
+  moon.lookAt(0, 0, 0);
+  sky.add(moon);
+  return { sky, stars, moon };
 }
 
 // One bank: a shore rising out of the water up to the foot of the parapet
@@ -151,7 +160,7 @@ function createTrees(path, clearings) {
 export function createEnvironment(scene, path, clearings) {
   scene.fog = new THREE.Fog(COLORS.horizon, FOG.near, FOG.far);
 
-  const { sky, stars } = createSky();
+  const { sky, stars, moon } = createSky();
   scene.add(sky);
 
   // Colours, strengths and the sun's position are driven by the atmosphere.
@@ -162,5 +171,5 @@ export function createEnvironment(scene, path, clearings) {
 
   scene.add(createBank(path, 1), createBank(path, -1), createTrees(path, clearings));
 
-  return { sky, stars, sun, hemisphere, skyMaterial: sky.material };
+  return { sky, stars, moon, sun, hemisphere, skyMaterial: sky.material };
 }

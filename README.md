@@ -68,7 +68,6 @@ La ciudad pasa de decorado genérico a tener la forma de València.
 - Probar en móviles reales: fluidez, gesto de dos dedos y sonido. Hasta ahora solo se ha probado en un navegador automatizado.
 - Cotejar el trazado con el plano de Tosca y las fichas con fuentes mejores que Wikipedia.
 - Los pilares de los puentes no frenan la barca.
-- De noche no hay luces en las ventanas ni faroles.
 - Las sombras y las texturas han subido el coste gráfico; falta medirlo en móviles. Las sombras solo se activan en calidad alta.
 
 ### Ideas para después

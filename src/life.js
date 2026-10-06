@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RIVER, createRandom, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
-import { createBoatModel, setSailLight } from './boat.js';
+import { createBoatModel, setSailLight, setLanternLight } from './boat.js';
 import { waveHeight } from './water.js';
 
 // Things that move or keep the place company: other boats, washerwomen at
@@ -212,6 +212,7 @@ export function createLife(layout, path, chimneys) {
   function update(dt, time, boatState, atmosphere) {
     traffic.update(dt, time);
     setSailLight(THREE.MathUtils.clamp(atmosphere.light, 0.15, 1));
+    setLanternLight(atmosphere.night);
     smoke.points.visible = extras;
     birds.mesh.visible = extras;
     if (!extras) return;

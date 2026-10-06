@@ -31,6 +31,16 @@ const KEYS = [
   night,
 }));
 
+// The sky button steps through these three; the settings offer the rest.
+const QUICK_HOURS = [18, 20, 23.5];
+const ICONS = {
+  day: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  dusk: '<path d="M6.2 16a5.8 5.8 0 0 1 11.6 0M2.5 16h19M5 20h14M12 4.5v3M4.6 8.6l2.1 2.1M19.4 8.6l-2.1 2.1"/>',
+  night: '<path d="M19.5 14.2A8 8 0 0 1 9.8 4.5a8 8 0 1 0 9.7 9.7z"/>',
+};
+const LABELS = { day: 'Es de día. Pasar al atardecer', dusk: 'Atardece. Pasar a la noche', night: 'Es de noche. Volver al día' };
+const phaseOf = (hour) => (hour >= 21 || hour < 5.5 ? 'night' : hour >= 19 || hour < 7.5 ? 'dusk' : 'day');
+
 const lerp = THREE.MathUtils.lerp;
 
 function readHour(select) {
@@ -43,7 +53,7 @@ function readHour(select) {
   return String(DEFAULT_HOUR);
 }
 
-export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere }, waterMaterial, select, refreshEnvironment) {
+export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisphere }, waterMaterial, select, button, refreshEnvironment) {
   select.value = readHour(select);
   const state = {
     hour: Number(select.value),
@@ -56,8 +66,25 @@ export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere },
   let environmentHour = null;
   const waterBase = new THREE.Color(COLORS.water);
 
+  const showPhase = () => {
+    const phase = phaseOf(chosenHour);
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[phase]}</svg>`;
+    button.setAttribute('aria-label', LABELS[phase]);
+    button.title = LABELS[phase];
+  };
+  showPhase();
+
+  // One press moves on to the next of day, dusk and night.
+  button.addEventListener('click', () => {
+    const order = ['day', 'dusk', 'night'];
+    const next = QUICK_HOURS[(order.indexOf(phaseOf(chosenHour)) + 1) % order.length];
+    select.value = String(next);
+    select.dispatchEvent(new Event('change'));
+  });
+
   select.addEventListener('change', () => {
     chosenHour = Number(select.value);
+    showPhase();
     try {
       localStorage.setItem(STORAGE_KEY, select.value);
     } catch {
@@ -93,6 +120,7 @@ export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere },
     state.night = lerp(a.night, b.night, t);
     state.light = ambient / 1.3;
     stars.material.opacity = state.night * 0.9;
+    moon.material.opacity = state.night;
 
     // The sun rises in the east, crosses the south and sets in the west, a
     // little to the north at both ends as it does in summer. At night the

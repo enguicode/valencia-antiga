@@ -7,7 +7,7 @@ import { createCity } from './city.js';
 import { createBridges } from './bridges.js';
 import { createLandmarks, landmarkClearings } from './landmarks.js';
 import { createRiverside } from './riverside.js';
-import { createBoat } from './boat.js';
+import { createBoat, DRAW_ORDER } from './boat.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
 import { createGuide, createTour } from './guide.js';
@@ -16,6 +16,7 @@ import { createAtmosphere } from './atmosphere.js';
 import { createLife } from './life.js';
 import { createSound } from './sound.js';
 import { createQuality } from './quality.js';
+import { createNightLights } from './lights.js';
 
 const debug = new URLSearchParams(location.search).has('debug');
 
@@ -43,13 +44,16 @@ const environment = createEnvironment(scene, path, landmarkClearings(layout));
 const { sky } = environment;
 const water = createWater(path);
 const boat = createBoat(path);
+water.mesh.renderOrder = DRAW_ORDER.water;
 const city = createCity(layout);
 const life = createLife(layout, path, city.userData.chimneys);
+const nightLights = createNightLights(layout, path);
 scene.add(
   water.mesh,
   createWalls(layout),
   city,
   life.group,
+  nightLights.points,
   createBridges(layout, path),
   createLandmarks(layout, path),
   createRiverside(layout, path),
@@ -82,6 +86,7 @@ const atmosphere = createAtmosphere(
   environment,
   water.material,
   document.getElementById('hour'),
+  document.getElementById('sky'),
   refreshEnvironment,
 );
 
@@ -99,7 +104,8 @@ Object.assign(sun.shadow.camera, {
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.6;
 scene.traverse((object) => {
-  if (!object.isMesh || object === sky) return;
+  // Depth-only helpers, such as the boats' lids, take no part in the shadows.
+  if (!object.isMesh || object === sky || !object.material.colorWrite) return;
   object.castShadow = object !== water.mesh;
   object.receiveShadow = true;
 });
@@ -220,6 +226,8 @@ function frame() {
   water.update(time, boat.state.row);
   life.update(dt, time, boat.state, atmosphere.state);
   sound.update(dt, boat.state.speed);
+  nightLights.update(time, atmosphere.state.night);
+  city.userData.facades.emissiveIntensity = atmosphere.state.night * 1.4;
   if (started) updateOrbit(dt, axes);
   updateCamera(dt);
   cullInstances(camera, scene.fog.far);

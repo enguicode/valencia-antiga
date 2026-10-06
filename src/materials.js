@@ -173,6 +173,24 @@ function paintFacade(context) {
   speckle(context, random, 3500, 0.08);
 }
 
+// The same house front after dark: black everywhere except the windows that
+// have a light on. It must line up with paintFacade.
+function paintFacadeGlow(context) {
+  const random = createRandom(18);
+  context.fillStyle = '#000';
+  context.fillRect(0, 0, SIZE, SIZE);
+  for (const top of [0.14, 0.42]) {
+    for (const centre of [0.2, 0.5, 0.8]) {
+      if (random() < 0.45) continue;
+      const warmth = 150 + Math.floor(random() * 60);
+      context.fillStyle = `rgb(255, ${warmth}, 70)`;
+      context.fillRect(centre * SIZE - 6, top * SIZE, 12, 44);
+    }
+  }
+  context.fillStyle = 'rgb(255, 170, 70)';
+  context.fillRect(0.2 * SIZE - 13, SIZE - 56, 26, 34);
+}
+
 // Tileable ripples as a normal map: a sum of waves with whole-number
 // frequencies, differentiated analytically.
 function createRippleNormals() {
@@ -217,6 +235,7 @@ export const TEXTURES = {
   planks: paint(paintPlanks),
   cloth: paint(paintCloth),
   facade: paint(paintFacade, { repeat: false }),
+  facadeGlow: paint(paintFacadeGlow, { repeat: false }),
   ripples: createRippleNormals(),
 };
 

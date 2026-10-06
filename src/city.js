@@ -89,16 +89,21 @@ export function createCity(layout) {
   floor.position.y = BANK.height;
 
   // House fronts use ordinary UVs: one drawing of windows and a door per wall.
+  // A second drawing lights some of those windows; it is faded in at night.
+  const facades = new THREE.MeshStandardMaterial({
+    map: TEXTURES.facade,
+    emissive: 0xffffff,
+    emissiveMap: TEXTURES.facadeGlow,
+    emissiveIntensity: 0,
+    roughness: 0.95,
+  });
   const group = new THREE.Group();
   group.add(
     floor,
-    createInstances(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshStandardMaterial({ map: TEXTURES.facade, roughness: 0.95 }),
-      bodies,
-    ),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
     createInstances(roofGeometry, createSurface('tiles', 3), roofs),
   );
   group.userData.chimneys = chimneys;
+  group.userData.facades = facades;
   return group;
 }

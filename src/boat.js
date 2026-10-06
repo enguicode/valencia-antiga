@@ -55,6 +55,38 @@ export function setSailLight(light) {
   MATERIALS.sail.emissiveIntensity = 0.1 * light;
 }
 
+// A lantern at the bow of every boat: a small bright core and a soft halo,
+// both faded in at night.
+function createHaloTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 64;
+  const context = canvas.getContext('2d');
+  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, 'rgba(255, 200, 120, 1)');
+  gradient.addColorStop(0.25, 'rgba(255, 160, 70, 0.45)');
+  gradient.addColorStop(1, 'rgba(255, 140, 50, 0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(canvas);
+}
+const LANTERN = {
+  core: new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0 }),
+  halo: new THREE.SpriteMaterial({
+    map: createHaloTexture(),
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0,
+  }),
+  geometry: new THREE.SphereGeometry(0.09, 8, 6),
+  position: [0, sheer(1) + 0.75, stationZ(1) - 0.05],
+};
+
+export function setLanternLight(night) {
+  LANTERN.core.opacity = night;
+  LANTERN.halo.opacity = night;
+}
+
 function createHullGeometry() {
   const positions = [];
   const uvs = [];
@@ -85,6 +117,27 @@ function createHullGeometry() {
   geometry.computeVertexNormals();
   return geometry;
 }
+
+// An unseen lid over the open hull, from gunwale to gunwale. It is drawn
+// after the boat and before the river, into the depth buffer only, so the
+// water surface that would otherwise show inside the hull is discarded.
+function createLidGeometry() {
+  const positions = [];
+  const indices = [];
+  for (let i = 0; i <= HULL.stations; i++) {
+    const t = (i / HULL.stations) * 2 - 1;
+    positions.push(-halfBeam(t), sheer(t), stationZ(t), halfBeam(t), sheer(t), stationZ(t));
+    if (i < HULL.stations) indices.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  return geometry;
+}
+
+// Draw order for the trick above: boats first, then their lids, then the river.
+export const DRAW_ORDER = { lid: 1, water: 2 };
+const LID_MATERIAL = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide });
 
 // Floorboards: the hull's outline, narrowed, laid flat near the bottom.
 function createSoleGeometry() {
@@ -174,7 +227,7 @@ function createParts() {
     }
     add('trim', new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rail), 32, 0.055, 6));
   }
-  add('trim', new THREE.BoxGeometry(0.09, 0.5, 0.12), 0, sheer(1) + 0.18, stationZ(1) - 0.03);
+  add('trim', new THREE.BoxGeometry(0.09, 0.85, 0.12), 0, sheer(1) + 0.35, stationZ(1) - 0.03);
   add('trim', new THREE.BoxGeometry(0.09, 0.4, 0.12), 0, sheer(-1) + 0.12, stationZ(-1) + 0.03);
 
   // Thwarts
@@ -230,7 +283,7 @@ function createParts() {
   ];
   const rigging = new THREE.BufferGeometry().setFromPoints(lines.flat());
 
-  return { geometries, rigging };
+  return { geometries, rigging, lid: createLidGeometry() };
 }
 
 let parts = null;
@@ -243,6 +296,15 @@ export function createBoatModel() {
     model.add(new THREE.Mesh(geometry, MATERIALS[material]));
   }
   model.add(new THREE.LineSegments(parts.rigging, MATERIALS.rope));
+  const core = new THREE.Mesh(LANTERN.geometry, LANTERN.core);
+  core.position.set(...LANTERN.position);
+  const halo = new THREE.Sprite(LANTERN.halo);
+  halo.position.set(...LANTERN.position);
+  halo.scale.setScalar(2.4);
+  model.add(core, halo);
+  const lid = new THREE.Mesh(parts.lid, LID_MATERIAL);
+  lid.renderOrder = DRAW_ORDER.lid;
+  model.add(lid);
   return model;
 }
 

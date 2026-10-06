@@ -22,6 +22,26 @@
   <meta name="twitter:title" content="València Antiga · el Turia hacia 1700">
   <meta name="twitter:description" content="Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700: la muralla, sus puertas, los cinco puentes históricos y el perfil de la ciudad, vistos desde una barca.">
   <meta name="twitter:image" content="https://valencia-antiga.pages.dev/og.jpg">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "València Antiga",
+      "alternateName": "El Turia hacia 1700",
+      "url": "https://valencia-antiga.pages.dev/",
+      "image": "https://valencia-antiga.pages.dev/og.jpg",
+      "inLanguage": ["es", "ca", "en"],
+      "applicationCategory": "Game",
+      "operatingSystem": "Any",
+      "isAccessibleForFree": true,
+      "description": "Paseo interactivo en 3D por el Turia y la València amurallada de hacia 1700: la muralla, sus puertas, los cinco puentes históricos y el perfil de la ciudad, vistos desde una barca.",
+      "about": {
+        "@type": "Place",
+        "name": "València",
+        "description": "El viejo cauce del Turia y la ciudad amurallada de hacia 1700."
+      }
+    }
+  </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%235a9a96'/%3E%3Cpath d='M16 5v17M17 6l8 14h-8z' fill='%23f3e9d2' stroke='%237a5230' stroke-width='1.5'/%3E%3Cpath d='M6 22h20l-3 5H9z' fill='%237a5230'/%3E%3C/svg%3E">
   <!-- Display type for the start screen only; it falls back to the system serif. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -964,7 +984,7 @@
     <div class="sheet">
       <p class="eyebrow" data-i18n="intro.eyebrow">El Turia hacia 1700</p>
       <h1>València Antiga</h1>
-      <p data-i18n="intro.lead"></p>
+      <p data-i18n="intro.lead">Baja en barca por el viejo cauce del Turia y mira la ciudad amurallada desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios.</p>
       <p class="caption" data-i18n="intro.moment">Momento del día</p>
       <div class="choice moments" role="group" aria-label="Momento del día" data-i18n-label="intro.moment">
         <button type="button" data-hour="18" data-i18n="sky.day">Día</button>
@@ -976,20 +996,20 @@
         <button id="start-tour" type="button" disabled data-i18n="tour">Recorrido guiado</button>
       </div>
       <p class="links"><button class="link" type="button" data-open="help-section" data-i18n="intro.controls">Controles</button> · <button class="link" type="button" data-open="credits-section" data-i18n="intro.credits">Créditos y fuentes</button> · <button class="link reset-found" type="button" data-i18n="reset.short">Reiniciar puntos</button></p>
-      <p class="note" data-i18n="intro.note"></p>
+      <p class="note" data-i18n="intro.note">Es una reconstrucción aproximada: los sitios están donde estaban, las formas son un esbozo.</p>
     </div>
   </section>
 
   <dialog id="info">
     <h2 id="help-section" data-i18n="help.title">Controles</h2>
     <ul>
-      <li data-i18n-html="help.keyboard"></li>
-      <li data-i18n-html="help.mouse"></li>
-      <li data-i18n-html="help.touch"></li>
-      <li data-i18n-html="help.points"></li>
-      <li data-i18n-html="help.bridges"></li>
-      <li data-i18n-html="help.menu"></li>
-      <li data-i18n-html="help.tour"></li>
+      <li data-i18n-html="help.keyboard"><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
+      <li data-i18n-html="help.mouse"><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
+      <li data-i18n-html="help.touch"><strong>Pantalla táctil:</strong> el mando de abajo a la izquierda lleva la barca (arriba para avanzar, a los lados para virar) y el de abajo a la derecha, el del ojo, gira la cámara. También puedes arrastrar en cualquier parte de la pantalla.</li>
+      <li data-i18n-html="help.points"><strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro claro sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha: la cámara se vuelve unos segundos hacia el sitio, o vuela hasta él si está lejos, y regresa sola (o antes, si mueves tú la cámara). Mientras tanto la barca va despacio. La flecha del borde de la pantalla lleva al más cercano que te falte. Hay quince; toca la cuenta de arriba a la izquierda para repasarlos y, con el ojo de cada ficha, volver a verlos de cerca. De noche hay uno más.</li>
+      <li data-i18n-html="help.bridges"><strong>Puentes:</strong> al acercarte, la barca se encauza sola hacia el arco más cercano y abate la vela para pasar por debajo.</li>
+      <li data-i18n-html="help.menu"><strong>Menú:</strong> el botón que hay bajo el mapa despliega el reinicio de los puntos, los ajustes y esta ayuda. El momento del día y el sonido tienen sus botones redondos abajo, en el centro.</li>
+      <li data-i18n-html="help.tour"><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez el botón de la brújula, abajo a la izquierda.</li>
     </ul>
     <h2 id="settings-section" data-i18n="settings.title">Ajustes</h2>
     <p><label><span data-i18n="settings.language">Idioma:</span>
@@ -999,7 +1019,7 @@
         <option value="en" lang="en">English</option>
       </select>
     </label></p>
-    <p data-i18n="settings.sun"></p>
+    <p data-i18n="settings.sun">Abajo, el botón del sol pasa de día a atardecer y a noche. Aquí hay más horas:</p>
     <p><label><span data-i18n="settings.hour">Hora del día:</span>
       <select id="hour">
         <option value="6.6" data-i18n="hour.dawn">Alba</option>
@@ -1028,18 +1048,18 @@
 
     <h2 id="credits-section" data-i18n="credits.title">Créditos y fuentes</h2>
     <ul>
-      <li data-i18n-html="credits.layout"></li>
-      <li data-i18n-html="credits.cards"></li>
-      <li data-i18n-html="credits.engine"></li>
-      <li data-i18n-html="credits.sound"></li>
-      <li data-i18n-html="credits.code"></li>
+      <li data-i18n-html="credits.layout"><strong>Trazado:</strong> el curso del río, el perímetro de la muralla y la posición de puentes, puertas y edificios salen de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© sus colaboradores, licencia ODbL).</li>
+      <li data-i18n-html="credits.cards"><strong>Fichas de historia:</strong> sus datos están contrastados con Wikipedia en español (licencia CC BY-SA) y, las de tres puertas, con blogs de historia local; cada ficha enlaza su fuente.</li>
+      <li data-i18n-html="credits.engine"><strong>Motor 3D:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (licencia MIT).</li>
+      <li data-i18n-html="credits.sound"><strong>Sonido:</strong> sintetizado en el navegador; no hay grabaciones.</li>
+      <li data-i18n-html="credits.code"><strong>Código:</strong> <a href="https://github.com/enguicode/valencia-antiga" target="_blank" rel="noopener">github.com/enguicode/valencia-antiga</a>.</li>
     </ul>
 
     <h2 data-i18n="reliable.title">Qué es fiable y qué no</h2>
     <ul>
-      <li data-i18n-html="reliable.yes"></li>
-      <li data-i18n-html="reliable.roughly"></li>
-      <li data-i18n-html="reliable.no"></li>
+      <li data-i18n-html="reliable.yes"><strong>Fiable:</strong> dónde está cada cosa. Puentes, puertas, iglesias y palacios ocupan el lugar que ocupan hoy, o sus restos.</li>
+      <li data-i18n-html="reliable.roughly"><strong>Aproximado:</strong> la muralla sigue las calles de ronda que la sustituyeron, y el río, la línea de los puentes actuales.</li>
+      <li data-i18n-html="reliable.no"><strong>Esbozado o inventado:</strong> la forma de los edificios y sus texturas, las barcas, el número y el sitio de las torres, las casas, las escaleras, el azud, y todo lo que se mueve.</li>
     </ul>
     <p data-i18n="version">Versión 1.0.</p>
     <button id="close-info" class="close" type="button" data-i18n="close">Cerrar</button>

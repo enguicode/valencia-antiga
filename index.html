@@ -16,9 +16,20 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap">
   <style>
     :root {
-      --ink: #2e2418;
-      --parchment: rgba(244, 233, 210, 0.82);
-      --rule: rgba(46, 36, 24, 0.25);
+      /* --night is 0 by day and 1 after dark. The paper panels follow it so
+         a night sail is not a row of white lamps. */
+      --night: 0;
+      --ink: color-mix(in srgb, #2e2418 calc((1 - var(--night)) * 100%), #e4d5bf);
+      --fill: color-mix(in srgb, #2e2418 calc((1 - var(--night)) * 100%), #4a3f34);
+      --parchment: color-mix(in srgb, rgba(244, 233, 210, 0.86) calc((1 - var(--night)) * 100%), rgba(34, 29, 24, 0.9));
+      --paper: color-mix(in srgb, #f4e9d2 calc((1 - var(--night)) * 100%), #221e19);
+      --sheet: color-mix(in srgb, #f6efe1 calc((1 - var(--night)) * 100%), #221e19);
+      --paper-item: color-mix(in srgb, rgba(255, 250, 240, 0.6) calc((1 - var(--night)) * 100%), rgba(228, 213, 191, 0.07));
+      --field: color-mix(in srgb, #fffaf0 calc((1 - var(--night)) * 100%), #2c261f);
+      --chip: color-mix(in srgb, rgba(244, 233, 210, 0.88) calc((1 - var(--night)) * 100%), rgba(42, 36, 30, 0.92));
+      --rule: color-mix(in srgb, rgba(46, 36, 24, 0.25) calc((1 - var(--night)) * 100%), rgba(228, 213, 191, 0.3));
+      --muted: color-mix(in srgb, rgba(46, 36, 24, 0.55) calc((1 - var(--night)) * 100%), rgba(228, 213, 191, 0.5));
+      --kbd: color-mix(in srgb, rgba(255, 255, 255, 0.45) calc((1 - var(--night)) * 100%), rgba(228, 213, 191, 0.08));
     }
 
     * { box-sizing: border-box; }
@@ -86,7 +97,7 @@
       color: var(--ink);
       font: inherit;
       line-height: 1.45;
-      background: #f4e9d2;
+      background: var(--paper);
       border: 1px solid var(--rule);
       border-radius: 4px;
       -webkit-user-select: text;
@@ -117,7 +128,7 @@
 
     #journal li {
       padding: 9px 12px;
-      background: rgba(255, 250, 240, 0.6);
+      background: var(--paper-item);
       border: 1px solid var(--rule);
       border-radius: 3px;
     }
@@ -169,7 +180,7 @@
     }
 
     #journal li.unknown {
-      color: rgba(46, 36, 24, 0.55);
+      color: var(--muted);
       background: repeating-linear-gradient(135deg, rgba(46, 36, 24, 0.05) 0 8px, transparent 8px 16px);
       border-style: dashed;
     }
@@ -182,7 +193,7 @@
       padding: 8px 16px;
       font: inherit;
       color: #f4e9d2;
-      background: var(--ink);
+      background: var(--fill);
       border: 0;
       border-radius: 3px;
       cursor: pointer;
@@ -226,7 +237,7 @@
       padding: 0 5px;
       border: 1px solid var(--rule);
       border-radius: 3px;
-      background: rgba(255, 255, 255, 0.45);
+      background: var(--kbd);
     }
 
     #minimap {
@@ -244,7 +255,7 @@
       z-index: 2;
       width: min(340px, calc(100vw - 20px), calc(100vh - 140px));
       height: min(340px, calc(100vw - 20px), calc(100vh - 140px));
-      background: rgba(244, 233, 210, 0.95);
+      background: color-mix(in srgb, rgba(244, 233, 210, 0.95) calc((1 - var(--night)) * 100%), rgba(34, 29, 24, 0.94));
       cursor: zoom-out;
     }
 
@@ -298,7 +309,7 @@
       font: inherit;
       font-size: 0.82rem;
       color: #f4e9d2;
-      background: var(--ink);
+      background: var(--fill);
       border: 0;
       border-radius: 3px;
       cursor: pointer;
@@ -318,7 +329,7 @@
       align-items: center;
       gap: 2px;
       transform: translate(-50%, -50%);
-      color: #2e2418;
+      color: var(--ink);
       font-size: 0.72rem;
       font-variant-numeric: tabular-nums;
       pointer-events: none;
@@ -343,7 +354,7 @@
       padding: 8px 16px;
       font: inherit;
       color: #f4e9d2;
-      background: var(--ink);
+      background: var(--fill);
       border: 0;
       border-radius: 3px;
       cursor: pointer;
@@ -392,7 +403,7 @@
 
     body.menu-open #menu-toggle,
     #controls button.active {
-      background: var(--ink);
+      background: var(--fill);
       color: #f4e9d2;
     }
 
@@ -425,14 +436,14 @@
       height: 40px;
       padding: 0;
       color: var(--ink);
-      background: rgba(244, 233, 210, 0.88);
+      background: var(--chip);
       border: 1px solid var(--rule);
       border-radius: 50%;
       cursor: pointer;
     }
 
     .quick.active {
-      background: var(--ink);
+      background: var(--fill);
       color: #f4e9d2;
     }
 
@@ -526,13 +537,13 @@
       padding: 26px 22px 18px;
       font-family: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
       font-size: 1.12rem;
-      color: #2a211a;
-      background-color: #f6efe1;
-      background-image: radial-gradient(rgba(46, 36, 24, 0.07) 1px, transparent 1px);
+      color: var(--ink);
+      background-color: var(--sheet);
+      background-image: radial-gradient(color-mix(in srgb, rgba(46, 36, 24, 0.07) calc((1 - var(--night)) * 100%), rgba(228, 213, 191, 0.06)) 1px, transparent 1px);
       background-size: 12px 12px;
-      border: 1px solid rgba(46, 36, 24, 0.18);
+      border: 1px solid var(--rule);
       border-radius: 14px;
-      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), inset 0 0 0 4px rgba(255, 255, 255, 0.35);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), inset 0 0 0 4px color-mix(in srgb, rgba(255, 255, 255, 0.35) calc((1 - var(--night)) * 100%), rgba(228, 213, 191, 0.08));
       text-align: center;
     }
 
@@ -608,7 +619,7 @@
     }
 
     #intro .choice button[aria-pressed="true"] {
-      background: #2a211a;
+      background: color-mix(in srgb, #2a211a calc((1 - var(--night)) * 100%), #6a5a46);
       color: #f6efe1;
     }
 
@@ -630,8 +641,8 @@
     }
 
     #intro .languages button[aria-pressed="true"] {
-      background: #f6efe1;
-      color: #2a211a;
+      background: color-mix(in srgb, #f6efe1 calc((1 - var(--night)) * 100%), #6a5a46);
+      color: color-mix(in srgb, #2a211a calc((1 - var(--night)) * 100%), #f3ead8);
     }
 
     #intro .moments button::before,
@@ -667,7 +678,7 @@
       padding: 13px 10px;
       font: 600 0.95rem/1 system-ui, sans-serif;
       letter-spacing: 0.02em;
-      color: #2a211a;
+      color: inherit;
       background: rgba(46, 36, 24, 0.07);
       border: 1px solid rgba(46, 36, 24, 0.3);
       border-radius: 10px;
@@ -692,7 +703,7 @@
     #intro .links {
       margin-bottom: 10px;
       padding-top: 12px;
-      border-top: 1px solid rgba(46, 36, 24, 0.15);
+      border-top: 1px solid var(--rule);
       font: 500 0.78rem/1.2 system-ui, sans-serif;
       font-size: clamp(0.66rem, 3.1vw, 0.78rem);
       white-space: nowrap;
@@ -722,7 +733,7 @@
       color: var(--ink);
       font: inherit;
       line-height: 1.5;
-      background: #f4e9d2;
+      background: var(--paper);
       border: 1px solid var(--rule);
       border-radius: 4px;
       -webkit-user-select: text;
@@ -751,7 +762,7 @@
       padding: 4px 6px;
       font: inherit;
       color: var(--ink);
-      background: #fffaf0;
+      background: var(--field);
       border: 1px solid var(--rule);
       border-radius: 3px;
     }
@@ -762,7 +773,7 @@
       padding: 8px 16px;
       font: inherit;
       color: #f4e9d2;
-      background: var(--ink);
+      background: var(--fill);
       border: 0;
       border-radius: 3px;
       cursor: pointer;
@@ -806,7 +817,7 @@
       height: 50px;
       margin: -25px 0 0 -25px;
       color: var(--ink);
-      background: rgba(244, 233, 210, 0.88);
+      background: var(--chip);
       border: 1px solid var(--rule);
       border-radius: 50%;
       pointer-events: none;
@@ -856,7 +867,7 @@
       height: 40px;
       margin: -20px 0 0 -20px;
       border-radius: 50%;
-      background: rgba(244, 233, 210, 0.85);
+      background: var(--chip);
     }
   </style>
   <script type="importmap">

@@ -136,7 +136,11 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
       environmentHour = state.hour;
       refreshEnvironment();
     }
+
+    // The paper panels track the same night as the sky, or they glare.
+    document.documentElement.style.setProperty('--night', state.night.toFixed(3));
   }
 
+  update(0);
   return { state, update };
 }

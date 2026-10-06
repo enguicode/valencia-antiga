@@ -152,7 +152,6 @@ Después, sobre esa base: las dos barcas con su manejo, las texturas, las sombra
 
 ## Pendiente
 
-- **Probarlo en móviles de verdad.** Casi todo se ha visto en un navegador automatizado, lento y sin sonido. Faltan la fluidez, los mandos y cómo suena.
 - **Medir el coste.** Texturas, sombras y detalle han cargado mucho la escena. Lo primero que se recortaría son los árboles.
 - **Cotejar el trazado, las puertas y los puentes con el plano de Tosca.**
 - **Mejorar las fuentes** de las fichas, más allá de Wikipedia.

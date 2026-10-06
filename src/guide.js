@@ -236,8 +236,7 @@ export function createTour(path, button) {
   const set = (value) => {
     active = value;
     const label = active ? 'Detener el recorrido guiado' : 'Recorrido guiado';
-    button.setAttribute('aria-label', label);
-    button.title = label;
+    button.querySelector('.label').textContent = label;
     button.classList.toggle('active', active);
   };
   button.addEventListener('click', () => set(!active));

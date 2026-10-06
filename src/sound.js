@@ -28,7 +28,7 @@ export function createSound(button) {
 
   const showState = () => {
     const key = enabled ? 'on' : 'off';
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[key]}</svg>`;
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[key]}</svg><span class="label">${enabled ? 'Sonido activado' : 'Sonido apagado'}</span>`;
     button.setAttribute('aria-label', LABELS[key]);
     button.title = LABELS[key];
     button.classList.toggle('active', enabled);

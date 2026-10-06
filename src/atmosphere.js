@@ -39,6 +39,7 @@ const ICONS = {
   night: '<path d="M19.5 14.2A8 8 0 0 1 9.8 4.5a8 8 0 1 0 9.7 9.7z"/>',
 };
 const LABELS = { day: 'Es de día. Pasar al atardecer', dusk: 'Atardece. Pasar a la noche', night: 'Es de noche. Volver al día' };
+const NAMES = { day: 'Día', dusk: 'Atardecer', night: 'Noche' };
 const phaseOf = (hour) => (hour >= 21 || hour < 5.5 ? 'night' : hour >= 19 || hour < 7.5 ? 'dusk' : 'day');
 
 const lerp = THREE.MathUtils.lerp;
@@ -68,7 +69,7 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
 
   const showPhase = () => {
     const phase = phaseOf(chosenHour);
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[phase]}</svg>`;
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[phase]}</svg><span class="label">${NAMES[phase]}</span>`;
     button.setAttribute('aria-label', LABELS[phase]);
     button.title = LABELS[phase];
   };

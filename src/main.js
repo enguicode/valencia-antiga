@@ -196,8 +196,19 @@ showMoment();
 
 startButton.addEventListener('click', () => start(false));
 startTourButton.addEventListener('click', () => start(true));
+// The menu under the map folds and unfolds the column of actions.
+const menuToggle = document.getElementById('menu-toggle');
+const setMenu = (open) => {
+  document.body.classList.toggle('menu-open', open);
+  menuToggle.setAttribute('aria-expanded', String(open));
+};
+menuToggle.addEventListener('click', () => setMenu(!document.body.classList.contains('menu-open')));
+// Starting the tour or opening a dialog is the end of the errand: fold it away.
+document.getElementById('tour').addEventListener('click', () => setMenu(false));
+
 for (const opener of document.querySelectorAll('[data-open]')) {
   opener.addEventListener('click', () => {
+    setMenu(false);
     infoDialog.showModal();
     document.getElementById(opener.dataset.open).scrollIntoView();
   });

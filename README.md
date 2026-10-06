@@ -22,7 +22,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 | **La hora** | Al entrar, la portada premarca día, atardecer o noche según el reloj del visitante, con su huso horario. Desde ahí solo cambia a mano. De noche se encienden ventanas, faroles y luciérnagas, y los carteles de la interfaz pasan a un tono oscuro. |
 | **La barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. |
 | **El idioma** | Castellano, valenciano o inglés, en la portada y en los ajustes. |
-| **Donar** | En la portada, junto a Créditos, hay un enlace a PayPal. El importe lo elige quien paga. |
+| **Donar** | En la portada, junto a Créditos, y también en Ayuda y en Créditos. El importe lo elige quien paga. |
 
 ## Controles
 

@@ -468,6 +468,12 @@
       cursor: default;
     }
 
+    /* The three small links stay on one line, shrinking a little if they must. */
+    #intro .links {
+      font-size: clamp(0.72rem, 3.3vw, 0.95rem);
+      white-space: nowrap;
+    }
+
     #intro .note {
       margin: 0;
       font-size: 0.8rem;
@@ -718,7 +724,7 @@
         <button id="start" type="button" disabled data-i18n="start.loading">Cargando…</button>
         <button id="start-tour" type="button" disabled data-i18n="tour">Recorrido guiado</button>
       </div>
-      <p><button class="link" type="button" data-open="help-section" data-i18n="intro.controls">Controles</button> · <button class="link" type="button" data-open="credits-section" data-i18n="intro.credits">Créditos y fuentes</button> · <button class="link reset-found" type="button" data-i18n="reset.short">Reiniciar puntos</button></p>
+      <p class="links"><button class="link" type="button" data-open="help-section" data-i18n="intro.controls">Controles</button> · <button class="link" type="button" data-open="credits-section" data-i18n="intro.credits">Créditos y fuentes</button> · <button class="link reset-found" type="button" data-i18n="reset.short">Reiniciar puntos</button></p>
       <p class="note" data-i18n="intro.note"></p>
     </div>
   </section>

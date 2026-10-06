@@ -425,10 +425,10 @@
    "x": 77.2,
    "z": 412.3,
    "axis": [
-    1,
-    0
+    0,
+    -1
    ],
-   "length": 95,
+   "length": 94,
    "width": 28
   },
   {
@@ -463,7 +463,8 @@
    "name": "Reial Monestir de la Santíssima Trinitat",
    "kind": "convent",
    "x": 337.1,
-   "z": -121.1
+   "z": -121.1,
+   "alignToRiver": true
   },
   {
    "id": "sant-pius",

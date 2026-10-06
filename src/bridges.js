@@ -3,61 +3,90 @@ import { RIVER, BANK, COLORS, yawTowards } from './config.js';
 import { createSurface } from './materials.js';
 import { createInstances } from './instancing.js';
 
-// Stone bridges: a deck on a row of arches, with a ramp down to each bank.
-// They cross at right angles to the river, which is a simplification.
+// The five stone bridges as they stood around 1700. Each has its own number
+// and shape of arches, width of deck, cutwaters and furniture; what is
+// documented and what is guessed is set out in docs/sources.md. They all
+// cross at right angles to the river and span the same width, which is a
+// simplification: the real ones were between 148 and 171 m long.
 
 const SPAN = RIVER.width + BANK.slopeRun * 2 + 4;
-const DECK = { width: 9, top: 8.5 };
+const DECK_TOP = 8.5;
 const RAMP = 35;
 const PIER = 3;
 const ARCH = { spring: 2, rise: 4.5 };
 const PARAPET = { height: 0.9, thickness: 0.5 };
 const FOOT = -3;
-const CUTWATER = { reach: 3.2, top: 4.6 }; // how far the piers' pointed ends stick out, and how high
+const CUTWATER = { reach: 3.2, top: 4.6 };
 
-// Number of arches of each bridge. Serrans and Mar are checked against a
-// source; the other three are from memory. See docs/sources.md.
-const ARCHES = { 'sant-josep': 13, serrans: 9, trinitat: 10, real: 10, mar: 10 };
-// Bridges with a pair of small shrines (casalicis) on the parapets. Mar is
-// documented; Real is from memory.
-const SHRINES = new Set(['real', 'mar']);
+// `shrinePier` and `stairPiers` count piers from the city bank.
+const BRIDGES = {
+  // Thirteen small arches and a deck barely six metres wide; two marble
+  // statues on bare pedestals by the third pier.
+  'sant-josep': { arches: 13, width: 6, arch: 'segmental', statuePier: 3 },
+  // Cutwaters carried up to the parapet as refuges, and a pair of shrines on
+  // the pier nearest the city.
+  serrans: { arches: 9, width: 10.9, arch: 'segmental', refuges: true, shrinePier: 1 },
+  // Slightly pointed arches, stepped caps on the cutwaters and two stairs
+  // down to the river bed on the downstream side.
+  trinitat: { arches: 10, width: 10.4, arch: 'pointed', caps: true, stairPiers: [3, 7] },
+  // Nine arches in 1700 (ten today), a level deck, the shrines of the two
+  // Vicents and stone balls on the parapet.
+  real: { arches: 9, width: 10.5, arch: 'segmental', shrinePier: 2, stairPiers: [6], balls: true },
+  // Very flat pointed arches under a humped deck, big cutwaters, balls, and
+  // the shrines of the Cross and of Sant Pasqual.
+  mar: { arches: 10, width: 8.35, arch: 'flatPointed', hump: 1.6, shrinePier: 3, balls: true },
+};
+const FALLBACK = { arches: 10, width: 9, arch: 'segmental' };
 
-const archCount = (bridge) => ARCHES[bridge.id] ?? 10;
+const specOf = (bridge) => BRIDGES[bridge.id] ?? FALLBACK;
 const openingOf = (arches) => (SPAN - PIER * (arches + 1)) / arches;
 const archCentre = (arches, i) => -SPAN / 2 + PIER + openingOf(arches) / 2 + i * (openingOf(arches) + PIER);
+// Lateral position of a pier counted from the city bank, which is at +SPAN / 2.
+const pierFromCity = (arches, n) => SPAN / 2 - PIER / 2 - n * (openingOf(arches) + PIER);
+const deckHeight = (spec, x) => DECK_TOP + (spec.hump ?? 0) * (1 - Math.abs(x) / (SPAN / 2));
 
-function createBridgeGeometry(arches) {
+function createBridgeGeometry(spec) {
   const half = SPAN / 2;
   const outline = new THREE.Shape();
   outline.moveTo(-half - RAMP, FOOT);
   outline.lineTo(-half - RAMP, BANK.height - 0.2);
-  outline.lineTo(-half, DECK.top);
-  outline.lineTo(half, DECK.top);
+  outline.lineTo(-half, DECK_TOP);
+  if (spec.hump) outline.lineTo(0, DECK_TOP + spec.hump);
+  outline.lineTo(half, DECK_TOP);
   outline.lineTo(half + RAMP, BANK.height - 0.2);
   outline.lineTo(half + RAMP, FOOT);
   outline.closePath();
 
-  const opening = openingOf(arches);
-  for (let i = 0; i < arches; i++) {
-    const centre = archCentre(arches, i);
+  const opening = openingOf(spec.arches);
+  const a = opening / 2;
+  for (let i = 0; i < spec.arches; i++) {
+    const centre = archCentre(spec.arches, i);
     const hole = new THREE.Path();
-    hole.moveTo(centre - opening / 2, FOOT + 0.5);
-    hole.lineTo(centre - opening / 2, ARCH.spring);
-    hole.absellipse(centre, ARCH.spring, opening / 2, ARCH.rise, Math.PI, 0, true);
-    hole.lineTo(centre + opening / 2, FOOT + 0.5);
+    hole.moveTo(centre - a, FOOT + 0.5);
+    hole.lineTo(centre - a, ARCH.spring);
+    if (spec.arch === 'pointed') {
+      hole.quadraticCurveTo(centre - a * 0.9, ARCH.spring + ARCH.rise * 0.95, centre, ARCH.spring + ARCH.rise * 1.12);
+      hole.quadraticCurveTo(centre + a * 0.9, ARCH.spring + ARCH.rise * 0.95, centre + a, ARCH.spring);
+    } else if (spec.arch === 'flatPointed') {
+      hole.quadraticCurveTo(centre - a * 0.7, ARCH.spring + ARCH.rise * 0.8, centre, ARCH.spring + ARCH.rise * 0.9);
+      hole.quadraticCurveTo(centre + a * 0.7, ARCH.spring + ARCH.rise * 0.8, centre + a, ARCH.spring);
+    } else {
+      hole.absellipse(centre, ARCH.spring, a, ARCH.rise, Math.PI, 0, true);
+    }
+    hole.lineTo(centre + a, FOOT + 0.5);
     hole.closePath();
     outline.holes.push(hole);
   }
 
-  const geometry = new THREE.ExtrudeGeometry(outline, { depth: DECK.width, bevelEnabled: false, curveSegments: 10 });
-  geometry.translate(0, 0, -DECK.width / 2);
+  const geometry = new THREE.ExtrudeGeometry(outline, { depth: spec.width, bevelEnabled: false, curveSegments: 10 });
+  geometry.translate(0, 0, -spec.width / 2);
   return geometry;
 }
 
 // A pier seen from above: its rectangle, drawn out to a point up- and
 // downstream so the current parts around it.
-function createCutwaterGeometry() {
-  const half = DECK.width / 2;
+function createCutwaterGeometry(width, top) {
+  const half = width / 2;
   const plan = new THREE.Shape();
   plan.moveTo(-PIER / 2, -half);
   plan.lineTo(0, -half - CUTWATER.reach);
@@ -66,7 +95,7 @@ function createCutwaterGeometry() {
   plan.lineTo(0, half + CUTWATER.reach);
   plan.lineTo(-PIER / 2, half);
   plan.closePath();
-  const geometry = new THREE.ExtrudeGeometry(plan, { depth: CUTWATER.top - FOOT, bevelEnabled: false });
+  const geometry = new THREE.ExtrudeGeometry(plan, { depth: top - FOOT, bevelEnabled: false });
   geometry.rotateX(-Math.PI / 2); // extrude upwards; the plan's y becomes -z
   geometry.translate(0, FOOT, 0);
   return geometry;
@@ -76,64 +105,121 @@ export function createBridges(layout, path) {
   // Double-sided, so a camera that strays into the stonework sees stone
   // rather than straight through it.
   const stone = createSurface('masonry', 4, { color: COLORS.stone, side: THREE.DoubleSide });
-  const pale = createSurface('masonry', 3, { color: 0xe2d3b0 });
-  const roof = createSurface('tiles', 2, { color: COLORS.roofs[0] });
-  const parapetGeometry = new THREE.BoxGeometry(SPAN, PARAPET.height, PARAPET.thickness);
-  const courseGeometry = new THREE.BoxGeometry(SPAN, 0.35, DECK.width + 0.5);
-  const shrineGeometry = new THREE.BoxGeometry(1.7, 2.8, 1.7);
-  const shrineRoofGeometry = new THREE.ConeGeometry(1.5, 1.4, 4).rotateY(Math.PI / 4);
-  const cutwaterGeometry = createCutwaterGeometry();
+  const pale = createSurface('masonry', 3, { color: 0xe8dcc0 });
+  const marble = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 });
+  const roof = createSurface('tiles', 1.6, { color: 0x6f8f7a }); // glazed tiles
   const group = new THREE.Group();
-  const cutwaters = [];
   const balls = [];
   const local = new THREE.Object3D();
 
+  const shrineBase = new THREE.CylinderGeometry(1.25, 1.25, 0.5, 3);
+  const shrineColumn = new THREE.CylinderGeometry(0.13, 0.13, 2.6, 6);
+  const shrineRoof = new THREE.ConeGeometry(1.5, 1.7, 3);
+  const figure = new THREE.BoxGeometry(0.45, 1.5, 0.45);
+
   for (const bridge of layout.bridges) {
+    const spec = specOf(bridge);
+    const { arches, width } = spec;
     const { sample } = path.project(bridge.x, bridge.z);
-    const arches = archCount(bridge);
     const model = new THREE.Group();
     model.position.set(sample.x, 0, sample.z);
     model.rotation.y = yawTowards(sample.rx, sample.rz);
     model.updateMatrix();
+    const piece = (geometry, material, x, y, z) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(x, y, z);
+      model.add(mesh);
+      return mesh;
+    };
 
-    model.add(new THREE.Mesh(createBridgeGeometry(arches), stone));
-    const course = new THREE.Mesh(courseGeometry, stone);
-    course.position.y = DECK.top - 1;
-    model.add(course);
+    model.add(new THREE.Mesh(createBridgeGeometry(spec), stone));
+    if (!spec.hump) piece(new THREE.BoxGeometry(SPAN, 0.35, width + 0.5), stone, 0, DECK_TOP - 1, 0);
+
+    // Parapets: one straight run, or two sloping halves over a humped deck
+    const edge = width / 2 - PARAPET.thickness / 2;
     for (const side of [-1, 1]) {
-      const parapet = new THREE.Mesh(parapetGeometry, stone);
-      const z = side * (DECK.width / 2 - PARAPET.thickness / 2);
-      parapet.position.set(0, DECK.top + PARAPET.height / 2, z);
-      model.add(parapet);
-
-      // A stone ball over every pier, as on the river walls
-      for (let i = 0; i <= arches; i++) {
-        local.position.set(-SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER), DECK.top + PARAPET.height + 0.3, z);
-        local.updateMatrix();
-        balls.push({ matrix: model.matrix.clone().multiply(local.matrix) });
+      if (spec.hump) {
+        const slope = Math.atan2(spec.hump, SPAN / 2);
+        const length = Math.hypot(SPAN / 2, spec.hump);
+        for (const end of [-1, 1]) {
+          const half = piece(
+            new THREE.BoxGeometry(length, PARAPET.height, PARAPET.thickness),
+            stone,
+            (end * SPAN) / 4,
+            DECK_TOP + spec.hump / 2 + PARAPET.height / 2,
+            side * edge,
+          );
+          half.rotation.z = -end * slope;
+        }
+      } else {
+        piece(new THREE.BoxGeometry(SPAN, PARAPET.height, PARAPET.thickness), stone, 0, DECK_TOP + PARAPET.height / 2, side * edge);
       }
-
-      if (SHRINES.has(bridge.id)) {
-        const shrine = new THREE.Mesh(shrineGeometry, pale);
-        shrine.position.set(side * 0, DECK.top + 1.4, side * (DECK.width / 2 + 0.6));
-        const cap = new THREE.Mesh(shrineRoofGeometry, roof);
-        cap.position.set(0, DECK.top + 3.5, side * (DECK.width / 2 + 0.6));
-        model.add(shrine, cap);
+      if (spec.balls) {
+        for (let i = 0; i <= arches; i++) {
+          const x = -SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER);
+          local.position.set(x, deckHeight(spec, x) + PARAPET.height + 0.3, side * edge);
+          local.updateMatrix();
+          balls.push({ matrix: model.matrix.clone().multiply(local.matrix) });
+        }
       }
     }
 
+    // Cutwaters on every pier. On the Serrans they rise to the parapet as
+    // refuges; on the Trinitat they end in stepped caps.
+    const cutwaterTop = spec.refuges ? DECK_TOP + PARAPET.height : CUTWATER.top;
+    const cutwater = createCutwaterGeometry(width, cutwaterTop);
+    const stairs = new Set((spec.stairPiers ?? []).map((n) => arches - n));
     for (let i = 0; i <= arches; i++) {
-      local.position.set(-SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER), 0, 0);
-      local.updateMatrix();
-      cutwaters.push({ matrix: model.matrix.clone().multiply(local.matrix) });
+      const x = -SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER);
+      piece(cutwater, stone, x, 0, 0);
+      if (spec.caps) {
+        for (const side of [-1, 1]) {
+          for (let step = 0; step < 3; step++) {
+            const size = 2.2 - step * 0.65;
+            piece(new THREE.BoxGeometry(size, 0.6, size), stone, x, CUTWATER.top + 0.3 + step * 0.6, side * (width / 2 + 1.1));
+          }
+        }
+      }
+      // A flight of steps down the downstream side (local -Z) of some piers
+      if (stairs.has(i)) {
+        for (let step = 0; step < 9; step++) {
+          const top = DECK_TOP - step * 1.05;
+          piece(new THREE.BoxGeometry(PIER + 0.6, top - FOOT, 1.3), stone, x, (top + FOOT) / 2, -(width / 2 + 0.65 + step * 1.3));
+        }
+      }
+    }
+
+    // Shrines: a facing pair, one on each side of the same pier, each a
+    // three-sided canopy on columns with a figure inside.
+    if (spec.shrinePier) {
+      const x = pierFromCity(arches, spec.shrinePier);
+      const base = deckHeight(spec, x);
+      for (const side of [-1, 1]) {
+        const z = side * (width / 2 + 1.5);
+        piece(new THREE.BoxGeometry(PIER, base - CUTWATER.top, 2.6), stone, x, (base + CUTWATER.top) / 2, z);
+        piece(shrineBase, pale, x, base + 0.25, z);
+        for (let k = 0; k < 3; k++) {
+          const angle = (k / 3) * Math.PI * 2;
+          piece(shrineColumn, pale, x + Math.sin(angle) * 0.95, base + 1.8, z + Math.cos(angle) * 0.95);
+        }
+        piece(shrineRoof, roof, x, base + 3.95, z);
+        piece(figure, marble, x, base + 1.25, z);
+      }
+    }
+
+    // Two marble statues on plain pedestals, with no canopy
+    if (spec.statuePier) {
+      const x = pierFromCity(arches, spec.statuePier);
+      for (const side of [-1, 1]) {
+        const z = side * (width / 2 + 1.3);
+        piece(new THREE.BoxGeometry(PIER, DECK_TOP + 1.4 - CUTWATER.top, 2.2), stone, x, (DECK_TOP + 1.4 + CUTWATER.top) / 2, z);
+        piece(new THREE.BoxGeometry(0.7, 2.8, 0.7), marble, x, DECK_TOP + 2.8, z);
+      }
     }
     group.add(model);
   }
 
-  group.add(
-    createInstances(cutwaterGeometry, stone, cutwaters),
-    createInstances(new THREE.SphereGeometry(0.42, 12, 9), stone, balls),
-  );
+  group.add(createInstances(new THREE.SphereGeometry(0.42, 12, 9), stone, balls));
   return group;
 }
 
@@ -144,7 +230,7 @@ export function createBridgeGuide(layout, path) {
   const FUNNEL = 38; // metres before and after the bridge where it acts
   const CLEARANCE = 1.5; // kept between the boat's middle and the pier
   const bridges = layout.bridges.map((bridge) => {
-    const arches = archCount(bridge);
+    const { arches } = specOf(bridge);
     return {
       s: path.project(bridge.x, bridge.z).s,
       centres: Array.from({ length: arches }, (_, i) => archCentre(arches, i)),

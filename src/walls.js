@@ -1,26 +1,32 @@
 import * as THREE from 'three';
 import { BANK, WALL, COLORS, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
-import { stoneSurface } from './materials.js';
+import { stoneSurface, createSurface } from './materials.js';
 
-// City wall along the perimeter in the layout: a curtain between vertices, a
-// tower on every vertex and a gate where the layout says so. Every piece is
+// City wall along the perimeter in the layout: a curtain between vertices,
+// round towers on the vertices of the river front, plain piers on the rest,
+// and a gate where the layout says so. Every piece is
 // described in a local frame whose +X points out of the city and whose origin
 // sits at the foot of the wall.
 
 const BASE_Y = BANK.height - 0.5;
 const MERLON = { width: 1, height: 1.2, spacing: 2.4 };
-const TOWER = { size: 8, height: WALL.height + 5, offset: 2.5 };
+const RIVER_FRONT = 230; // metres from the river within which the wall has towers
 
-// Proportions only: the two surviving gates are far taller than the wall, and
-// Quart is the one with round towers. The other two great gates are drawn
-// larger than the minor ones, without evidence for their shape.
+// Gates as they stood around 1700, as far as the sources go (docs/sources.md).
+// Serrans and Quart survive and are measured; the rest are known only from
+// descriptions, and their sizes here are estimates.
 const GATE_STYLES = {
-  minor: { radius: 5, height: 17, gap: 7, round: false },
-  mar: { radius: 6, height: 22, gap: 8, round: false },
-  'sant-vicent': { radius: 6, height: 22, gap: 8, round: false },
-  serrans: { radius: 7.5, height: 30, gap: 9.5, round: false },
-  quart: { radius: 7.5, height: 30, gap: 9.5, round: true },
+  // two towers flanking a lower central body with the arch
+  serrans: { kind: 'polygonal', radius: 6, height: 33, gap: 11, centre: 28, squareBack: true, tracery: true, stair: true },
+  quart: { kind: 'round', radius: 5.3, height: 34, gap: 8.8, centre: 27, batter: true, squareBack: true },
+  'sant-josep': { kind: 'round', radius: 4.2, height: 20, gap: 7, centre: 16, batter: true },
+  trinitat: { kind: 'square', radius: 3.5, height: 14, gap: 6.5, centre: 11.5 },
+  // a single tower with the gate through it
+  mar: { kind: 'single', size: 9, height: 15, annex: true },
+  'sant-vicent': { kind: 'single', size: 9, height: 14.5, niches: true },
+  // no tower: an arch in a taller, slightly projecting stretch of wall
+  real: { kind: 'plain', width: 11, height: 12.5 },
 };
 
 function createArchGeometry() {
@@ -43,16 +49,30 @@ function faceted(geometry) {
   return flat;
 }
 
-export function createWalls(layout) {
+export function createWalls(layout, path) {
   const stone = stoneSurface();
   const dark = new THREE.MeshBasicMaterial({ color: COLORS.stoneDark });
+  // Quart and the Portal Nou were rough rendered masonry, not dressed stone.
+  const render = createSurface('mottle', 3.5, { color: 0xa8987a });
+  const pale = createSurface('masonry', 2.5, { color: 0xe6d9b8 });
 
   const vertices = layout.wall.map(([x, z]) => ({ x, z }));
   const count = vertices.length;
   const centre = vertices.reduce((sum, v) => ({ x: sum.x + v.x / count, z: sum.z + v.z / count }), { x: 0, z: 0 });
   const gateByVertex = new Map(layout.gates.map((gate) => [gate.vertex, gate]));
 
-  const lists = { curtains: [], merlons: [], towers: [], slits: [], polygonal: [], round: [], passages: [], arches: [] };
+  const lists = {
+    curtains: [],
+    merlons: [],
+    slits: [],
+    polygonal: [],
+    round: [],
+    rendered: [],
+    renderedBlocks: [],
+    passages: [],
+    accents: [],
+    arches: [],
+  };
   const local = new THREE.Object3D();
 
   const makeFrame = (x, z, outX, outZ) =>
@@ -100,74 +120,138 @@ export function createWalls(layout) {
     const outZ = before.outZ + after.outZ;
     const frame = makeFrame(vertex.x, vertex.z, outX, outZ);
     const gate = gateByVertex.get(i);
+    const merlonRing = (x, z, radius, y, count) => {
+      for (let k = 0; k < count; k++) {
+        const angle = (k / count) * Math.PI * 2;
+        place(lists.merlons, frame, x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius, { yaw: -angle });
+      }
+    };
+    const merlonSquare = (x, z, half, y) => {
+      const rim = half - MERLON.width / 2;
+      const steps = Math.max(1, Math.floor(rim / 1.3));
+      for (let step = -steps; step <= steps; step++) {
+        const along = (step / steps) * rim;
+        place(lists.merlons, frame, x + rim, y, z + along);
+        place(lists.merlons, frame, x - rim, y, z + along);
+        place(lists.merlons, frame, x + along, y, z + rim);
+        place(lists.merlons, frame, x + along, y, z - rim);
+      }
+    };
+    const arch = (x, width, height) => place(lists.arches, frame, x, 0.5, 0, { scale: [1, height / 1.4, width] });
 
     if (!gate) {
-      const rim = TOWER.size / 2 - MERLON.width / 2;
-      const top = TOWER.height + MERLON.height / 2;
-      place(lists.towers, frame, TOWER.offset, TOWER.height / 2, 0);
-      place(lists.slits, frame, TOWER.offset + TOWER.size / 2 + 0.02, TOWER.height * 0.65, 0);
-      for (let step = -1; step <= 1; step++) {
-        const along = step * rim;
-        place(lists.merlons, frame, TOWER.offset + rim, top, along);
-        place(lists.merlons, frame, TOWER.offset - rim, top, along);
-        place(lists.merlons, frame, TOWER.offset + along, top, rim);
-        place(lists.merlons, frame, TOWER.offset + along, top, -rim);
+      // The plan of 1704 shows towers only along the river front, rounded;
+      // elsewhere the wall ran plain from gate to gate.
+      if (Math.abs(path.project(vertex.x, vertex.z).lateral) < RIVER_FRONT) {
+        const height = WALL.height + 2.5;
+        place(lists.round, frame, 1.3, height / 2, 0, { scale: [4.2, height, 4.2] });
+        merlonRing(1.3, 0, 3.7, height + MERLON.height / 2, 9);
+        place(lists.slits, frame, 5.54, height * 0.6, 0);
+      } else {
+        place(lists.passages, frame, 0, WALL.height / 2, 0, { scale: [3.8, WALL.height, 3.8] });
       }
       return;
     }
 
-    const style = GATE_STYLES[gate.id] ?? GATE_STYLES.minor;
-    const towerX = style.radius * 0.6;
-    for (const direction of [-1, 1]) {
-      const towerZ = direction * style.gap;
-      place(style.round ? lists.round : lists.polygonal, frame, towerX, style.height / 2, towerZ, {
-        scale: [style.radius, style.height, style.radius],
-      });
-      const crown = style.radius - MERLON.width / 2;
-      const crownCount = Math.round(style.radius * 2);
-      for (let k = 0; k < crownCount; k++) {
-        const angle = (k / crownCount) * Math.PI * 2;
-        place(
-          lists.merlons,
-          frame,
-          towerX + Math.cos(angle) * crown,
-          style.height + MERLON.height / 2,
-          towerZ + Math.sin(angle) * crown,
-          { yaw: -angle },
-        );
-      }
+    const style = GATE_STYLES[gate.id];
 
-      // A corbelled gallery below the battlements, a top course, and loopholes
-      const solid = style.round ? lists.round : lists.polygonal;
-      place(solid, frame, towerX, style.height * 0.78, towerZ, {
-        scale: [style.radius * 1.1, style.height * 0.06, style.radius * 1.1],
-      });
-      place(solid, frame, towerX, style.height - 0.5, towerZ, {
-        scale: [style.radius * 1.06, 1, style.radius * 1.06],
-      });
-      const face = towerX + style.radius * (style.round ? 1 : 0.866) + 0.04;
-      for (const level of [0.3, 0.5, 0.66]) {
-        place(lists.slits, frame, face, style.height * level, towerZ, { scale: [1, style.height / 17, 1.4] });
+    if (style.kind === 'plain') {
+      place(lists.passages, frame, 0.4, style.height / 2, 0, { scale: [WALL.thickness + 1.4, style.height, style.width] });
+      arch(0.4 + (WALL.thickness + 1.4) / 2 + 0.05, 4.2, 6);
+      for (let along = -style.width / 2 + 0.8; along <= style.width / 2 - 0.8; along += MERLON.spacing) {
+        place(lists.merlons, frame, 1.2, style.height + MERLON.height / 2, along);
+      }
+      return;
+    }
+
+    if (style.kind === 'single') {
+      const x = style.size * 0.2;
+      place(lists.passages, frame, x, style.height / 2, 0, { scale: [style.size, style.height, style.size] });
+      merlonSquare(x, 0, style.size / 2, style.height + MERLON.height / 2);
+      place(lists.accents, frame, x, style.height - 2.2, 0, { scale: [style.size + 0.5, 0.5, style.size + 0.5] });
+      arch(x + style.size / 2 + 0.05, 4.4, 6.4);
+      place(lists.slits, frame, x + style.size / 2 + 0.03, style.height * 0.72, 0);
+      if (style.niches) {
+        // The two statues of the Vicents, put up in 1677 and 1681
+        for (const side of [-1, 1]) {
+          place(lists.accents, frame, x + style.size / 2 + 0.15, 8.4, side * 2.7, { scale: [0.4, 2.4, 1.1] });
+        }
+      }
+      if (style.annex) {
+        // The Casa de les Armes stood against the wall beside the gate
+        place(lists.passages, frame, -9, 4.5, 26, { scale: [16, 9, 34] });
+        place(lists.accents, frame, -9, 9.2, 26, { scale: [16.6, 0.5, 34.6] });
+      }
+      return;
+    }
+
+    // Two towers and a central body
+    const { radius, height, gap } = style;
+    const towerX = radius * 0.6;
+    const solid = style.kind === 'polygonal' ? lists.polygonal : style.batter ? lists.rendered : lists.round;
+    for (const direction of [-1, 1]) {
+      const towerZ = direction * gap;
+      if (style.kind === 'square') {
+        place(lists.passages, frame, towerX, height / 2, towerZ, { scale: [radius * 2, height, radius * 2] });
+        merlonSquare(towerX, towerZ, radius, height + MERLON.height / 2);
+        place(lists.slits, frame, towerX + radius + 0.03, height * 0.6, towerZ);
+        continue;
+      }
+      place(solid, frame, towerX, height / 2, towerZ, { scale: [radius, height, radius] });
+      merlonRing(towerX, towerZ, radius * 1.1 - MERLON.width / 2, height + MERLON.height / 2, Math.round(radius * 2.2));
+      // The gallery that juts out on corbels over the top third, and a
+      // moulding a third of the way up
+      place(solid, frame, towerX, height * 0.8, towerZ, { scale: [radius * 1.13, height * 0.07, radius * 1.13] });
+      place(solid, frame, towerX, height - 0.5, towerZ, { scale: [radius * 1.1, 1, radius * 1.1] });
+      merlonRing(towerX, towerZ, radius * 1.03, height * 0.745, Math.round(radius * 2.4));
+      place(solid, frame, towerX, height / 3, towerZ, { scale: [radius * 1.04, 0.5, radius * 1.04] });
+      if (style.batter) {
+        // A sloping foot, drawn as a broader band
+        place(solid, frame, towerX, 2.5, towerZ, { scale: [radius * 1.15, 5, radius * 1.15] });
+        place(solid, frame, towerX, 5.2, towerZ, { scale: [radius * 1.07, 0.6, radius * 1.07] });
+      }
+      if (style.squareBack) {
+        // Towards the city the towers are flat-backed
+        place(style.batter ? lists.renderedBlocks : lists.passages, frame, towerX - radius * 0.8, height / 2, towerZ, {
+          scale: [radius * 1.6, height, radius * 2],
+        });
+      }
+      const face = towerX + radius * (style.kind === 'round' ? 1 : 0.866) + 0.04;
+      for (const level of [0.2, 0.45, 0.62]) {
+        place(lists.slits, frame, face, height * level, towerZ, { scale: [1, height / 17, 1.4] });
       }
     }
-    const passageHeight = style.height * 0.75;
-    const passageDepth = style.radius * 1.2;
-    place(lists.passages, frame, 1, passageHeight / 2, 0, {
-      scale: [passageDepth, passageHeight, style.gap * 2],
-    });
-    const archSize = style.radius * 0.9;
-    place(lists.arches, frame, 1 + passageDepth / 2 + 0.05, 0.5, 0, { scale: [1, archSize, archSize] });
-    // The front of the passage: pilasters either side of the arch, a cornice
-    // and battlements along the top
-    const front = 1 + passageDepth / 2;
-    for (const side of [-1, 1]) {
-      place(lists.passages, frame, front + 0.3, passageHeight * 0.42, side * archSize * 0.72, {
-        scale: [0.7, passageHeight * 0.84, archSize * 0.22],
-      });
+
+    const centre = style.centre;
+    const depth = radius * 1.4;
+    const front = 1 + depth / 2;
+    const open = gap * 2 - radius * 1.2; // the stretch of front between the towers
+    place(style.batter ? lists.renderedBlocks : lists.passages, frame, 1, centre / 2, 0, { scale: [depth, centre, gap * 2] });
+    const archWidth = Math.min(5, open * 0.5);
+    arch(front + 0.05, archWidth, archWidth * 1.3);
+    place(lists.accents, frame, front + 0.15, archWidth * 1.3 + 2.2, 0, { scale: [0.3, 2.2, 1.8] }); // royal arms
+    place(lists.passages, frame, front + 0.25, centre / 3, 0, { scale: [0.6, 0.5, open] });
+    // Gallery and battlements over the central body
+    place(lists.passages, frame, front, centre * 0.84, 0, { scale: [1.6, centre * 0.07, open] });
+    for (let along = -open / 2 + 0.8; along <= open / 2 - 0.8; along += MERLON.spacing) {
+      place(lists.merlons, frame, front + 0.4, centre + MERLON.height / 2, along);
+      place(lists.merlons, frame, front - 0.2, centre * 0.79, along);
     }
-    place(lists.passages, frame, front + 0.2, passageHeight * 0.86, 0, { scale: [0.9, 0.7, style.gap * 1.5] });
-    for (let along = -style.gap + 1.8; along <= style.gap - 1.8; along += MERLON.spacing) {
-      place(lists.merlons, frame, front - MERLON.width / 2, passageHeight + MERLON.height / 2, along);
+    if (style.tracery) {
+      // Blind Gothic arcading between the moulding and the gallery
+      const from = centre * 0.44;
+      const tall = centre * 0.34;
+      place(lists.accents, frame, front + 0.1, from + tall / 2, 0, { scale: [0.25, tall, open * 0.92] });
+      for (let along = -open * 0.44; along <= open * 0.44 + 0.01; along += open * 0.11) {
+        place(lists.passages, frame, front + 0.22, from + tall / 2, along, { scale: [0.3, tall, 0.24] });
+      }
+    }
+    if (style.stair) {
+      // The great stair up the back of one tower
+      for (let step = 0; step < 7; step++) {
+        const rise = (7 - step) * 1.7;
+        place(lists.passages, frame, towerX - radius * 1.6 - 1 - step * 1.6, rise / 2, -gap, { scale: [1.6, rise, radius * 1.5] });
+      }
     }
   });
 
@@ -175,11 +259,13 @@ export function createWalls(layout) {
   group.add(
     createInstances(new THREE.BoxGeometry(WALL.thickness, WALL.height, 1), stone, lists.curtains),
     createInstances(new THREE.BoxGeometry(MERLON.width, MERLON.height, MERLON.width * 1.2), stone, lists.merlons),
-    createInstances(new THREE.BoxGeometry(TOWER.size, TOWER.height, TOWER.size), stone, lists.towers),
     createInstances(new THREE.BoxGeometry(0.05, 1.6, 0.35), dark, lists.slits),
     createInstances(faceted(new THREE.CylinderGeometry(1, 1, 1, 6)), stone, lists.polygonal),
     createInstances(new THREE.CylinderGeometry(1, 1, 1, 28), stone, lists.round),
+    createInstances(new THREE.CylinderGeometry(1, 1, 1, 28), render, lists.rendered),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), render, lists.renderedBlocks),
     createInstances(new THREE.BoxGeometry(1, 1, 1), stone, lists.passages),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), pale, lists.accents),
     createInstances(createArchGeometry(), dark, lists.arches),
   );
   return group;

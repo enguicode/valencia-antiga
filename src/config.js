@@ -17,8 +17,8 @@ export const BANK = {
 };
 
 export const WALL = {
-  height: 9,
-  thickness: 3,
+  height: 10, // about what the sources give for the curtain
+  thickness: 2.6,
 };
 
 export const FOG = { near: 150, far: 800 };

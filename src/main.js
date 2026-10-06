@@ -70,7 +70,7 @@ const life = createLife(layout, path, city.userData.chimneys, bridgeGuide);
 const nightLights = createNightLights(layout, path);
 scene.add(
   water.mesh,
-  createWalls(layout),
+  createWalls(layout, path),
   city,
   life.group,
   nightLights.points,

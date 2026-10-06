@@ -86,10 +86,63 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 - **Barquero y vela:** en la barca de la Albufera el barquero mueve la percha y la vela va arriada cuando se navega despacio, y se iza al coger velocidad. Es una animación inventada.
 - **Paso bajo los arcos:** las barcas se encauzan solas hacia el arco más cercano y abaten el palo y la vela. Es un recurso del juego para que nada atraviese la piedra; no consta que se hiciera así.
 
+## Revisión de monumentos (6 de octubre de 2026)
+
+Se documentó cada monumento por separado y se rehicieron las maquetas con lo encontrado. En cada caso se distingue lo que dice una fuente de lo que es estimación.
+
+### Torres dels Serrans y de Quart
+
+- **Con fuente:** Serrans, 1392-1398, de Pere Balaguer; cuerpo central entre dos torres poligonales por fuera y rectas hacia la ciudad; arco de 5 × 6,5 m; galería volada sobre ménsulas en el tercio superior; tracería gótica ciega entre la galería y una imposta a un tercio de la altura; escudo real; trasera abierta en arcos y gran escalera; prisión de nobles de 1586 a 1887. Quart, 34 m de alto, torres semicilíndricas con base en talud, muros de mampostería enlucida con sillería solo en esquinas y remates. ([Wikipedia: Serranos](https://es.wikipedia.org/wiki/Torres_de_Serranos), [Quart](https://es.wikipedia.org/wiki/Torres_de_Quart), fichas del catálogo municipal en valencia.es)
+- **Estimado:** el ancho y el fondo de ambas puertas, la altura de Serrans (unos 33 m, de fuentes no leídas directamente) y cuánto más bajo es el cuerpo central.
+- **Dudoso para 1700:** si la galería almenada de Serrans seguía en pie; se ha dejado.
+
+### Muralla y puertas desaparecidas
+
+- **Con fuente:** muralla de 1356-1370, unos 4 km, lienzo de unos 10 m de alto y 2,5 m de grueso, de tapial; el frente del río, reforzado con mortero y sillería. El plano de Tosca muestra torres semicirculares solo en el frente del río. Portal Nou: dos torres de frente redondo «parecidas a Quart» pero menores, acabado en 1471-74. Portal de la Trinitat: dos torres cuadradas almenadas (una sola fuente). Portal del Real: desde 1599, un hueco sencillo con arco algo apuntado. Portal de la Mar: abierto en 1356, «una puerta abierta en una torre»; a su lado, la Casa de les Armes (1574). Portal de Sant Vicent: antes de 1830, un torreón con arco y las estatuas de los dos Vicentes (1677 y 1681). ([Viquipèdia: Muralla cristiana](https://ca.wikipedia.org/wiki/Muralla_cristiana_de_València), [Wikipedia: Muralla medieval](https://es.wikipedia.org/wiki/Muralla_medieval_de_Valencia), [Ciudadela](https://es.wikipedia.org/wiki/Ciudadela_de_Valencia) y varios blogs de historia local)
+- **Estimado:** todas las medidas de estas cinco puertas y la forma de la Casa de les Armes. Las fuentes son textos; no se han visto el plano de Tosca ni los grabados.
+- **Cambiado en la escena:** la muralla sube a 10 m; solo hay torres, redondas, en el frente del río; cada puerta tiene ahora su forma.
+
+### Puentes
+
+Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de València), una por puente, en victoryepes.blogs.upv.es.
+
+| Puente | Arcos hacia 1700 | Forma del arco | Ancho | Lo que lo distingue |
+| --- | --- | --- | --- | --- |
+| Sant Josep | 13 | Escarzano, pequeño y alto | Casi 6 m | Dos estatuas de mármol (1694) sobre pedestales, sin casalicio |
+| Serrans | 9 | Escarzano | 10,9 m | Tajamares hasta el pretil, como apartaderos; dos casalicios junto a la ciudad |
+| Trinitat | 10 | Algo apuntado | 10,4 m (sin contrastar) | Tajamares con sombreretes escalonados; dos escaleras aguas abajo; sin casalicios en 1700 |
+| Real | 9 (hoy 10) | Escarzano | 10,5 m | Casalicios de los dos Vicentes (1682-83), bolas en el pretil, una escalera |
+| Mar | 10 | Apuntado muy rebajado | 8,35 m | Tablero alomado, bolas, casalicios de la Cruz y de Sant Pasqual |
+
+- **Corregido:** el Pont del Real tenía nueve arcos en 1700, no diez.
+- **Estimado:** la forma de los casalicios (planta triangular y columnas constan; la cubierta en pirámide es lectura propia), el sitio exacto de las escaleras y de las bolas. Todos los puentes miden lo mismo en la escena; los reales iban de 148 a 171 m.
+
+### Micalet y Seu
+
+- **Con fuente:** Micalet, prisma octogonal de 50,85 m hasta la terraza, igual que su perímetro, con contrafuertes en las ocho aristas y cuatro cuerpos (macizo, «presó», casa del campanero y sala de campanas con ocho ventanales); la crestería gótica calada no se derribó hasta el XVIII; la espadaña de piedra es de 1660-1736. Seu, 94 m de largo y 53,65 m en el crucero; cimborrio octogonal de dos cuerpos con ocho ventanas de alabastro cada uno; Obra Nova de tres pisos de arcos (1566); puerta de los Apóstoles con rosetón de 6,45 m; Aula Capitular de 13 m de lado y 16 de alto. ([Wikipedia: El Miguelete](https://es.wikipedia.org/wiki/El_Miguelete), [Catedral](https://es.wikipedia.org/wiki/Catedral_de_Santa_María_de_Valencia))
+- **Estimado:** la altura de cada cuerpo del Micalet, la altura de la nave (23 m), las cubiertas en terraza y la orientación (eje norte-sur con el ábside al norte, deducida de hacia dónde miran las puertas).
+- **Decisión para 1700:** crestería en pie y, en lugar de la espadaña acabada, un armazón sencillo con la campana de las horas.
+
+### Palau del Real
+
+- **Con fuente:** dos cuerpos, el Real Vell (la almunia reformada, con un patio y cuatro torres en las esquinas, una con chapitel) y el Real Nou, mayor; puerta principal entre dos torres fuertes, halladas en la excavación de 2009; pórtico de pilares y arcos de medio punto con galería de balcones encima; foso de 1356. ([Wikipedia](https://es.wikipedia.org/wiki/Palacio_del_Real_de_Valencia), [cultural.valencia.es](https://cultural.valencia.es/en/arqueologia-centro/royal-palace/))
+- **Estimado:** todas las medidas. Varias fuentes repiten que la fachada «llegó a alcanzar los 200 metros»; aquí mide unos 120. Alturas, cubiertas y color son suposición.
+
+### Trinitat y Sant Pius V
+
+- **Trinitat, con fuente:** iglesia de una nave con cinco tramos y ábside poligonal, paralela al claustro; se entra por una puerta lateral desde un patio del lado del río, con arquivoltas bajo arco conopial entre pináculos; claustro de dos pisos; fábrica de sillería y tapial. No hay fuente para el campanario ni para ninguna medida: son estimación. ([Viquipèdia](https://ca.wikipedia.org/wiki/Monestir_de_la_Trinitat))
+- **Sant Pius V, con fuente:** proyecto de Pérez Castiel hacia 1683; las obras se pararon en 1699; el plano de Tosca (1704) muestra el claustro a medias y la iglesia sin empezar; se acabó entre 1728 y 1744. Fachada al río de tres pisos con dos torres en las esquinas, de ladrillo sobre zócalo de sillería. ([Viquipèdia](https://ca.wikipedia.org/wiki/Col·legi_de_Sant_Pius_V))
+- **Cambiado en la escena:** Sant Pius V aparece a medio hacer, sin iglesia ni cúpula; la cúpula azul sería un anacronismo.
+
+### Barcas
+
+- **Con fuente:** las barcas de la Albufera eran de fondo plano, sin quilla, de dos puntas y antiguamente embreadas; el barquet medía de 4,6 a 5 m y el barquetot de 7 a 11; la entena podía ser bastante más larga que la barca; la percha pasa de 3 m. ([maritima-et-mechanika.org](https://maritima-et-mechanika.org/maritime/albufera/Boats-of-the-Albufera.html))
+- **Importante:** no hay constancia de barcas de la Albufera, ni de navegación, en el Turia a su paso por València hacia 1700. El río no era navegable; la madera bajaba suelta, guiada por gancheros. **El paseo en barca es, por tanto, una licencia de este proyecto.**
+
 ## Pendiente
 
 - Cotejar muralla, puertas y puentes con el plano de Tomás Vicente Tosca (1704). Todavía no se ha usado: el trazado actual sale solo del callejero moderno.
-- Contrastar el número de arcos de Sant Josep, Trinitat y Real, y los datos de la muralla en la tabla del README (no se encontró artículo de la muralla cristiana).
+- Ver el plano de Tosca y los grabados: toda la revisión de monumentos se hizo sobre textos.
 - Sustituir Wikipedia por fuentes primarias o bibliografía donde importe.
 - Revisar las traducciones al valenciano y al inglés con hablantes nativos.
 - Contrastar la forma de la barca de la Albufera y si tiene sentido en el Turia.

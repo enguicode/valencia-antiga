@@ -35,8 +35,8 @@ La interfaz deja la pantalla casi libre: arriba a la izquierda, la cuenta de pun
 ## Qué hay en la escena
 
 - **El río:** el curso real del viejo cauce, con agua animada, pretiles de piedra con bolas, escaleras y un azud que cierra el extremo de aguas arriba.
-- **La muralla:** el perímetro completo, unos 4,7 km, con una torre cada 70 m y siete puertas: Portal Nou, Serrans, Trinitat, Real y de la Mar en el lado del río, más Quart y Sant Vicent.
-- **Los cinco puentes históricos:** Sant Josep, Serrans, Trinitat, Real y de la Mar, con sus arcos, tajamares y rampas.
+- **La muralla:** el perímetro completo, unos 4,7 km, de 10 m de alto, con torres redondas solo en el frente del río y siete puertas, cada una con su forma: Portal Nou, Serrans, Trinitat, Real y de la Mar en el lado del río, más Quart y Sant Vicent.
+- **Los cinco puentes históricos:** Sant Josep, Serrans, Trinitat, Real y de la Mar, cada uno con su número y forma de arcos, su ancho, sus tajamares y sus casalicios o estatuas.
 - **Edificios singulares:** el Micalet, la Seu, la Lonja, el Palau del Real, los conventos de la Trinitat, Sant Pius V, Sant Doménec y la Saïdia, y quince iglesias.
 - **Relleno y vida:** 2.600 casas, árboles, siete barcas más, lavanderas, humo de chimeneas y pájaros.
 - **Luz y sonido:** hora del día a elegir, sombras, reflejo del cielo en el agua, luces nocturnas, y agua y campana sintetizadas.
@@ -123,7 +123,9 @@ Estado de los datos:
 | Curso del río y perímetro de la muralla | Aproximados y suavizados |
 | Datos de las doce fichas | Contrastados con Wikipedia en español, una fuente secundaria |
 | Muralla cristiana: levantada en 1356, derribo iniciado en 1865 | De memoria; solo consta en Wikipedia que la Puerta del Mar cayó en 1868 |
-| Forma de los edificios, texturas, barcas, torres, casas, luces | Esbozo o invención |
+| Forma de puertas, puentes, Micalet, Seu, Palau del Real, Trinitat y Sant Pius V | Rehecha con lo que dicen las fuentes; las medidas que faltan, estimadas |
+| Navegar en barca por el Turia | Licencia: el río no era navegable hacia 1700 |
+| Texturas, casas, iglesias menores, luces | Esbozo o invención |
 | Traducciones al valenciano y al inglés | Hechas sin revisión de un hablante nativo |
 
 ## Historia del proyecto
@@ -147,6 +149,7 @@ Después de la v1.0:
 - Puntos de interés como aros a los que hay que acercarse, con cámara que enfoca o vuela al sitio y cuaderno de recapitulación.
 - Paso real bajo los puentes y más detalle en edificios, puertas y puentes.
 - Interfaz nueva: mandos táctiles, menú desplegable bajo el mapa, mapa ampliable.
+- Revisión documentada de cada monumento, con las maquetas rehechas.
 - Tres idiomas.
 
 ## Pendiente
@@ -154,7 +157,7 @@ Después de la v1.0:
 - **Probar en móviles reales.** Casi todo se ha comprobado en un navegador automatizado, lento y sin sonido: faltan la fluidez, los mandos táctiles y cómo suena.
 - **Medir el coste gráfico.** Las texturas, las sombras y el detalle han subido mucho la carga; lo primero a recortar serían los árboles.
 - **Cotejar con el plano de Tosca** el trazado, las puertas y los puentes.
-- **Mejores fuentes** que Wikipedia para las fichas, y contrastar el número de arcos de Sant Josep, Trinitat y Real.
+- **Mejores fuentes** que Wikipedia para las fichas.
 - **Fichas que faltan:** Portal Nou, Portal de la Trinitat y Portal del Real no tienen porque no se encontró fuente.
 - **Revisar las traducciones** con alguien que hable valenciano e inglés.
 

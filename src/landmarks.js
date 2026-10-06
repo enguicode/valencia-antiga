@@ -13,6 +13,9 @@ const PALE = new THREE.Color(0xe2d3b0);
 const ROOF = new THREE.Color(COLORS.roofs[0]);
 const TILE_BLUE = new THREE.Color(0x3f6f9f);
 const DARK = new THREE.Color(0x2f2720); // openings: windows, doors, belfries
+const ALABASTER = new THREE.Color(0xf6ecd2); // the cathedral lantern's translucent windows
+const RENDER = new THREE.Color(0xe9dcbc); // limewashed walls
+const BRICK = new THREE.Color(0xb98562);
 
 // Openings set into a wall are thin dark slabs standing just proud of it.
 // These helpers lay them out; `yaw` turns a slab to face out of a side wall.
@@ -28,13 +31,13 @@ function windowRow(add, { from, to, step, y, z, width, height }) {
 // One opening on each face of a tower with `sides` faces. A square tower is
 // a box, whose faces look along the axes; the polygonal ones are prisms whose
 // first face is half a step round from there.
-function ringOfOpenings(add, { x, y, z, sides, apothem, width, height }) {
+function ringOfOpenings(add, { x, y, z, sides, apothem, width, height, color = DARK }) {
   const firstFace = sides === 4 ? 0 : 0.5;
   for (let k = 0; k < sides; k++) {
     const angle = ((k + firstFace) / sides) * Math.PI * 2;
     const outX = Math.sin(angle);
     const outZ = Math.cos(angle);
-    add('box', [x + outX * apothem, y, z + outZ * apothem], [0.4, height, width], DARK, yawTowards(outX, outZ));
+    add('box', [x + outX * apothem, y, z + outZ * apothem], [0.4, height, width], color, yawTowards(outX, outZ));
   }
 }
 
@@ -74,46 +77,94 @@ function createSolids() {
 const RIDGE_ALONG_X = Math.PI / 2;
 
 const MODELS = {
+  // The cathedral's bell tower: an octagonal prism 50.85 m to the terrace,
+  // the same as its perimeter, in four storeys. Around 1700 the pierced
+  // Gothic parapet was still there and the stone bell gable was not yet
+  // finished, so a plain bell frame stands in for it.
   micalet(add) {
-    add('oct', [0, 0, 0], [14, 51, 14], STONE);
-    // String courses dividing the shaft into its storeys
-    for (const y of [12.5, 25, 37]) add('oct', [0, y, 0], [14.8, 0.7, 14.8], PALE);
-    // The belfry: a tall opening on each of the eight faces
-    ringOfOpenings(add, { x: 0, y: 39, z: 0, sides: 8, apothem: 6.5, width: 2.4, height: 8.5 });
-    // Traceried crown, terrace and bell gable
-    add('oct', [0, 48.6, 0], [15, 2.4, 15], PALE);
-    add('oct', [0, 51, 0], [15.6, 1.4, 15.6], PALE);
+    const across = 16.6; // corner to corner
+    const height = 50.85;
+    const corner = across / 2;
+    const flat = corner * 0.924;
+    add('oct', [0, 0, 0], [across, height, across], STONE);
+    // A slim buttress up each of the eight edges
     for (let k = 0; k < 8; k++) {
       const angle = (k / 8) * Math.PI * 2;
-      add('box', [Math.sin(angle) * 7.3, 52.4, Math.cos(angle) * 7.3], [0.9, 2.6, 0.9], PALE);
+      add('box', [Math.sin(angle) * (corner - 0.1), 0, Math.cos(angle) * (corner - 0.1)], [1.1, height, 1.1], STONE, yawTowards(Math.sin(angle), Math.cos(angle)));
     }
-    add('box', [0, 52.4, 0], [5, 8, 1.6], STONE);
-    add('box', [0, 55, 0], [1.8, 3, 1.9], DARK);
+    // Mouldings between the storeys: blind, the "prison", the ringer's house, the bells
+    for (const y of [14, 25, 36]) add('oct', [0, y, 0], [across + 0.9, 0.7, across + 0.9], PALE);
+    const window = (face, y, tall) => {
+      const angle = ((face + 0.5) / 8) * Math.PI * 2;
+      add('box', [Math.sin(angle) * (flat + 0.05), y, Math.cos(angle) * (flat + 0.05)], [0.4, tall, 1.3], DARK, yawTowards(Math.sin(angle), Math.cos(angle)));
+    };
+    window(1, 18, 3);
+    window(2, 29, 3);
+    window(6, 29, 3);
+    // The bell chamber: one tall opening on every face, with a moulding over them
+    ringOfOpenings(add, { x: 0, y: 38, z: 0, sides: 8, apothem: flat + 0.05, width: 2.8, height: 9.5 });
+    add('oct', [0, 48.3, 0], [across + 0.7, 0.6, across + 0.7], PALE);
+    // Terrace with its pierced parapet
+    add('oct', [0, height, 0], [across + 1.2, 0.5, across + 1.2], PALE);
+    for (let k = 0; k < 24; k++) {
+      const angle = (k / 24) * Math.PI * 2;
+      add('box', [Math.sin(angle) * (flat + 0.3), height + 0.5, Math.cos(angle) * (flat + 0.3)], [0.45, 1.7, 0.45], PALE, yawTowards(Math.sin(angle), Math.cos(angle)));
+    }
+    for (let k = 0; k < 8; k++) {
+      const angle = (k / 8) * Math.PI * 2;
+      add('box', [Math.sin(angle) * corner, height + 0.5, Math.cos(angle) * corner], [0.9, 3.2, 0.9], PALE);
+    }
+    // Bell frame: two piers and a beam, with the hours bell hung between them
+    for (const x of [-2.1, 2.1]) add('box', [x, height + 0.5, 0], [1, 8, 1.3], STONE);
+    add('box', [0, height + 8.5, 0], [5.8, 0.8, 1.5], STONE);
+    add('box', [0, height + 5.4, 0], [1.7, 2.3, 1.7], DARK);
   },
 
-  cathedral(add, { length = 95, width = 28 }) {
-    const crossing = length * 0.18;
-    add('box', [0, 0, 0], [length, 22, width], STONE);
-    add('gable', [0, 22, 0], [width, 5, length], ROOF, RIDGE_ALONG_X);
-    add('box', [crossing, 0, 0], [width * 0.8, 22, width * 2.1], STONE);
-    add('gable', [crossing, 22, 0], [width * 0.8, 5, width * 2.1], ROOF);
-    add('oct', [crossing, 22, 0], [17, 18, 17], PALE);
-    add('cone', [crossing, 40, 0], [17, 3, 17], ROOF);
-    add('oct', [length / 2, 0, 0], [width, 20, width], STONE);
-    // The lantern over the crossing is nearly all window
-    ringOfOpenings(add, { x: crossing, y: 25, z: 0, sides: 8, apothem: 7.9, width: 3.4, height: 5.5 });
-    ringOfOpenings(add, { x: crossing, y: 32.5, z: 0, sides: 8, apothem: 7.9, width: 3.4, height: 5.5 });
-    // Buttresses and tall windows down both sides of the nave
+  // The cathedral: 94 m long and 53.65 m across the transept, apse to the
+  // north (+X here). Flat terraces rather than pitched roofs, Gothic pinnacles
+  // still in place, and the two-storey lantern with its alabaster windows.
+  cathedral(add, { length = 94, width = 28 }) {
+    const nave = 23;
+    const transept = 53.65;
+    const crossing = length * 0.2;
+    const west = -1; // local -Z looks west, towards the Apostles' door
+    add('box', [0, 0, 0], [length, nave, width], STONE);
+    add('box', [0, nave, 0], [length + 0.6, 0.9, width + 0.6], PALE);
+    add('box', [crossing, 0, 0], [width * 0.78, nave, transept], STONE);
+    add('box', [crossing, nave, 0], [width * 0.78 + 0.6, 0.9, transept + 0.6], PALE);
+    // Lantern: two storeys of eight windows each, then a low roof
+    add('oct', [crossing, nave, 0], [18, 17.5, 18], PALE);
+    for (const y of [nave + 1.2, nave + 9.4]) {
+      ringOfOpenings(add, { x: crossing, y, z: 0, sides: 8, apothem: 8.35, width: 4.4, height: 6.6, color: ALABASTER });
+    }
+    add('oct', [crossing, nave + 8.4, 0], [18.8, 0.6, 18.8], STONE);
+    add('oct', [crossing, nave + 17.5, 0], [18.8, 0.7, 18.8], STONE);
+    add('cone', [crossing, nave + 18.2, 0], [18, 2.4, 18], ROOF);
+    // Apse with its ring of chapels
+    add('oct', [length / 2 - 4, 0, 0], [width * 1.05, nave - 2, width * 1.05], STONE);
+    add('oct', [length / 2 - 4, 0, 0], [width * 1.55, 11, width * 1.55], STONE);
+    ringOfOpenings(add, { x: length / 2 - 4, y: 12.5, z: 0, sides: 8, apothem: width * 0.486, width: 2.2, height: 6 });
+    // The Obra Nova: three tiers of open arcades beside the apse, facing the square
+    add('box', [length / 2 - 12, 0, west * (width / 2 + 9)], [15, 15, 9], PALE);
+    for (const y of [1.2, 6, 10.6]) {
+      windowRow(add, { from: length / 2 - 17.5, to: length / 2 - 6.5, step: 2.75, y, z: west * (width / 2 + 13.55), width: 1.7, height: 3.4 });
+    }
+    // Buttresses, pinnacles and tall windows along the nave
     for (const side of [-1, 1]) {
       for (let x = -length / 2 + 5; x < crossing - width * 0.5; x += 9) {
-        add('box', [x, 0, side * (width / 2 + 1.4)], [1.8, 19, 2.8], STONE);
-        add('box', [x + 4.5, 9, side * (width / 2 + 0.05)], [0.35, 8, 2.2], DARK, FACING_Z);
+        add('box', [x, 0, side * (width / 2 + 1.4)], [1.8, nave - 2, 2.8], STONE);
+        add('pyramid', [x, nave - 2, side * (width / 2 + 1.4)], [1.6, 4, 1.6], PALE);
+        add('box', [x + 4.5, 10, side * (width / 2 + 0.05)], [0.35, 8, 2.2], DARK, FACING_Z);
       }
+      // Transept doors: the Apostles' to the west, with its rose window; the Almoina to the east
+      const end = side * (transept / 2 + 0.05);
+      add('box', [crossing, 0, end], [0.4, 9, 5.5], DARK, FACING_Z);
+      add('box', [crossing, 0, side * (transept / 2 + 0.35)], [0.5, 11.5, 8.5], PALE, FACING_Z);
+      if (side === west) add('oct', [crossing, 13.5, end - 0.4], [6.45, 0.9, 6.45], ALABASTER);
     }
-    ringOfOpenings(add, { x: length / 2, y: 8, z: 0, sides: 8, apothem: width * 0.462, width: 2.4, height: 7 });
-    // West door
-    add('box', [-length / 2 - 0.05, 0, 0], [0.4, 10, 6], DARK);
-    add('box', [-length / 2 - 0.3, 0, 0], [0.5, 13, 9], PALE);
+    // Chapter house by the foot of the nave, and the plain south front of 1700
+    add('box', [-length / 2 + 8, 0, -west * (width / 2 + 8)], [13, 16, 13], STONE);
+    add('box', [-length / 2 - 0.05, 0, 0], [0.4, 8, 4.5], DARK);
   },
 
   llotja(add) {
@@ -124,31 +175,126 @@ const MODELS = {
     add('box', [-30, 0, 0], [22, 16, 19], STONE);
   },
 
+  // The Palau del Real, pulled down in 1810. What is documented: a long main
+  // front towards the river with a gate between two strong towers, a
+  // ground-floor arcade under a balconied gallery, and at one end the older
+  // palace, a square with four corner towers, one of them spired. The sizes
+  // are estimates. +Z looks at the river and -X is upstream.
   palace(add) {
-    add('box', [0, 0, 0], [96, 18, 26], PALE);
-    add('gable', [0, 18, 0], [26, 4, 96], ROOF, RIDGE_ALONG_X);
-    add('box', [-20, 0, 24], [50, 14, 24], PALE);
-    add('gable', [-20, 14, 24], [24, 3.5, 50], ROOF, RIDGE_ALONG_X);
-    for (const x of [-42, 42]) {
-      for (const z of [-11, 11]) {
-        add('box', [x, 0, z], [9, 27, 9], STONE);
-        add('pyramid', [x, 27, z], [10, 5, 10], ROOF);
-        add('box', [x, 18, z], [9.6, 0.6, 9.6], PALE);
-        ringOfOpenings(add, { x, y: 20.5, z, sides: 4, apothem: 4.55, width: 1.6, height: 3.2 });
+    const front = 15; // z of the main facade
+    // The Real Nou
+    add('box', [12, 0, 0], [84, 15, 30], RENDER);
+    add('gable', [12, 15, 0], [30, 5, 84], ROOF, RIDGE_ALONG_X);
+    add('box', [12, 6.6, front + 0.3], [84, 0.5, 0.9], PALE);
+    add('box', [12, 14.6, 0], [85, 0.6, 31], STONE);
+    windowRow(add, { from: -27, to: 51, step: 4.3, y: 0.4, z: front + 0.05, width: 2.6, height: 4.6 });
+    windowRow(add, { from: -27, to: 51, step: 4.3, y: 8, z: front + 0.05, width: 1.5, height: 3.4 });
+    windowRow(add, { from: -27, to: 51, step: 4.3, y: 12.4, z: front + 0.05, width: 1.1, height: 1.2 });
+    windowRow(add, { from: -27, to: 51, step: 6, y: 8, z: -front - 0.05, width: 1.5, height: 3.2 });
+    // The gate between its two towers; the royal arms on one of them
+    for (const x of [4.5, 19.5]) {
+      add('box', [x, 0, front + 2], [8.5, 26, 8.5], STONE);
+      add('box', [x, 19, front + 2], [9.1, 0.6, 9.1], PALE);
+      add('pyramid', [x, 26, front + 2], [9.4, 6, 9.4], ROOF);
+      ringOfOpenings(add, { x, y: 21, z: front + 2, sides: 4, apothem: 4.3, width: 1.6, height: 3.4 });
+    }
+    add('box', [12, 0, front + 0.2], [0.5, 8, 5.2], DARK, FACING_Z);
+    add('box', [12, 0, front + 0.8], [0.5, 10, 7], STONE, FACING_Z);
+    add('box', [19.5, 11, front + 6.3], [0.3, 3, 2.6], PALE, FACING_Z);
+    // The Real Vell at the upstream end
+    add('box', [-52, 0, 2], [34, 13, 34], RENDER);
+    add('gable', [-52, 13, 2], [34, 4.5, 34], ROOF, RIDGE_ALONG_X);
+    windowRow(add, { from: -63, to: -41, step: 5.5, y: 6, z: 19.05, width: 1.4, height: 3 });
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => {
+      const x = -52 + sx * 15;
+      const z = 2 + sz * 15;
+      add('box', [x, 0, z], [7, 21, 7], STONE);
+      ringOfOpenings(add, { x, y: 16, z, sides: 4, apothem: 3.55, width: 1.3, height: 2.8 });
+      if (i === 2) {
+        add('cone', [x, 21, z], [5, 13, 5], ROOF); // the spired tower
+      } else {
+        add('pyramid', [x, 21, z], [7.8, 4.5, 7.8], ROOF);
       }
+    });
+    // Garden walls behind
+    for (const [x, z, sx, sz] of [[-8, -95, 150, 1], [-83, -55, 1, 80], [67, -55, 1, 80]]) {
+      add('box', [x, 0, z], [sx, 3.6, sz], RENDER);
     }
-    // Two storeys of windows on both long fronts, a cornice and the main door
-    for (const z of [-13.05, 13.05]) {
-      windowRow(add, { from: -33, to: 33, step: 6, y: 4, z, width: 1.7, height: 3 });
-      windowRow(add, { from: -33, to: 33, step: 6, y: 11, z, width: 1.7, height: 3.6 });
-    }
-    add('box', [0, 17.4, 0], [97, 0.7, 27], STONE);
-    add('box', [0, 0, -13.1], [0.4, 7.5, 5], DARK, FACING_Z);
-    add('box', [0, 0, -13.4], [0.5, 9.5, 8], STONE, FACING_Z);
-    windowRow(add, { from: -40, to: 0, step: 5, y: 5, z: 36.05, width: 1.5, height: 3 });
   },
 
-  convent(add, { length }) {
+  // The Trinitat: a tall, buttressed single-nave church lying along the
+  // river with its apse downstream, entered from a forecourt on the river
+  // side through a pinnacled Gothic door; a two-storey cloister behind, and a
+  // long blank wall towards the water. The belfry is a guess: no source
+  // describes it. +Z looks at the river.
+  trinitat(add) {
+    add('box', [0, 0, 6], [40, 16, 12], RENDER);
+    add('gable', [0, 16, 6], [12, 4.5, 40], ROOF, RIDGE_ALONG_X);
+    add('oct', [20, 0, 6], [12.5, 16, 12.5], RENDER);
+    add('cone', [20, 16, 6], [12.5, 4, 12.5], ROOF);
+    for (let x = -16; x <= 16; x += 8) {
+      add('box', [x, 0, 12.9], [1.5, 13, 2], STONE);
+      add('box', [x, 0, -0.9], [1.5, 13, 2], STONE);
+      if (x < 16) add('box', [x + 4, 8.5, 12.05], [0.35, 5, 1.3], DARK, FACING_Z);
+    }
+    // The door: archivolts under an ogee arch, between pinnacles
+    add('box', [-4, 0, 12.5], [0.5, 9.5, 6.4], STONE, FACING_Z);
+    add('box', [-4, 0, 12.8], [0.4, 6.5, 3.4], DARK, FACING_Z);
+    add('pyramid', [-4, 9.5, 12.5], [3, 3, 1], PALE);
+    for (const x of [-7.6, -0.4]) {
+      add('box', [x, 0, 12.7], [0.9, 10, 0.9], PALE);
+      add('pyramid', [x, 10, 12.7], [1, 2.6, 1], PALE);
+    }
+    // Cloister, two storeys round a court, and the belfry
+    add('box', [-2, 0, -17], [36, 9.5, 30], RENDER);
+    add('box', [-2, 9.5, -17], [37, 0.8, 31], ROOF);
+    windowRow(add, { from: -17, to: 13, step: 4.3, y: 5.6, z: -1.95, width: 1.6, height: 2.6 });
+    add('box', [15, 0, -3], [4.6, 23, 4.6], STONE);
+    add('pyramid', [15, 23, -3], [5.4, 4.5, 5.4], ROOF);
+    ringOfOpenings(add, { x: 15, y: 17.5, z: -3, sides: 4, apothem: 2.35, width: 1.4, height: 3.6 });
+    // Perimeter wall with its gate towards the river, and the cart yard
+    add('box', [0, 0, 27], [84, 4.2, 1], RENDER);
+    add('box', [-42, 0, 6], [1, 4.2, 43], RENDER);
+    add('box', [42, 0, 6], [1, 4.2, 43], RENDER);
+    add('box', [-4, 0, 27.3], [0.5, 3.4, 3], DARK, FACING_Z);
+    add('box', [-30, 0, 10], [18, 6, 10], RENDER);
+    windowRow(add, { from: -35, to: -25, step: 5, y: 0.3, z: 15.05, width: 3.4, height: 3.6 });
+  },
+
+  // Sant Pius V as it stood when work stopped in 1699: the river range with
+  // its two corner towers and three tiers of windows, in bare brick on a
+  // stone plinth; the courtyard unfinished; no church and no dome, which came
+  // decades later. +Z looks at the river.
+  santPius(add) {
+    add('box', [0, 0, 22], [56, 16, 12], BRICK);
+    add('box', [0, 0, 22], [56.4, 1.6, 12.4], STONE);
+    add('gable', [0, 16, 22], [12, 3.5, 56], ROOF, RIDGE_ALONG_X);
+    add('box', [0, 15.6, 28.2], [56, 0.6, 0.8], PALE);
+    for (const y of [3, 7.4, 11.8]) {
+      windowRow(add, { from: -18, to: 18, step: 4.5, y, z: 28.05, width: 1.5, height: 2.6 });
+    }
+    for (const x of [-24.5, 24.5]) {
+      add('box', [x, 0, 23], [9, 22, 9], BRICK);
+      add('box', [x, 0, 23], [9.4, 1.6, 9.4], STONE);
+      add('box', [x, 22, 23], [9.8, 1, 9.8], PALE); // flat parapet, no spire
+      for (const [dx, dz] of [[-4.3, -4.3], [4.3, -4.3], [-4.3, 4.3], [4.3, 4.3]]) add('box', [x + dx, 23, 23 + dz], [0.8, 1.4, 0.8], PALE);
+      ringOfOpenings(add, { x, y: 17, z: 23, sides: 4, apothem: 4.55, width: 1.5, height: 2.8 });
+      for (const y of [3, 7.4, 11.8]) add('box', [x, y, 27.55], [0.35, 2.6, 1.5], DARK, FACING_Z);
+    }
+    // One side range finished, the other only begun, the far range half built
+    add('box', [22, 0, -2], [12, 15, 36], BRICK);
+    add('gable', [22, 15, -2], [12, 3, 36], ROOF);
+    add('box', [-22, 0, -2], [12, 5.5, 36], BRICK);
+    add('box', [6, 0, -24], [44, 9, 10], BRICK);
+    // Scaffolding poles on the unfinished side
+    for (let z = -16; z <= 12; z += 7) add('box', [-29, 0, z], [0.3, 11, 0.3], DARK);
+    add('box', [-29, 8, -2], [0.3, 0.3, 30], DARK);
+  },
+
+  convent(add, landmark) {
+    if (landmark.id === 'trinitat') return MODELS.trinitat(add);
+    if (landmark.id === 'sant-pius') return MODELS.santPius(add);
+    const { length } = landmark;
     const size = clamp(length ?? 70, 50, 90) * 0.6;
     add('box', [0, 0, -12], [size, 16, 13], PALE);
     add('gable', [0, 16, -12], [13, 4, size], ROOF, RIDGE_ALONG_X);

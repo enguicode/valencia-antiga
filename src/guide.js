@@ -123,7 +123,12 @@ export function createGuide(points, layout, path, camera, elements) {
       ({ x, z } = landmark);
       kind = landmark.kind;
     }
-    const { s, lateral } = path.project(x, z);
+    const { s, lateral, sample } = path.project(x, z);
+    // Buildings are shown from the river, which is the side they are seen from.
+    if (!facing) {
+      const reach = Math.hypot(sample.x - x, sample.z - z) || 1;
+      facing = [(sample.x - x) / reach, (sample.z - z) / reach];
+    }
     return {
       s: s + offset,
       side: type === 'bridge' ? 0 : Math.sign(lateral),

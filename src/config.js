@@ -26,7 +26,7 @@ export const FOG = { near: 150, far: 800 };
 export const COLORS = {
   skyTop: 0x5f97d2,
   horizon: 0xf0e2c6,
-  water: 0x5a9a96,
+  water: 0x3f746e,
   grass: 0x86a052,
   stone: 0xcdb78d,
   stoneDark: 0x3a2f24,

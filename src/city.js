@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BANK, COLORS, createRandom } from './config.js';
 import { createInstances } from './instancing.js';
 import { landmarkClearings } from './landmarks.js';
+import { TEXTURES, createSurface } from './materials.js';
 
 // Generic houses filling the walled city. They are placeholders for volume:
 // there is no street plan behind them.
@@ -82,17 +83,21 @@ export function createCity(layout) {
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
-    new THREE.MeshStandardMaterial({ color: COLORS.grass, roughness: 1, side: THREE.DoubleSide }),
+    createSurface('mottle', 9, { color: 0xb8a67e, side: THREE.DoubleSide }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = BANK.height;
 
-  const material = new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true });
+  // House fronts use ordinary UVs: one drawing of windows and a door per wall.
   const group = new THREE.Group();
   group.add(
     floor,
-    createInstances(new THREE.BoxGeometry(1, 1, 1), material, bodies),
-    createInstances(roofGeometry, material, roofs),
+    createInstances(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshStandardMaterial({ map: TEXTURES.facade, roughness: 0.95 }),
+      bodies,
+    ),
+    createInstances(roofGeometry, createSurface('tiles', 3), roofs),
   );
   group.userData.chimneys = chimneys;
   return group;

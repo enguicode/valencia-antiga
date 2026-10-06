@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIVER, COLORS } from './config.js';
 import { waveHeight } from './water.js';
+import { TEXTURES } from './materials.js';
 
 const MAX_SPEED = 9;
 const MAX_REVERSE = -2.5;
@@ -8,86 +10,239 @@ const ACCELERATION = 6;
 const DRAG = 0.6;
 const TURN_RATE = 0.9;
 
-// Shared by every boat so the glow that keeps the sail readable in daylight
-// can be turned down at night.
-const SAIL_MATERIAL = new THREE.MeshStandardMaterial({
-  color: COLORS.sail,
-  emissive: COLORS.sail,
-  emissiveIntensity: 0.35,
-  roughness: 1,
-  side: THREE.DoubleSide,
-});
+// A small lateen-rigged river boat, about seven metres long. The bow points
+// to +Z, +X is the port side and the waterline sits at y = 0.
+const HULL = { length: 7, beam: 2.3, stations: 18, girth: 12 };
+
+// Hull lines as functions of t, from -1 at the stern to +1 at the bow.
+const halfBeam = (t) => (HULL.beam / 2) * (1 - Math.abs(t) ** (t < 0 ? 3 : 2.2)) ** 0.75;
+const sheer = (t) => 0.55 + 0.3 * t * t + 0.18 * Math.max(t, 0) ** 3;
+const keel = (t) => -0.36 + 0.5 * Math.abs(t) ** 3;
+const stationZ = (t) => (t * HULL.length) / 2;
+
+function sharedMaterials() {
+  const planks = TEXTURES.planks.clone();
+  planks.repeat.set(2, 1.6);
+  return {
+    hull: new THREE.MeshStandardMaterial({ map: planks, color: 0x8a5a34, roughness: 0.8, side: THREE.DoubleSide }),
+    trim: new THREE.MeshStandardMaterial({ color: 0x4a2f1c, roughness: 0.7 }),
+    deck: new THREE.MeshStandardMaterial({
+      map: TEXTURES.planks,
+      color: 0xb08a5c,
+      roughness: 0.9,
+      side: THREE.DoubleSide,
+    }),
+    // A touch of glow keeps the sail readable when it is seen against the light.
+    sail: new THREE.MeshStandardMaterial({
+      map: TEXTURES.cloth,
+      color: COLORS.sail,
+      emissive: COLORS.sail,
+      emissiveIntensity: 0.1,
+      roughness: 1,
+      side: THREE.DoubleSide,
+    }),
+    shirt: new THREE.MeshStandardMaterial({ color: 0xe6dcc6, roughness: 1 }),
+    breeches: new THREE.MeshStandardMaterial({ color: 0x4a4038, roughness: 1 }),
+    skin: new THREE.MeshStandardMaterial({ color: 0xc9946f, roughness: 0.9 }),
+    straw: new THREE.MeshStandardMaterial({ color: 0xd9b96a, roughness: 1 }),
+    sack: new THREE.MeshStandardMaterial({ map: TEXTURES.cloth, color: 0xb9a27a, roughness: 1 }),
+    rope: new THREE.LineBasicMaterial({ color: 0x3a2e22 }),
+  };
+}
+const MATERIALS = sharedMaterials();
 
 export function setSailLight(light) {
-  SAIL_MATERIAL.emissiveIntensity = 0.35 * light;
+  MATERIALS.sail.emissiveIntensity = 0.1 * light;
 }
 
-function createHull(material) {
-  // Top-down outline, bow towards +Y of the shape (which becomes +Z in the world).
-  const outline = new THREE.Shape();
-  outline.moveTo(-0.9, -2.6);
-  outline.lineTo(0.9, -2.6);
-  outline.lineTo(1.15, 0.4);
-  outline.lineTo(0, 3.2);
-  outline.lineTo(-1.15, 0.4);
-  outline.closePath();
-
-  const depth = 0.9;
-  const geometry = new THREE.ExtrudeGeometry(outline, { depth, bevelEnabled: false });
-  geometry.rotateX(Math.PI / 2);
-
-  // Narrow the keel so the hull is not a plain prism.
-  const positions = geometry.attributes.position;
-  for (let i = 0; i < positions.count; i++) {
-    if (positions.getY(i) < -depth / 2) {
-      positions.setX(i, positions.getX(i) * 0.5);
-      positions.setZ(i, positions.getZ(i) * 0.85);
+function createHullGeometry() {
+  const positions = [];
+  const uvs = [];
+  const indices = [];
+  for (let i = 0; i <= HULL.stations; i++) {
+    const t = (i / HULL.stations) * 2 - 1;
+    for (let j = 0; j <= HULL.girth; j++) {
+      const a = (j / HULL.girth) * 2 - 1; // -1 and +1 are the gunwales, 0 is the keel
+      positions.push(
+        halfBeam(t) * Math.sign(a) * Math.abs(a) ** 0.6,
+        keel(t) + (sheer(t) - keel(t)) * Math.abs(a) ** 2.2,
+        stationZ(t),
+      );
+      uvs.push(i / HULL.stations, j / HULL.girth);
     }
   }
-  geometry.translate(0, 0.5, 0);
+  const row = HULL.girth + 1;
+  for (let i = 0; i < HULL.stations; i++) {
+    for (let j = 0; j < HULL.girth; j++) {
+      const a = i * row + j;
+      indices.push(a, a + row, a + 1, a + 1, a + row, a + row + 1);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
   geometry.computeVertexNormals();
-  return new THREE.Mesh(geometry, material);
+  return geometry;
 }
 
-function createRigging(wood) {
-  const group = new THREE.Group();
-
-  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 4.2, 6), wood);
-  mast.position.set(0, 2.6, 0.5);
-  group.add(mast);
-
-  // Lateen sail: a triangle hanging from a slanted yard.
-  const tack = new THREE.Vector3(0, 1.3, 2.5);
-  const peak = new THREE.Vector3(0, 5.0, -1.3);
-  const clew = new THREE.Vector3(1.5, 1.2, -1.8); // sheeted out to port so the sail shows from astern
-
-  const sailGeometry = new THREE.BufferGeometry().setFromPoints([tack, peak, clew]);
-  sailGeometry.computeVertexNormals();
-  const sail = new THREE.Mesh(sailGeometry, SAIL_MATERIAL);
-  sail.position.x = 0.1;
-  group.add(sail);
-
-  const yardVector = peak.clone().sub(tack);
-  const yard = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, yardVector.length() + 0.4, 5), wood);
-  yard.position.copy(tack).add(peak).multiplyScalar(0.5);
-  yard.position.x = 0.1;
-  yard.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), yardVector.normalize());
-  group.add(yard);
-
-  return group;
+// Floorboards: the hull's outline, narrowed, laid flat near the bottom.
+function createSoleGeometry() {
+  const outline = new THREE.Shape();
+  const steps = 14;
+  for (let i = 0; i <= steps; i++) {
+    const t = -0.86 + (1.72 * i) / steps;
+    outline[i ? 'lineTo' : 'moveTo'](halfBeam(t) * 0.72, stationZ(t));
+  }
+  for (let i = steps; i >= 0; i--) {
+    const t = -0.86 + (1.72 * i) / steps;
+    outline.lineTo(-halfBeam(t) * 0.72, stationZ(t));
+  }
+  const geometry = new THREE.ShapeGeometry(outline);
+  geometry.rotateX(Math.PI / 2); // the shape's y becomes z
+  geometry.translate(0, 0.02, 0);
+  return geometry;
 }
+
+function createSailGeometry(tack, peak, clew) {
+  const rows = 9;
+  const positions = [];
+  const uvs = [];
+  const indices = [];
+  const indexOf = [];
+  for (let i = 0; i <= rows; i++) {
+    indexOf.push([]);
+    for (let j = 0; j <= rows - i; j++) {
+      const u = i / rows;
+      const v = j / rows;
+      // The belly is deepest in the middle of the cloth and nil at its edges.
+      const belly = 27 * u * v * (1 - u - v) * 0.6;
+      indexOf[i].push(positions.length / 3);
+      positions.push(
+        tack.x + u * (peak.x - tack.x) + v * (clew.x - tack.x) + belly,
+        tack.y + u * (peak.y - tack.y) + v * (clew.y - tack.y),
+        tack.z + u * (peak.z - tack.z) + v * (clew.z - tack.z),
+      );
+      uvs.push(u, v);
+    }
+  }
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < rows - i; j++) {
+      indices.push(indexOf[i][j], indexOf[i + 1][j], indexOf[i][j + 1]);
+      if (j < rows - i - 1) indices.push(indexOf[i + 1][j], indexOf[i + 1][j + 1], indexOf[i][j + 1]);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// A spar between two points.
+function spar(from, to, radius) {
+  const axis = to.clone().sub(from);
+  const geometry = new THREE.CylinderGeometry(radius * 0.8, radius, axis.length(), 8);
+  geometry.applyQuaternion(
+    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.clone().normalize()),
+  );
+  geometry.translate(...from.clone().add(to).multiplyScalar(0.5).toArray());
+  return geometry;
+}
+
+// Everything is built once: each boat is a handful of meshes over these
+// shared geometries, one per material.
+function createParts() {
+  const pieces = {};
+  const add = (material, geometry, x = 0, y = 0, z = 0) => {
+    const piece = geometry.index ? geometry.toNonIndexed() : geometry;
+    piece.translate(x, y, z);
+    (pieces[material] ??= []).push(piece);
+  };
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  add('hull', createHullGeometry());
+  add('deck', createSoleGeometry());
+
+  // Gunwales, stem and stern posts
+  for (const side of [-1, 1]) {
+    const rail = [];
+    for (let i = 0; i <= 16; i++) {
+      const t = (i / 16) * 2 - 1;
+      rail.push(v(side * halfBeam(t), sheer(t) + 0.02, stationZ(t)));
+    }
+    add('trim', new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rail), 32, 0.055, 6));
+  }
+  add('trim', new THREE.BoxGeometry(0.09, 0.5, 0.12), 0, sheer(1) + 0.18, stationZ(1) - 0.03);
+  add('trim', new THREE.BoxGeometry(0.09, 0.4, 0.12), 0, sheer(-1) + 0.12, stationZ(-1) + 0.03);
+
+  // Thwarts
+  for (const t of [-0.5, -0.05, 0.42]) {
+    add('deck', new THREE.BoxGeometry(halfBeam(t) * 1.86, 0.06, 0.3), 0, sheer(t) - 0.2, stationZ(t));
+  }
+
+  // Rig: raked mast, yard and a lateen sail sheeted out to port
+  const mastFoot = v(0, 0.05, 0.9);
+  const mastHead = v(0, 5.4, 1.15);
+  const tack = v(0.12, 1.5, 3.3);
+  const peak = v(0.12, 6.2, -1.5);
+  const clew = v(1.35, 1.25, -2.3);
+  add('trim', spar(mastFoot, mastHead, 0.085));
+  add('trim', spar(tack.clone().lerp(peak, -0.05), peak.clone().lerp(tack, -0.04), 0.05));
+  add('sail', createSailGeometry(tack, peak, clew));
+
+  // Rudder and tiller
+  add('trim', new THREE.BoxGeometry(0.06, 0.95, 0.42), 0, 0.02, stationZ(-1) - 0.18);
+  add('trim', spar(v(0, 0.5, stationZ(-1) - 0.1), v(0.1, 0.92, stationZ(-1) + 1.15), 0.035));
+
+  // An oar shipped along the starboard side
+  add('deck', spar(v(-0.55, 0.42, -2.2), v(-0.62, 0.5, 1.9), 0.035));
+  add('deck', new THREE.BoxGeometry(0.16, 0.03, 0.6), -0.63, 0.5, 2.1);
+
+  // The boatman, sitting aft with a hand on the tiller
+  const seat = stationZ(-0.62);
+  add('breeches', new THREE.BoxGeometry(0.36, 0.22, 0.5), 0.12, 0.5, seat + 0.2);
+  add('shirt', new THREE.CapsuleGeometry(0.19, 0.36, 4, 10), 0.12, 0.92, seat);
+  add('shirt', spar(v(0.0, 1.05, seat), v(0.06, 0.9, seat - 0.55), 0.06));
+  add('skin', new THREE.SphereGeometry(0.14, 12, 10), 0.12, 1.38, seat);
+  add('straw', new THREE.CylinderGeometry(0.3, 0.3, 0.025, 14), 0.12, 1.49, seat);
+  add('straw', new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12), 0.12, 1.56, seat);
+
+  // Cargo forward of the mast
+  const sack = () => new THREE.SphereGeometry(0.3, 10, 8).scale(1, 0.62, 1.25);
+  add('sack', sack(), 0.3, 0.24, 1.9);
+  add('sack', sack(), -0.25, 0.24, 2.05);
+  add('sack', sack().rotateY(0.9), 0.05, 0.56, 1.95);
+  add('deck', new THREE.CylinderGeometry(0.24, 0.2, 0.5, 12), -0.32, 0.3, 0.1);
+
+  const geometries = Object.fromEntries(
+    Object.entries(pieces).map(([material, list]) => [material, mergeGeometries(list)]),
+  );
+
+  // Standing and running rigging, as plain lines
+  const lines = [
+    [mastHead, v(halfBeam(0.1), sheer(0.1), stationZ(0.1))],
+    [mastHead, v(-halfBeam(0.1), sheer(0.1), stationZ(0.1))],
+    [mastHead, tack.clone().lerp(peak, 0.45)],
+    [clew, v(0.6, sheer(-0.8), stationZ(-0.8))],
+    [tack, v(0, sheer(1) + 0.3, stationZ(1))],
+  ];
+  const rigging = new THREE.BufferGeometry().setFromPoints(lines.flat());
+
+  return { geometries, rigging };
+}
+
+let parts = null;
 
 export function createBoatModel() {
-  const wood = new THREE.MeshStandardMaterial({ color: COLORS.wood, roughness: 0.9, flatShading: true });
+  parts ??= createParts();
   const model = new THREE.Group();
   model.rotation.order = 'YXZ';
-  model.add(createHull(wood), createRigging(wood));
-
-  for (const z of [-1.4, 1.0]) {
-    const thwart = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.08, 0.3), wood);
-    thwart.position.set(0, 0.56, z);
-    model.add(thwart);
+  for (const [material, geometry] of Object.entries(parts.geometries)) {
+    model.add(new THREE.Mesh(geometry, MATERIALS[material]));
   }
+  model.add(new THREE.LineSegments(parts.rigging, MATERIALS.rope));
   return model;
 }
 
@@ -141,11 +296,11 @@ export function createBoat(path) {
     state.s = s - overshoot;
     state.row = index;
 
-    const bow = waveHeight(state.x + dirX * 2, state.z + dirZ * 2, time);
-    const stern = waveHeight(state.x - dirX * 2, state.z - dirZ * 2, time);
+    const bow = waveHeight(state.x + dirX * 2.5, state.z + dirZ * 2.5, time);
+    const stern = waveHeight(state.x - dirX * 2.5, state.z - dirZ * 2.5, time);
     mesh.position.set(state.x, (bow + stern) / 2, state.z);
     mesh.rotation.y = state.heading;
-    mesh.rotation.x = (stern - bow) * 0.25;
+    mesh.rotation.x = (stern - bow) * 0.2;
     mesh.rotation.z = input.steer * (state.speed / MAX_SPEED) * 0.12;
   }
 

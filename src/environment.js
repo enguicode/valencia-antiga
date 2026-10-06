@@ -3,6 +3,7 @@ import { RIVER, BANK, FOG, COLORS, createRandom } from './config.js';
 import { buildRibbon } from './path.js';
 import { createInstances } from './instancing.js';
 import { PRETIL } from './riverside.js';
+import { createSurface } from './materials.js';
 
 function createSky() {
   const material = new THREE.ShaderMaterial({
@@ -74,12 +75,7 @@ function createBank(path, side) {
     [side * (PRETIL.offset + PRETIL.thickness), BANK.height],
     [side * (half + BANK.extent), BANK.height],
   ]);
-  const material = new THREE.MeshStandardMaterial({
-    color: COLORS.grass,
-    roughness: 1,
-    flatShading: true,
-    side: THREE.DoubleSide,
-  });
+  const material = createSurface('mottle', 9, { color: COLORS.grass, side: THREE.DoubleSide });
   const group = new THREE.Group();
   for (const geometry of [shore, street]) {
     const mesh = new THREE.Mesh(geometry, material);
@@ -87,6 +83,22 @@ function createBank(path, side) {
     group.add(mesh);
   }
   return group;
+}
+
+// A lumpy sphere: each vertex is pushed in or out by an amount that depends
+// only on where it is, so the seam of the sphere stays closed.
+function createCrownGeometry() {
+  const geometry = new THREE.SphereGeometry(2.6, 8, 6);
+  const positions = geometry.attributes.position;
+  const vertex = new THREE.Vector3();
+  for (let i = 0; i < positions.count; i++) {
+    vertex.fromBufferAttribute(positions, i);
+    const bump = Math.sin(vertex.x * 2.3 + vertex.y * 1.7) * Math.cos(vertex.z * 2.1 - vertex.y * 1.3);
+    vertex.multiplyScalar(1 + bump * 0.22);
+    positions.setXYZ(i, vertex.x, vertex.y * 0.85, vertex.z);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 // Orchard trees on the bank opposite the city.
@@ -113,17 +125,23 @@ function createTrees(path, clearings) {
     dummy.position.set(x, BANK.height + scale * 3.8, z);
     dummy.updateMatrix();
     foliage.push({ matrix: dummy.matrix.clone() });
+
+    // A second, smaller mass off to one side keeps the crown from being a ball.
+    dummy.scale.setScalar(scale * 0.7);
+    dummy.position.set(x + Math.cos(i) * scale * 1.5, BANK.height + scale * 4.9, z + Math.sin(i) * scale * 1.5);
+    dummy.updateMatrix();
+    foliage.push({ matrix: dummy.matrix.clone() });
   }
   const group = new THREE.Group();
   group.add(
     createInstances(
-      new THREE.CylinderGeometry(0.3, 0.4, 2, 5),
-      new THREE.MeshStandardMaterial({ color: COLORS.trunk, roughness: 1, flatShading: true }),
+      new THREE.CylinderGeometry(0.3, 0.42, 2, 7),
+      new THREE.MeshStandardMaterial({ color: COLORS.trunk, roughness: 1 }),
       trunks,
     ),
     createInstances(
-      new THREE.IcosahedronGeometry(2.6, 0),
-      new THREE.MeshStandardMaterial({ color: COLORS.foliage, roughness: 1, flatShading: true }),
+      createCrownGeometry(),
+      createSurface('mottle', 2.2, { color: COLORS.foliage }),
       foliage,
     ),
   );
@@ -140,8 +158,7 @@ export function createEnvironment(scene, path, clearings) {
   const hemisphere = new THREE.HemisphereLight(0xd6e6f5, 0x8a7a55, 1.2);
   scene.add(hemisphere);
   const sun = new THREE.DirectionalLight(0xfff1d6, 1.9);
-  sun.position.set(-60, 55, -80);
-  scene.add(sun);
+  scene.add(sun, sun.target);
 
   scene.add(createBank(path, 1), createBank(path, -1), createTrees(path, clearings));
 

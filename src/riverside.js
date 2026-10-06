@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RIVER, BANK, COLORS, yawTowards } from './config.js';
 import { buildRibbon } from './path.js';
 import { createInstances } from './instancing.js';
+import { createSurface } from './materials.js';
 
 // Stonework along the river: the parapet walls (pretiles) with their stone
 // balls, the stairs down to the water and a weir.
@@ -17,12 +18,7 @@ const BALL_SPACING = 12;
 const STAIRS = { steps: 8, tread: 0.9, rise: 0.45, width: 6, downstreamOfBridge: 30 };
 
 export function createRiverside(layout, path) {
-  const stone = new THREE.MeshStandardMaterial({
-    color: COLORS.stone,
-    roughness: 1,
-    flatShading: true,
-    side: THREE.DoubleSide,
-  });
+  const stone = createSurface('masonry', 3, { color: COLORS.stone, side: THREE.DoubleSide });
   const group = new THREE.Group();
   const top = BANK.height + PRETIL.parapet;
 
@@ -53,7 +49,7 @@ export function createRiverside(layout, path) {
       balls.push({ matrix: dummy.matrix.clone() });
     }
   });
-  group.add(createInstances(new THREE.IcosahedronGeometry(0.45, 1), stone, balls));
+  group.add(createInstances(new THREE.SphereGeometry(0.45, 12, 9), stone, balls));
 
   // Stairs from the street down to the water, just downstream of each bridge
   // on the city side. Local +X points towards the river.

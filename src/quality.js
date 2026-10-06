@@ -3,9 +3,9 @@
 // own, so it cannot flicker between two levels.
 
 const LEVELS = {
-  high: { label: 'alta', pixelRatio: 2, fogScale: 1, extras: true },
-  medium: { label: 'media', pixelRatio: 1.5, fogScale: 0.85, extras: true },
-  low: { label: 'baja', pixelRatio: 1, fogScale: 0.65, extras: false },
+  high: { label: 'alta', pixelRatio: 2, fogScale: 1, extras: true, shadows: 2048 },
+  medium: { label: 'media', pixelRatio: 1.5, fogScale: 0.85, extras: true, shadows: 0 },
+  low: { label: 'baja', pixelRatio: 1, fogScale: 0.65, extras: false, shadows: 0 },
 };
 const ORDER = ['high', 'medium', 'low'];
 const STORAGE_KEY = 'valencia-antiga.quality';

@@ -68,6 +68,12 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 - **Otras barcas, lavanderas, humo y pájaros:** colocados al azar. Las lavanderas están junto a las escaleras inventadas de la v0.3.
 - **Sonido:** sintetizado en el navegador (ruido filtrado para el agua y una campana aditiva). La campana suena a las 7, las 12 y las 20 del reloj de la escena; no reproduce ninguna campana real.
 
+## Aspecto (texturas, barca y luz)
+
+- **Texturas:** pintadas por código en el navegador (sillares, tejas, enlucido con ventanas, tablas, lona). No salen de fotografías ni de ningún edificio real: el despiece de la piedra, el número de plantas y la forma de las ventanas son inventados.
+- **Barca:** una barca de vela latina genérica, con barquero y carga. No reproduce ningún tipo documentado del Turia.
+- **Sombras y reflejos:** las sombras son las del sol de la escena; el agua refleja el cielo, no la ciudad.
+
 ## Pendiente
 
 - Cotejar muralla, puertas y puentes con el plano de Tomás Vicente Tosca (1704). Todavía no se ha usado: el trazado actual sale solo del callejero moderno.

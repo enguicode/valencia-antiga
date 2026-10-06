@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BANK, WALL, COLORS, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
+import { stoneSurface } from './materials.js';
 
 // City wall along the perimeter in the layout: a curtain between vertices, a
 // tower on every vertex and a gate where the layout says so. Every piece is
@@ -34,8 +35,16 @@ function createArchGeometry() {
   return geometry;
 }
 
+// Gives a solid hard edges again: without it the six sides of a polygonal
+// tower would be shaded as if it were round.
+function faceted(geometry) {
+  const flat = geometry.toNonIndexed();
+  flat.computeVertexNormals();
+  return flat;
+}
+
 export function createWalls(layout) {
-  const stone = new THREE.MeshStandardMaterial({ color: COLORS.stone, roughness: 1, flatShading: true });
+  const stone = stoneSurface();
   const dark = new THREE.MeshBasicMaterial({ color: COLORS.stoneDark });
 
   const vertices = layout.wall.map(([x, z]) => ({ x, z }));
@@ -143,8 +152,8 @@ export function createWalls(layout) {
     createInstances(new THREE.BoxGeometry(MERLON.width, MERLON.height, MERLON.width * 1.2), stone, lists.merlons),
     createInstances(new THREE.BoxGeometry(TOWER.size, TOWER.height, TOWER.size), stone, lists.towers),
     createInstances(new THREE.BoxGeometry(0.05, 1.6, 0.35), dark, lists.slits),
-    createInstances(new THREE.CylinderGeometry(1, 1, 1, 6), stone, lists.polygonal),
-    createInstances(new THREE.CylinderGeometry(1, 1, 1, 16), stone, lists.round),
+    createInstances(faceted(new THREE.CylinderGeometry(1, 1, 1, 6)), stone, lists.polygonal),
+    createInstances(new THREE.CylinderGeometry(1, 1, 1, 28), stone, lists.round),
     createInstances(new THREE.BoxGeometry(1, 1, 1), stone, lists.passages),
     createInstances(createArchGeometry(), dark, lists.arches),
   );

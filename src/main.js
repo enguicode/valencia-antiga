@@ -33,6 +33,8 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance',
 });
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
@@ -62,7 +64,45 @@ const debugPanel = document.getElementById('debug');
 const guide = createGuide(points, layout, path, document.getElementById('card'));
 const tour = createTour(path, document.getElementById('tour'));
 const minimap = createMinimap(document.getElementById('minimap'), layout, path, guide.stations);
-const atmosphere = createAtmosphere(scene, environment, water.material, document.getElementById('clock'));
+// Everything is lit by the sky as well as by the sun: the sky dome is
+// rendered into an environment map whenever the atmosphere asks for it.
+const pmrem = new THREE.PMREMGenerator(renderer);
+const skyScene = new THREE.Scene();
+skyScene.add(new THREE.Mesh(sky.geometry, environment.skyMaterial));
+let skyTarget = null;
+function refreshEnvironment() {
+  const next = pmrem.fromScene(skyScene, 0, 1, 2000);
+  scene.environment = next.texture;
+  skyTarget?.dispose();
+  skyTarget = next;
+}
+
+const atmosphere = createAtmosphere(
+  scene,
+  environment,
+  water.material,
+  document.getElementById('clock'),
+  refreshEnvironment,
+);
+
+// The sun casts shadows over a square around the boat, which it follows.
+const SHADOW = { reach: 120, distance: 300 };
+const { sun } = environment;
+Object.assign(sun.shadow.camera, {
+  left: -SHADOW.reach,
+  right: SHADOW.reach,
+  top: SHADOW.reach,
+  bottom: -SHADOW.reach,
+  near: 1,
+  far: SHADOW.distance * 2,
+});
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.6;
+scene.traverse((object) => {
+  if (!object.isMesh || object === sky) return;
+  object.castShadow = object !== water.mesh;
+  object.receiveShadow = true;
+});
 const sound = createSound(document.getElementById('sound'));
 
 function resize() {
@@ -75,6 +115,12 @@ window.addEventListener('resize', resize);
 
 const quality = createQuality(document.getElementById('quality'), (level) => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, level.pixelRatio));
+  sun.castShadow = level.shadows > 0;
+  if (sun.shadow.mapSize.x !== level.shadows && level.shadows > 0) {
+    sun.shadow.mapSize.setScalar(level.shadows);
+    sun.shadow.map?.dispose();
+    sun.shadow.map = null;
+  }
   atmosphere.state.fogScale = level.fogScale;
   life.setExtras(level.extras);
   resize();
@@ -169,6 +215,8 @@ function frame() {
 
   atmosphere.update(dt);
   boat.update(dt, axes, time);
+  sun.target.position.copy(boat.mesh.position);
+  sun.position.copy(boat.mesh.position).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
   water.update(time, boat.state.row);
   life.update(dt, time, boat.state, atmosphere.state);
   sound.update(boat.state.speed, atmosphere.state.hour);

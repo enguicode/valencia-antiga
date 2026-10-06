@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BANK, COLORS, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
+import { createSurface } from './materials.js';
 
 // Buildings with a silhouette of their own. Each one is assembled from a few
 // unit solids placed in a local frame: +X runs along the building's long axis
@@ -13,6 +14,13 @@ const ROOF = new THREE.Color(COLORS.roofs[0]);
 const TILE_BLUE = new THREE.Color(0x3f6f9f);
 
 const clamp = THREE.MathUtils.clamp;
+
+// Hard edges for the polygonal solids, which would otherwise shade as round.
+function faceted(geometry) {
+  const flat = geometry.toNonIndexed();
+  flat.computeVertexNormals();
+  return flat;
+}
 
 // Unit solids, all one unit wide and tall and resting on y = 0.
 function createSolids() {
@@ -31,10 +39,10 @@ function createSolids() {
     box: new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0),
     gable,
     pyramid: pyramid.translate(0, 0.5, 0),
-    oct: new THREE.CylinderGeometry(0.5, 0.5, 1, 8).translate(0, 0.5, 0),
-    hex: new THREE.CylinderGeometry(0.5, 0.5, 1, 6).translate(0, 0.5, 0),
-    cone: new THREE.ConeGeometry(0.5, 1, 8).translate(0, 0.5, 0),
-    dome: new THREE.SphereGeometry(0.5, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2),
+    oct: faceted(new THREE.CylinderGeometry(0.5, 0.5, 1, 8).translate(0, 0.5, 0)),
+    hex: faceted(new THREE.CylinderGeometry(0.5, 0.5, 1, 6).translate(0, 0.5, 0)),
+    cone: faceted(new THREE.ConeGeometry(0.5, 1, 8).translate(0, 0.5, 0)),
+    dome: new THREE.SphereGeometry(0.5, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2),
   };
 }
 
@@ -136,15 +144,17 @@ export function createLandmarks(layout, path) {
       local.rotation.set(0, yaw, 0);
       local.scale.set(...scale);
       local.updateMatrix();
-      (parts[solid] ??= []).push({ matrix: frame.clone().multiply(local.matrix), color });
+      const surface = color === ROOF || color === TILE_BLUE ? 'tiles' : 'masonry';
+      (parts[`${solid}|${surface}`] ??= []).push({ matrix: frame.clone().multiply(local.matrix), color });
     }, landmark);
   }
 
   const solids = createSolids();
-  const material = new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true });
+  const surfaces = { masonry: createSurface('masonry', 4), tiles: createSurface('tiles', 3) };
   const group = new THREE.Group();
-  for (const [solid, items] of Object.entries(parts)) {
-    group.add(createInstances(solids[solid], material, items));
+  for (const [key, items] of Object.entries(parts)) {
+    const [solid, surface] = key.split('|');
+    group.add(createInstances(solids[solid], surfaces[surface], items));
   }
   return group;
 }

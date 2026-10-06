@@ -72,11 +72,11 @@ function createWasherwomen(layout, path, random) {
     }
   }
 
-  const material = new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true });
+  const material = new THREE.MeshStandardMaterial({ roughness: 1 });
   const group = new THREE.Group();
   group.add(
     createInstances(new THREE.BoxGeometry(1, 1, 1), material, boxes),
-    createInstances(new THREE.IcosahedronGeometry(0.19, 0), material, heads),
+    createInstances(new THREE.SphereGeometry(0.19, 10, 8), material, heads),
   );
   return group;
 }

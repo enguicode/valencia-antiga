@@ -358,7 +358,12 @@
     }
   </style>
   <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
   </script>
 </head>
 <body>
@@ -438,7 +443,7 @@
     <ul>
       <li><strong>Fiable:</strong> dónde está cada cosa. Puentes, puertas, iglesias y palacios ocupan el lugar que ocupan hoy, o sus restos.</li>
       <li><strong>Aproximado:</strong> la muralla sigue las calles de ronda que la sustituyeron, y el río, la línea de los puentes actuales.</li>
-      <li><strong>Esbozado o inventado:</strong> la forma de los edificios, el número y el sitio de las torres, las casas, las escaleras, el azud, y todo lo que se mueve.</li>
+      <li><strong>Esbozado o inventado:</strong> la forma de los edificios y sus texturas, la barca, el número y el sitio de las torres, las casas, las escaleras, el azud, y todo lo que se mueve.</li>
     </ul>
     <p>Versión 1.0.</p>
     <button id="close-info" class="close" type="button">Cerrar</button>

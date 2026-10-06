@@ -38,8 +38,9 @@ const MODES = [
 
 const lerp = THREE.MathUtils.lerp;
 
-export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere }, waterMaterial, button) {
-  const state = { hour: 18, mode: 0, night: 0, light: 1, fogScale: 1 };
+export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere }, waterMaterial, button, refreshEnvironment) {
+  const state = { hour: 18, mode: 0, night: 0, light: 1, fogScale: 1, sunDirection: new THREE.Vector3(0, 1, 0) };
+  let environmentHour = null;
   const waterBase = new THREE.Color(COLORS.water);
 
   const label = () => {
@@ -72,9 +73,12 @@ export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere },
 
     sun.color.lerpColors(a.sun, b.sun, t);
     sun.intensity = lerp(a.sunStrength, b.sunStrength, t);
-    hemisphere.intensity = lerp(a.ambient, b.ambient, t);
+    // Half of the ambient light now comes from the sky's environment map.
+    const ambient = lerp(a.ambient, b.ambient, t);
+    hemisphere.intensity = ambient * 0.5;
+    scene.environmentIntensity = 0.75;
     state.night = lerp(a.night, b.night, t);
-    state.light = hemisphere.intensity / 1.3;
+    state.light = ambient / 1.3;
     stars.material.opacity = state.night * 0.9;
 
     // The sun rises in the east, crosses the south and sets in the west, a
@@ -82,19 +86,21 @@ export function createAtmosphere(scene, { skyMaterial, stars, sun, hemisphere },
     // same light stands in for the moon.
     const arc = ((state.hour - 6) / 14) * Math.PI;
     if (state.hour >= 6 && state.hour <= 20) {
-      sun.position.set(Math.cos(arc), Math.max(0.12, Math.sin(arc)), 0.5 * Math.sin(arc) - 0.35);
+      state.sunDirection.set(Math.cos(arc), Math.max(0.12, Math.sin(arc)), 0.5 * Math.sin(arc) - 0.35);
     } else {
-      sun.position.set(-0.4, 0.8, -0.3);
+      state.sunDirection.set(-0.4, 0.8, -0.3);
     }
+    state.sunDirection.normalize();
 
-    waterMaterial.color
-      .copy(waterBase)
-      .lerp(skyMaterial.uniforms.topColor.value, 0.35)
-      .multiplyScalar(THREE.MathUtils.clamp(state.light, 0.55, 1));
-    // A stand-in for reflection: the water gives back a little of the sky.
-    waterMaterial.emissive
-      .lerpColors(skyMaterial.uniforms.topColor.value, skyMaterial.uniforms.horizonColor.value, 0.5)
-      .multiplyScalar(0.22);
+    waterMaterial.color.copy(waterBase).multiplyScalar(THREE.MathUtils.clamp(state.light, 0.4, 1));
+
+    // The environment map is what the water and everything else reflects. It
+    // is re-rendered from the sky only when the hour has moved on a little.
+    const drift = Math.abs(state.hour - (environmentHour ?? state.hour));
+    if (environmentHour === null || Math.min(drift, 24 - drift) > 0.2) {
+      environmentHour = state.hour;
+      refreshEnvironment();
+    }
 
     const text = `Hora: ${label()}`;
     if (text !== shown) {

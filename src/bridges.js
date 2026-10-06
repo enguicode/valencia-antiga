@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { RIVER, BANK, COLORS, yawTowards } from './config.js';
+import { RIVER, BANK, yawTowards } from './config.js';
+import { stoneSurface } from './materials.js';
 
 // Stone bridges: a deck on a row of arches, with a ramp down to each bank.
 // They cross at right angles to the river, which is a simplification.
@@ -45,7 +46,7 @@ function createBridgeGeometry(arches) {
 }
 
 export function createBridges(layout, path) {
-  const stone = new THREE.MeshStandardMaterial({ color: COLORS.stone, roughness: 1, flatShading: true });
+  const stone = stoneSurface();
   const parapetGeometry = new THREE.BoxGeometry(SPAN, PARAPET.height, PARAPET.thickness);
   const group = new THREE.Group();
 

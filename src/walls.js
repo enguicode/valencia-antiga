@@ -52,6 +52,9 @@ function faceted(geometry) {
 export function createWalls(layout, path) {
   const stone = stoneSurface();
   const dark = new THREE.MeshBasicMaterial({ color: COLORS.stoneDark });
+  // Away from the river the curtain was rammed earth. Four lifts cover 3.4 m,
+  // so each pour is about 85 cm. The river front stays dressed stone.
+  const earth = createSurface('tapial', 3.4, { color: 0xc4956a });
   // Quart and the Portal Nou were rough rendered masonry, not dressed stone.
   const render = createSurface('mottle', 3.5, { color: 0xa8987a });
   const pale = createSurface('masonry', 2.5, { color: 0xe6d9b8 });
@@ -63,7 +66,10 @@ export function createWalls(layout, path) {
 
   const lists = {
     curtains: [],
+    earthCurtains: [],
     merlons: [],
+    earthMerlons: [],
+    earthPiers: [],
     slits: [],
     polygonal: [],
     round: [],
@@ -103,12 +109,15 @@ export function createWalls(layout, path) {
 
   for (const segment of segments) {
     const frame = makeFrame(segment.midX, segment.midZ, segment.outX, segment.outZ);
-    place(lists.curtains, frame, 0, WALL.height / 2, 0, { scale: [1, 1, segment.length] });
+    const onRiver = Math.abs(path.project(segment.midX, segment.midZ).lateral) < RIVER_FRONT;
+    place(onRiver ? lists.curtains : lists.earthCurtains, frame, 0, WALL.height / 2, 0, {
+      scale: [1, 1, segment.length],
+    });
     const face = WALL.thickness / 2 - MERLON.width / 2;
     const merlonCount = Math.floor(segment.length / MERLON.spacing);
     for (let i = 0; i < merlonCount; i++) {
       const along = (i + 0.5 - merlonCount / 2) * MERLON.spacing;
-      place(lists.merlons, frame, face, WALL.height + MERLON.height / 2, along);
+      place(onRiver ? lists.merlons : lists.earthMerlons, frame, face, WALL.height + MERLON.height / 2, along);
     }
   }
 
@@ -148,7 +157,7 @@ export function createWalls(layout, path) {
         merlonRing(1.3, 0, 3.7, height + MERLON.height / 2, 9);
         place(lists.slits, frame, 5.54, height * 0.6, 0);
       } else {
-        place(lists.passages, frame, 0, WALL.height / 2, 0, { scale: [3.8, WALL.height, 3.8] });
+        place(lists.earthPiers, frame, 0, WALL.height / 2, 0, { scale: [3.8, WALL.height, 3.8] });
       }
       return;
     }
@@ -258,7 +267,10 @@ export function createWalls(layout, path) {
   const group = new THREE.Group();
   group.add(
     createInstances(new THREE.BoxGeometry(WALL.thickness, WALL.height, 1), stone, lists.curtains),
+    createInstances(new THREE.BoxGeometry(WALL.thickness, WALL.height, 1), earth, lists.earthCurtains),
     createInstances(new THREE.BoxGeometry(MERLON.width, MERLON.height, MERLON.width * 1.2), stone, lists.merlons),
+    createInstances(new THREE.BoxGeometry(MERLON.width, MERLON.height, MERLON.width * 1.2), earth, lists.earthMerlons),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), earth, lists.earthPiers),
     createInstances(new THREE.BoxGeometry(0.05, 1.6, 0.35), dark, lists.slits),
     createInstances(faceted(new THREE.CylinderGeometry(1, 1, 1, 6)), stone, lists.polygonal),
     createInstances(new THREE.CylinderGeometry(1, 1, 1, 28), stone, lists.round),

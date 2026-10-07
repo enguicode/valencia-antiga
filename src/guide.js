@@ -10,6 +10,9 @@ import { t, localized, onLanguageChange } from './i18n.js';
 
 const STORAGE_KEY = 'valencia-antiga.found';
 const RING_RADIUS = 18;
+// No ring sits upstream of this, measured from the head of the navigable
+// reach. Quart's nearest water is beyond the weir, where the boat cannot go.
+const EARLIEST_RING = 55;
 const RING_OFFSET = 14; // from the middle of the river, towards the place
 const CARD_STAYS_WITHIN = 75; // metres from the ring before the card goes
 const VISIBLE_WITHIN = 750;
@@ -23,6 +26,8 @@ const SUBJECTS = {
   start: { aim: 2, span: 60 },
   // Seen from the west, where the cathedral stands behind it and not in front.
   micalet: { aim: 34, span: 110, facing: [-0.94, 0.34] },
+  // Off the river, on the west wall. The flight frames both round towers.
+  quart: { aim: 17, span: 48, fly: true, standOff: 1.15, above: 4 },
   palace: { aim: 14, span: 150 },
   // Convents stand back from the bank: the camera goes over to them.
   convent: { aim: 9, span: 90, fly: true, standOff: 0.8, above: 9 },
@@ -144,10 +149,11 @@ export function createGuide(points, layout, path, camera, elements) {
       const reach = Math.hypot(sample.x - x, sample.z - z) || 1;
       facing = [(sample.x - x) / reach, (sample.z - z) / reach];
     }
+    const preset = type === 'gate' && id === 'quart' ? SUBJECTS.quart : (SUBJECTS[kind] ?? SUBJECTS.convent);
     return {
-      s: s + offset,
-      side: type === 'bridge' ? 0 : Math.sign(lateral),
-      subject: { ...(SUBJECTS[kind] ?? SUBJECTS.convent), x, z, facing },
+      s: Math.max(s + offset, path.start + EARLIEST_RING),
+      side: type === 'bridge' ? 0 : Math.sign(lateral) || 1,
+      subject: { ...preset, x, z, facing },
     };
   };
 

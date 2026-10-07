@@ -1,5 +1,23 @@
 [
   {
+    "id": "torres-quart",
+    "at": {
+      "type": "gate",
+      "id": "quart"
+    },
+    "title": {
+      "es": "Torres de Quart",
+      "ca": "Torres de Quart",
+      "en": "Torres de Quart"
+    },
+    "text": {
+      "es": "La otra puerta que sigue en pie. Daba al camino de Castilla, hacia Quart de Poblet. Se levantó entre 1441 y 1460: dos torres de frente redondo, el muro enlucido y la piedra solo en las aristas. Desde 1649 fue la Galera, prisión de mujeres.",
+      "ca": "L'altra porta que segueix en peu. Donava al camí de Castella, cap a Quart de Poblet. Es va alçar entre 1441 i 1460: dues torres de front rodó, el mur arrebossat i la pedra només a les arestes. Des del 1649 va ser la Galera, presó de dones.",
+      "en": "The other gate still standing. It opened onto the road to Castile, towards Quart de Poblet. Built between 1441 and 1460: two round-fronted towers, a rendered wall, and stone only at the edges. From 1649 it was the Galera, a prison for women."
+    },
+    "source": "https://es.wikipedia.org/wiki/Torres_de_Quart"
+  },
+  {
     "id": "pretils",
     "at": {
       "type": "start",

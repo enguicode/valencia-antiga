@@ -1,6 +1,6 @@
 # Fuentes y grado de fiabilidad
 
-> Actualizado el 6 de octubre de 2026. Los títulos de sección conservan la versión en que se introdujo cada cosa; el contenido describe el estado actual.
+> Actualizado el 7 de octubre de 2026. Los títulos de sección conservan la versión en que se introdujo cada cosa; el contenido describe el estado actual.
 
 Cada dato de la escena lleva aquí su origen y lo fiable que es. Lo que no tenga fuente contrastada se marca como tal.
 
@@ -37,13 +37,14 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 
 ## Fichas de historia (v0.4)
 
-Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las quince es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
+Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las dieciséis es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026; la ficha de Quart, el 7). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
 
 | Ficha | Datos que afirma | Artículo |
 | --- | --- | --- |
 | Pretiles | Fàbrica Nova del Riu desde 1590, contra las riadas | Puente del Real (Valencia) |
 | Pont de Sant Josep | De piedra entre 1604 y 1607, el último de los cinco | Puente de Serranos |
 | Torres dels Serrans | 1392-1398, Pere Balaguer, entrada principal, prisión de nobles desde 1586 | Torres de Serranos |
+| Torres de Quart | 1441-1460, camino de Castilla, torres de frente redondo con muro enlucido y piedra en las aristas, prisión de mujeres (la Galera) desde 1649 | Torres de Quart |
 | Portal Nou | Primero un hueco en el muro; portal nuevo autorizado hacia 1419 y acabado en la década de 1470; dos torres redondas parecidas a las de Quart | Blog «Passejant València amb ulls curiosos» y castillosricsol.es (no Wikipedia) |
 | Pont dels Serrans | Reedificado en 1518 tras la riada de 1517; nueve arcos; 159,7 m | Puente de Serranos |
 | El Micalet y la Seu | 1381-1429; prisma octogonal; altura hasta la terraza igual al perímetro; cimborrio gótico | El Miguelete; Catedral de Santa María (Valencia) |
@@ -78,7 +79,7 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 
 ## Aspecto (texturas, barca y luz)
 
-- **Texturas:** pintadas por código en el navegador (sillares, tejas, enlucido con ventanas, tablas, lona). No salen de fotografías ni de ningún edificio real: el despiece de la piedra, el número de plantas y la forma de las ventanas son inventados.
+- **Texturas:** pintadas por código, sin fotografías. El lienzo lejos del río lleva tongadas de tapial; el frente del río, las puertas de piedra y los puentes siguen en sillería. Las cubiertas son teja curva, con los canales a favor de la pendiente. El despiece, el ancho de cada tongada, el número de plantas y las ventanas siguen siendo inventados.
 - **Barcas:** dos tipos, a elegir en los ajustes. La «de la Albufera» imita de memoria las barcas tradicionales del lago (fondo plano, casco bajo y embreado, dos puntas, vela latina grande y barquero empujando con la percha); no se ha contrastado con ninguna fuente ni con planos, y no consta que navegaran por el Turia. La «de río» es una barca de vela latina genérica.
 - **Sombras y reflejos:** las sombras son las del sol de la escena; el agua refleja el cielo, no la ciudad.
 

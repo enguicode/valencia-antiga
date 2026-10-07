@@ -70,25 +70,73 @@ function paintMasonry(context) {
   speckle(context, random, 5000, 0.14);
 }
 
+// Curved roof tiles. Channels run across U and the overlaps run down V,
+// which is how the roof mapping lays the texture on a slope.
 function paintTiles(context) {
   const random = createRandom(12);
-  context.fillStyle = grey(215);
+  const channels = 8;
+  const courses = 8;
+  const pitch = SIZE / channels;
+  const course = SIZE / courses;
+  context.fillStyle = grey(120);
   context.fillRect(0, 0, SIZE, SIZE);
-  const row = SIZE / 8;
-  const column = SIZE / 12;
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 12; c++) {
-      context.fillStyle = grey(190 + Math.floor(random() * 60));
-      context.fillRect(c * column, r * row, column - 1.5, row);
-    }
-    const shadow = context.createLinearGradient(0, r * row, 0, (r + 1) * row);
-    shadow.addColorStop(0, grey(0, 0.38));
-    shadow.addColorStop(0.3, grey(0, 0));
-    context.fillStyle = shadow;
-    context.fillRect(0, r * row, SIZE, row);
+  for (let i = 0; i < channels; i++) {
+    const left = i * pitch;
+    const crown = context.createLinearGradient(left, 0, left + pitch, 0);
+    crown.addColorStop(0, grey(55));
+    crown.addColorStop(0.18, grey(110));
+    crown.addColorStop(0.5, grey(235));
+    crown.addColorStop(0.82, grey(110));
+    crown.addColorStop(1, grey(55));
+    context.fillStyle = crown;
+    context.fillRect(left, 0, pitch, SIZE);
+    // the valley where two channels meet
+    context.fillStyle = grey(0, 0.35);
+    context.fillRect(left, 0, 1.5, SIZE);
   }
-  blotches(context, random, 14, 40, 0.14);
-  speckle(context, random, 3000, 0.12);
+  for (let r = 0; r < courses; r++) {
+    const y = r * course;
+    const lip = context.createLinearGradient(0, y, 0, y + course * 0.28);
+    lip.addColorStop(0, grey(0, 0.55));
+    lip.addColorStop(0.45, grey(0, 0.12));
+    lip.addColorStop(1, grey(0, 0));
+    context.fillStyle = lip;
+    context.fillRect(0, y, SIZE, course * 0.28);
+    context.fillStyle = grey(255, 0.16);
+    context.fillRect(0, y + 2, SIZE, 1);
+  }
+  blotches(context, random, 10, 36, 0.08);
+  speckle(context, random, 1800, 0.08);
+}
+
+// Rammed-earth lifts: horizontal pours, not ashlar. One copy is four lifts.
+function paintTapial(context) {
+  const random = createRandom(19);
+  const lifts = 4;
+  const lift = SIZE / lifts;
+  for (let row = 0; row < lifts; row++) {
+    const y = row * lift;
+    const shade = 158 + Math.floor(random() * 28);
+    context.fillStyle = grey(shade);
+    context.fillRect(0, y, SIZE, lift);
+    for (let x = 0; x < SIZE; x += 7) {
+      context.fillStyle = grey(random() < 0.5 ? 0 : 255, 0.04 + random() * 0.04);
+      context.fillRect(x, y + 3, 1, lift - 8);
+    }
+    context.fillStyle = grey(0, 0.38);
+    context.fillRect(0, y + lift - 4, SIZE, 4);
+    context.fillStyle = grey(255, 0.12);
+    context.fillRect(0, y + lift - 6, SIZE, 1);
+    for (let hole = 18; hole < SIZE - 20; hole += 46) {
+      const x = hole + (row % 2) * 16;
+      context.fillStyle = grey(40, 0.75);
+      context.beginPath();
+      context.ellipse(x, y + lift - 2, 2.2, 1.6, 0, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+  blotches(context, random, 18, 30, 0.1);
+  speckle(context, random, 4000, 0.1);
 }
 
 function paintMottle(context) {
@@ -231,6 +279,7 @@ function createRippleNormals() {
 export const TEXTURES = {
   masonry: paint(paintMasonry),
   tiles: paint(paintTiles),
+  tapial: paint(paintTapial),
   mottle: paint(paintMottle),
   planks: paint(paintPlanks),
   cloth: paint(paintCloth),
@@ -242,7 +291,9 @@ export const TEXTURES = {
 // Maps the texture by position instead of by UVs, in the object's own axes
 // and in metres, so nothing stretches however a box or a wall is scaled.
 // `metres` is how much surface one copy of the texture covers.
-function projectByPosition(material, metres) {
+// `roof` lays tiles across the slope and down it, instead of blending three
+// planes, so the channels are not smeared on a pitch.
+function projectByPosition(material, metres, roof = false) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.surfaceScale = { value: 1 / metres };
     shader.vertexShader = shader.vertexShader
@@ -258,23 +309,33 @@ function projectByPosition(material, metres) {
         vSurfacePosition = position * surfaceStretch;
         vSurfaceNormal = normal;`,
       );
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        '#include <common>\nuniform float surfaceScale;\nvarying vec3 vSurfacePosition;\nvarying vec3 vSurfaceNormal;',
-      )
-      .replace(
-        '#include <map_fragment>',
-        `vec3 surfaceWeight = pow(abs(vSurfaceNormal), vec3(6.0));
+    const sample = roof
+      ? `vec3 surfacePoint = vSurfacePosition * surfaceScale;
+        vec3 surfaceAbs = abs(vSurfaceNormal);
+        vec2 surfaceUv;
+        if (surfaceAbs.y >= surfaceAbs.x && surfaceAbs.y >= surfaceAbs.z) {
+          surfaceUv = surfaceAbs.x > surfaceAbs.z ? surfacePoint.zx : surfacePoint.xz;
+        } else if (surfaceAbs.x >= surfaceAbs.z) {
+          surfaceUv = surfacePoint.zy;
+        } else {
+          surfaceUv = surfacePoint.xy;
+        }
+        diffuseColor *= texture2D(map, surfaceUv);`
+      : `vec3 surfaceWeight = pow(abs(vSurfaceNormal), vec3(6.0));
         surfaceWeight /= surfaceWeight.x + surfaceWeight.y + surfaceWeight.z;
         vec3 surfacePoint = vSurfacePosition * surfaceScale;
         diffuseColor *=
           texture2D(map, surfacePoint.zy) * surfaceWeight.x +
           texture2D(map, surfacePoint.xz) * surfaceWeight.y +
-          texture2D(map, surfacePoint.xy) * surfaceWeight.z;`,
-      );
+          texture2D(map, surfacePoint.xy) * surfaceWeight.z;`;
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform float surfaceScale;\nvarying vec3 vSurfacePosition;\nvarying vec3 vSurfaceNormal;',
+      )
+      .replace('#include <map_fragment>', sample);
   };
-  material.customProgramCacheKey = () => `surface-${metres}`;
+  material.customProgramCacheKey = () => `surface-${metres}${roof ? '-roof' : ''}`;
   return material;
 }
 
@@ -284,6 +345,7 @@ export function createSurface(texture, metres, options = {}) {
   return projectByPosition(
     new THREE.MeshStandardMaterial({ map: TEXTURES[texture], roughness: 0.95, ...options }),
     metres,
+    texture === 'tiles',
   );
 }
 

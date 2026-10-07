@@ -6,7 +6,7 @@ Paseo en barca, en el navegador, por el viejo cauce del Turia y la València amu
 
 **[Entrar al paseo](https://valencia-antiga.pages.dev/)** · castellano, valenciano e inglés · no hay nada que instalar
 
-El río hacía entonces de foso. Desde el agua se ven la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Hay quince puntos de interés que descubrir, cada uno con su ficha, y uno más: al entrar en su aro se hace de noche. Es «quedarse a la luna de València».
+El río hacía entonces de foso. Desde el agua se ven la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Hay dieciséis puntos de interés que descubrir, cada uno con su ficha, y uno más: al entrar en su aro se hace de noche. Es «quedarse a la luna de València».
 
 Es una reconstrucción aproximada. Los sitios están donde estaban; las formas son un esbozo. Qué es fiable y qué no está en [docs/sources.md](docs/sources.md).
 
@@ -18,7 +18,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 | **Encontrar los puntos** | Junto a cada sitio flota un aro claro. Al entrar sale la ficha, la cámara mira el lugar (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Una flecha en el borde lleva al más cercano que falte. |
 | **La luna** | Al entrar en el aro anochece solo, sin botón: la cámara mira al cielo y sale la ficha. Al alejarte vuelve la hora que había, salvo que la cambies tú. En el listado se ve una luna, no el nombre, hasta que se consigue. |
 | **Repasar** | La cuenta de arriba a la izquierda abre el cuaderno. Lo no descubierto sale en blanco. Lo encontrado lleva un ojo que lleva la cámara hasta ese sitio. El ojo de la luna, si es de día, deja el cielo de noche mientras dura la ficha y luego devuelve la hora que había. |
-| **Recorrido guiado** | La barca baja sola por el centro y pasa por los quince aros. Arrastrar solo mueve la cámara. |
+| **Recorrido guiado** | La barca baja sola por el centro y pasa por los dieciséis aros. Arrastrar solo mueve la cámara. |
 | **La hora** | Al entrar, la portada premarca día, atardecer o noche según el reloj del visitante, con su huso horario. Desde ahí solo cambia a mano. De noche se encienden ventanas, faroles y luciérnagas, y los carteles de la interfaz pasan a un tono oscuro. |
 | **La barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. |
 | **El idioma** | Castellano, valenciano o inglés, en la portada y en los ajustes. |
@@ -128,11 +128,11 @@ Colocar cada cosa donde estaba cuesta más que el 3D. Las reglas:
 | --- | --- |
 | Dónde están puentes, puertas y edificios | De OpenStreetMap. Fiable. |
 | El curso del río y el perímetro de la muralla | Aproximados y suavizados. |
-| Las quince fichas | Contrastadas con Wikipedia en español, que es fuente secundaria. Los portales Nou, de la Trinitat y del Real, además, con blogs de historia local. |
+| Las dieciséis fichas | Contrastadas con Wikipedia en español, que es fuente secundaria. Los portales Nou, de la Trinitat y del Real, además, con blogs de historia local. |
 | La muralla cristiana, de 1356, y el derribo desde 1865 | De memoria. Solo consta en Wikipedia que la Puerta del Mar cayó en 1868. |
 | La forma de puertas, puentes, Micalet, Seu, Palau del Real, Trinitat y Sant Pius V | Rehecha según lo que dicen las fuentes. Las medidas que faltan, estimadas. |
 | Navegar el Turia | Licencia. Hacia 1700 el río no era navegable. |
-| Texturas, casas, iglesias menores, luces | Esbozo o invención. |
+| Texturas, casas, iglesias menores, luces | Esbozo. El tapial y la sillería de la muralla siguen a las fuentes; el dibujo, no. |
 | Valenciano e inglés | Sin revisión de un hablante nativo. |
 
 ## Cómo fue creciendo

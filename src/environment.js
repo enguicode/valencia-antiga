@@ -22,9 +22,9 @@ function seaWash() {
     if (((bytes[i >> 3] >> (7 - (i & 7))) & 1) === 0) continue;
     const pixel = i * 4;
     // Bone ink. A cool grey read as a photograph against the paper.
-    data[pixel] = 207;
-    data[pixel + 1] = 187;
-    data[pixel + 2] = 156;
+    data[pixel] = 178;
+    data[pixel + 1] = 156;
+    data[pixel + 2] = 124;
     data[pixel + 3] = 210;
   }
   context.putImageData(image, 0, 0);

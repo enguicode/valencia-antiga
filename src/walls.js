@@ -12,6 +12,10 @@ import { stoneSurface, createSurface } from './materials.js';
 const BASE_Y = BANK.height - 0.5;
 const MERLON = { width: 1, height: 1.2, spacing: 2.4 };
 const RIVER_FRONT = 230; // metres from the river within which the wall has towers
+// The tower of Santa Caterina, begun in 1390 on the corner where the wall
+// reaches the river: round, with a relief of the saint between two shields
+// of the city. Its size is an estimate.
+const SANTA_CATERINA = { radius: 5.6, height: WALL.height + 7 };
 
 // Gates as they stood around 1700, as far as the sources go (docs/sources.md).
 // Serrans and Quart survive and are measured; the rest are known only from
@@ -63,6 +67,7 @@ export function createWalls(layout, path) {
   const count = vertices.length;
   const centre = vertices.reduce((sum, v) => ({ x: sum.x + v.x / count, z: sum.z + v.z / count }), { x: 0, z: 0 });
   const gateByVertex = new Map(layout.gates.map((gate) => [gate.vertex, gate]));
+  const towerByVertex = new Map((layout.towers ?? []).map((tower) => [tower.vertex, tower]));
 
   const lists = {
     curtains: [],
@@ -147,6 +152,21 @@ export function createWalls(layout, path) {
       }
     };
     const arch = (x, width, height) => place(lists.arches, frame, x, 0.5, 0, { scale: [1, height / 1.4, width] });
+
+    if (!gate && towerByVertex.get(i)?.id === 'santa-caterina') {
+      const { radius, height } = SANTA_CATERINA;
+      place(lists.round, frame, 1.3, height / 2, 0, { scale: [radius, height, radius] });
+      // a moulding under the parapet, and the parapet itself
+      place(lists.round, frame, 1.3, height - 1.6, 0, { scale: [radius + 0.35, 0.5, radius + 0.35] });
+      merlonRing(1.3, 0, radius - 0.5, height + MERLON.height / 2, 14);
+      // the relief, looking out over the river, between the two shields
+      place(lists.accents, frame, 1.3 + radius + 0.02, height * 0.62, 0, { scale: [0.3, 2.6, 2] });
+      for (const side of [-1, 1]) {
+        place(lists.accents, frame, 1.3 + radius - 0.25, height * 0.62 - 0.5, side * 1.9, { scale: [0.3, 1.1, 0.9], yaw: -side * 0.34 });
+        place(lists.slits, frame, 1.3 + radius * 0.94, height * 0.34, side * radius * 0.34);
+      }
+      return;
+    }
 
     if (!gate) {
       // The plan of 1704 shows towers only along the river front, rounded;

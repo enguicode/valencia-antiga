@@ -404,6 +404,14 @@
    "major": true
   }
  ],
+ "towers": [
+  {
+   "id": "santa-caterina",
+   "name": "Torre de Santa Caterina",
+   "vertex": 46,
+   "placement": "where the wall coming from Quart reaches the river"
+  }
+ ],
  "landmarks": [
   {
    "id": "micalet",

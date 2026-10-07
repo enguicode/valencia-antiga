@@ -39,7 +39,7 @@ La pantalla se deja casi libre. Arriba a la izquierda, los puntos y los metros. 
 ## Qué hay en la escena
 
 - **El río.** El curso real del viejo cauce, con agua animada, pretiles de piedra con bolas, escaleras y un azud que cierra el tramo aguas arriba.
-- **La muralla.** El perímetro completo, unos 4,7 km y 10 m de alto. Torres redondas solo en el frente del río, y siete puertas con forma propia: Portal Nou, Serrans, Trinitat, Real y de la Mar en ese lado, más Quart y Sant Vicent.
+- **La muralla.** El perímetro completo, unos 4,7 km y 10 m de alto. Torres redondas solo en el frente del río, con la de Santa Caterina, mayor, en la esquina donde la muralla llega al agua, y siete puertas con forma propia: Portal Nou, Serrans, Trinitat, Real y de la Mar en ese lado, más Quart y Sant Vicent.
 - **Los cinco puentes.** Sant Josep, Serrans, Trinitat, Real y de la Mar, cada uno con sus arcos, su ancho, sus tajamares y sus casalicios o estatuas.
 - **Edificios.** El Micalet, la Seu, la Lonja, el Palau del Real, los conventos de la Trinitat, Sant Pius V, Sant Doménec y la Saïdia, y quince iglesias.
 - **Alrededor.** Unas 2.600 casas, árboles, otras siete barcas, lavanderas, humo y pájaros.

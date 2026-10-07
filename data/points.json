@@ -30,9 +30,9 @@
       "en": "The city wall"
     },
     "text": {
-      "es": "Aquí la muralla llega al río y lo sigue hasta la Ciutadella. La mandó levantar Pere el Cerimoniós entre 1356 y 1370, en plena guerra con Castilla: cuatro kilómetros de tapial, reforzado después con piedra. En esta esquina se alzaba desde 1390 la torre de Santa Caterina. El derribo empezó en 1865.",
-      "ca": "Ací la muralla arriba al riu i el segueix fins a la Ciutadella. La va manar alçar Pere el Cerimoniós entre 1356 i 1370, en plena guerra amb Castella: quatre quilòmetres de tàpia, reforçada després amb pedra. En este cantó s'alçava des del 1390 la torre de Santa Caterina. L'enderroc va començar el 1865.",
-      "en": "Here the wall reaches the river and follows it down to the Ciutadella. Pere el Cerimoniós had it built between 1356 and 1370, in the middle of a war with Castile: four kilometres of rammed earth, later strengthened with stone. On this corner stood, from 1390, the tower of Santa Caterina. Demolition began in 1865."
+      "es": "Aquí la muralla llega al río y lo sigue hasta la Ciutadella. La mandó levantar Pere el Cerimoniós entre 1356 y 1370, en plena guerra con Castilla: cuatro kilómetros de tapial, reforzado después con piedra. La torre redonda de la esquina es la de Santa Caterina, empezada en 1390: guardaba la pólvora. El derribo empezó en 1865.",
+      "ca": "Ací la muralla arriba al riu i el segueix fins a la Ciutadella. La va manar alçar Pere el Cerimoniós entre 1356 i 1370, en plena guerra amb Castella: quatre quilòmetres de tàpia, reforçada després amb pedra. La torre redona del cantó és la de Santa Caterina, començada el 1390: guardava la pólvora. L'enderroc va començar el 1865.",
+      "en": "Here the wall reaches the river and follows it down to the Ciutadella. Pere el Cerimoniós had it built between 1356 and 1370, in the middle of a war with Castile: four kilometres of rammed earth, later strengthened with stone. The round tower on the corner is Santa Caterina, begun in 1390: the gunpowder was kept in it. Demolition began in 1865."
     },
     "source": "https://es.wikipedia.org/wiki/Muralla_medieval_de_Valencia"
   },
@@ -86,12 +86,12 @@
       "en": "Portal Nou"
     },
     "text": {
-      "es": "La puerta que daba al Pont de Sant Josep. Fue primero un simple hueco en la muralla; hacia 1419 el rey autorizó hacer un portal nuevo, acabado en la década de 1470, con dos torres redondas parecidas a las de Quart. Cayó con la muralla en el siglo XIX.",
-      "ca": "El portal que donava al Pont de Sant Josep. Va ser primer una simple obertura en el mur; cap al 1419 el rei va autoritzar fer-ne un de nou, acabat en la dècada de 1470, amb dues torres redones semblants a les de Quart. Va caure amb la muralla al segle XIX.",
-      "en": "The gate that opened onto the Pont de Sant Josep. At first a plain opening in the wall; around 1419 the king authorised a new gate, finished in the 1470s, with two round towers much like those of Quart. It came down with the wall in the nineteenth century."
+      "es": "La puerta que daba al Pont de Sant Josep. Se empezó en 1390 y no se acabó hasta la década de 1470, con dos torres redondas parecidas a las de Quart. Cayó con la muralla en el siglo XIX.",
+      "ca": "El portal que donava al Pont de Sant Josep. Es va començar el 1390 i no es va acabar fins a la dècada de 1470, amb dues torres redones semblants a les de Quart. Va caure amb la muralla al segle XIX.",
+      "en": "The gate that opened onto the Pont de Sant Josep. Begun in 1390 and not finished until the 1470s, with two round towers much like those of Quart. It came down with the wall in the nineteenth century."
     },
-    "source": "https://passejantvalenciaambullscuriosos.blogspot.com/2017/07/lenderrocament-de-les-portes-de-la.html",
-    "sourceName": "Passejant València amb ulls curiosos"
+    "source": "https://www.jdiezarnal.com/valenciamurallasvalencia.html",
+    "sourceName": "jdiezarnal.com"
   },
   {
     "id": "torres-serrans",
@@ -182,9 +182,9 @@
       "en": "Portal de la Trinitat"
     },
     "text": {
-      "es": "También llamado Portal dels Catalans, frente al Pont de la Trinitat. En el siglo XVI lo formaban dos torres cuadradas gemelas, rematadas por almenas, unidas por un cuerpo central más bajo donde se abría un arco de medio punto. Más tarde se redujo a un simple arco con frontón.",
-      "ca": "També anomenat Portal dels Catalans, davant del Pont de la Trinitat. Al segle XVI el formaven dues torres quadrades bessones, rematades per merlets, unides per un cos central més baix on s'obria un arc de mig punt. Més tard es va reduir a un simple arc amb frontó.",
-      "en": "Also known as the Portal dels Catalans, facing the Pont de la Trinitat. In the sixteenth century it was two twin square towers topped with battlements, joined by a lower central body with a round arch. Later it was reduced to a plain arch with a pediment."
+      "es": "También llamado Portal dels Catalans, frente al Pont de la Trinitat. Tuvo dos torres cuadradas gemelas, rematadas por almenas, unidas por un cuerpo central más bajo donde se abría un arco de medio punto. En 1862 ya era un simple arco con frontón.",
+      "ca": "També anomenat Portal dels Catalans, davant del Pont de la Trinitat. Va tindre dues torres quadrades bessones, rematades per merlets, unides per un cos central més baix on s'obria un arc de mig punt. El 1862 ja era un simple arc amb frontó.",
+      "en": "Also known as the Portal dels Catalans, facing the Pont de la Trinitat. It had two twin square towers topped with battlements, joined by a lower central body with a round arch. By 1862 it was a plain arch with a pediment."
     },
     "source": "https://castillosricsol.es/murallas-cristianas-de-valencia/",
     "sourceName": "castillosricsol.es"

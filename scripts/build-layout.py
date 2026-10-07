@@ -273,6 +273,30 @@ def main():
             "major": True,
         })
 
+    def distance_to_river(point):
+        best = float("inf")
+        for a, b in zip(river, river[1:]):
+            ax, az, bx, bz = *a, *b
+            t = max(0, min(1, ((point[0] - ax) * (bx - ax) + (point[1] - az) * (bz - az)) / math.dist(a, b) ** 2))
+            best = min(best, math.dist(point, (ax + (bx - ax) * t, az + (bz - az) * t)))
+        return best
+
+    # Named towers. Santa Caterina stood on the corner where the wall coming
+    # from Quart reaches the river, upstream of the Portal Nou: the first
+    # vertex on that stretch that is as close to the river as the wall gets.
+    towers = []
+    by_gate = {gate["id"]: gate["vertex"] for gate in gates}
+    if "quart" in by_gate and "sant-josep" in by_gate:
+        step = 1 if by_gate["sant-josep"] > by_gate["quart"] else -1
+        stretch = list(range(by_gate["quart"] + step, by_gate["sant-josep"], step))
+        closest = min(distance_to_river(wall[i]) for i in stretch)
+        towers.append({
+            "id": "santa-caterina",
+            "name": "Torre de Santa Caterina",
+            "vertex": next(i for i in stretch if distance_to_river(wall[i]) <= closest + 5),
+            "placement": "where the wall coming from Quart reaches the river",
+        })
+
     landmarks = []
     for name, landmark_id, kind, options in LANDMARKS:
         candidates = [e for e in by_name.get(name, []) if e["type"] != "node"] or by_name.get(name, [])
@@ -304,18 +328,11 @@ def main():
         "bridges": [{**b, "x": round(b["x"], 1), "z": round(b["z"], 1)} for b in bridges],
         "wall": rounded(wall),
         "gates": gates,
+        "towers": towers,
         "landmarks": landmarks,
     }
     target = ROOT / "data" / "layout.json"
     target.write_text(json.dumps(layout, ensure_ascii=False, indent=1) + "\n")
-
-    def distance_to_river(point):
-        best = float("inf")
-        for a, b in zip(river, river[1:]):
-            ax, az, bx, bz = *a, *b
-            t = max(0, min(1, ((point[0] - ax) * (bx - ax) + (point[1] - az) * (bz - az)) / math.dist(a, b) ** 2))
-            best = min(best, math.dist(point, (ax + (bx - ax) * t, az + (bz - az) * t)))
-        return best
 
     gaps = sorted(distance_to_river(p) for p in wall)
     print(f"wrote {target.relative_to(ROOT)}")

@@ -9,7 +9,7 @@ export const RIVER = {
   // Navigable water before the first historic bridge: far enough upstream to
   // pass the corner where the wall leaves the river.
   upstreamRun: 550,
-  downstreamRun: 200, // and after the last one
+  downstreamRun: 320, // and after the last one, with room for the mist to close in well clear of it
 };
 
 export const BANK = {

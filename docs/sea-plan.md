@@ -15,7 +15,7 @@ Dos condiciones puestas por el autor:
 
 - Desde el 7 de octubre de 2026 el final del tramo es un banco de niebla que devuelve al principio del paseo. Cuando exista el tramo del mar, esa niebla tendrá que irse al nuevo final, mar adentro, o quitarse.
 
-- El tramo navegable acaba 200 m después del Pont de la Mar (`RIVER.downstreamRun` en `src/config.js`); la barca se para ahí en seco (`path.end`, en `src/boat.js`).
+- El tramo navegable acaba 320 m después del Pont de la Mar (`RIVER.downstreamRun` en `src/config.js`); la barca se para ahí en seco (`path.end`, en `src/boat.js`).
 - El curso del río sale de los puentes actuales sobre el viejo cauce (`RIVER_BRIDGES` en `scripts/build-layout.py`) y termina en el Pont del Regne de València: unos 800 m más allá del final navegable. De ahí al mar no hay datos.
 - El mar no existe en la escena. El suelo llega a 1.100 m del río (`BANK.extent`) y la niebla tapa el resto.
 
@@ -48,13 +48,13 @@ Dónde mirar: la web de jdiezarnal.com (tiene páginas del Grau y de las ataraza
 ### 3. Lo que no cambia
 
 - El mapa: se queda en el tramo de ahora. Falta decidir qué hace la marca de la barca cuando sale de él (ver abajo).
-- La cuenta «X m de 2764», los puntos de interés y su total.
+- La cuenta «X m de 2884», los puntos de interés y su total.
 - El recorrido guiado, que sigue acabando donde acaba hoy.
 
 ### 4. Comprobaciones
 
 - Que el paseo de ahora queda idéntico: los dieciocho puntos, el recorrido guiado completo con cada barca y el mapa.
-- Rendimiento: el río pasa de 2,8 km a unos 6. Las cintas de agua y orilla ya se dibujan por ventanas; hay que mirar el suelo, los árboles y la niebla.
+- Rendimiento: el río pasa de 2,9 km a unos 6. Las cintas de agua y orilla ya se dibujan por ventanas; hay que mirar el suelo, los árboles y la niebla.
 - A velocidad de barca son unos diez minutos más de huerta. Con la lancha o el hidroplano, uno o dos.
 
 ## Decisiones pendientes del autor

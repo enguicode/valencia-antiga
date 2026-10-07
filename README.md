@@ -14,7 +14,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 
 | | |
 | --- | --- |
-| **Navegar** | 2,9 km de río, desde la altura de las Torres de Quart hasta pasado el de la Mar. La barca frena contra las orillas y, al llegar a un puente, se encauza sola por un arco y abate la vela. |
+| **Navegar** | 3 km de río, desde la altura de las Torres de Quart hasta pasado el de la Mar. La barca frena contra las orillas y, al llegar a un puente, se encauza sola por un arco y abate la vela. |
 | **Encontrar los puntos** | Junto a cada sitio flota un aro claro. Al entrar sale la ficha, la cámara mira el lugar (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Una flecha en el borde lleva al más cercano que falte. |
 | **La luna** | Al entrar en el aro anochece solo, sin botón: la cámara mira al cielo y sale la ficha. Al alejarte vuelve la hora que había, salvo que la cambies tú. En el listado se ve una luna, no el nombre, hasta que se consigue. |
 | **Repasar** | La cuenta de arriba a la izquierda abre el cuaderno. Lo no descubierto sale en blanco. Lo encontrado lleva un ojo que lleva la cámara hasta ese sitio. El ojo de la luna, si es de día, deja el cielo de noche mientras dura la ficha y luego devuelve la hora que había. |

@@ -5,6 +5,95 @@ import { createInstances } from './instancing.js';
 import { PRETIL } from './riverside.js';
 import { createSurface } from './materials.js';
 
+// Near side, north up, one bit per pixel of a 200px wash. The shape of
+// the seas is the real one; the ink is flat, so it reads as a drawing.
+const SEA_WASH = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAAAAABwAAAAAAAAAAAAAAAAAAAAAAAAAPgAAADD8AAAAAAAAAAAAAAAAAAAAAAAAAH4AAAB4yAAAAAAAAAAAAAAAAAAAAAAAACP8AAAOecwAAAAAAAAAAAAAAAAAAAAAAAH/8AAAH/4PAAAAAAAAAAAAAAAAAAAAAAAH/8AAfj/+fwAAAAAAAAAAAAAAAAAAAAAAH/8AA////v8AAAAAAAAAAAAAAAAAAAAAAD//AAf/////AAAAAAAAAAAAAAAAAAAAAAB//8AH/////wAAAAAAAAAAAAAAAAAAAAAA///AD/////8AAAAAAAAAAAAAAAAAAAAAAf//wA//////gAAAAAAAAAAAAAAAAAAAAAP//8AP/////4AAAAAAAAAAAAAAAAAAAAAD///AD/////+AAAAAAAAAAAAAAAAAAAAAB///AA//////gAAAAAAAAAAAAAAAAAAAAAf//gA//////wAAAAAAAAAAAAAAAAAAAAAP//4A//////wAAAAAAAAAAAAAAAAAAAAAP//8Af/////8AAAAAAAAAAAAAAAAAAAAAH///YH//////AAAAAAAAAAAAAAAAAAAAAD///+H//////wAAAD4AAAAAAAAAAAAAAAA////n//////8AAAB/gAAAAAAAAAAAAAAAf///////////gAAA/+AfAAAAAAAAAAAAAP///////////+AAAP/gPwAAAAAAAAAAAAH////////////gAAH/+f+AAAAAAAAAAAAB////////////4AAB////gAAAAAAAAAAAA////////////+AAAf///wAAAAAAAAAAAAf////////////wAAP///8AAAAAAAAAAAAH////////////8AAD////AAAAAAAAAAAAD////////////+AAD////4AAAAAAAAAAAA////////////8AAD/////AAAAAAAAAAAAf////////////AAA/////8AAAAAAAAAAAD//8/////////wAAP/////gAAAAAAAAAAA///P////////EAAB/////4AAAAAAAAAAA///j////////gAAAP////+AAAAAAAAAAAf//w///////54AA4D/////wAAAAAAAAAAH//8Pf/////+eAAfA/////+AAAAAAAAAAB///D3///////gAPwH/////gAAAAAAAAAAf//w9///////4AD8D/////4AAAAAAAAAAD//4P////////AAeA/////+AAAAAAAAAAA//+B////////4AGAP/////gAAAAAAAAAAP//Af//v/////ABAH/////4AAAAAQAAAAP//gH//x/////9AAB//////AAAAAeAAAAH///z//8f/////4AA//////wAAAADgAAAD//////+D//////AAP/////8AAAAA8AAAB///////g//////wAD//////AAAADPgAAAf//////8//////8AA//////wAAAB/8AAAP/////////////+AAP/////8AAAAf/gAAD////////7/////gAD//////AAAAH/8AAB////////w///7/gAAf/////4dwAB//AAAf///////4H/g+/wAAD///////+AAf/4AAH///////8B/4Hv4AGM////////wAD/+AAB/////j/8AMAA/8AD///g/////8AA//gAAf////4/4AAAAH/gB//f8D/////AAP/4AAP/////P+AAAAB/4B//gfgf////wAD/+AAD/////z/wAAAAf+c//4H8H////+AA//AAA/////9/8AAAAH//P//B/g/////gAH/wAAH//////+AAAAAf////4f4f////4AB/8AAB/////7/gAAAAB//////wf/////AAP/AAAf////8P4AAAAA//////8P/////4AB/wAAH////8D+AAAAAP//////D//////gAf8AAB/////AfgAAAAD//////g//////8AD+AAAP////gH8AAAAA//5///gH//////gAfAAAD////4B+AAAAAP/8B//wD//////4AAAAAAf///4AfgAAAAH/+AP/4A//////4AAAAAAH///+AH4AAAAB/+AB/8AP/////8AAAAAAB////gB/AAAAA/+AAD+AB//////AAAAAAAf///wAP+AAAYP/gAAAAAf/////wAAAAAAH///8AD+AAAPD/4AAAAAH/////+AAAAAAB////gAcAAAP//+AAAAAB//////wAAAAAAP///8AeAAAD///gAAAAAf/////8BAAAAAD////gPwAAB///8AAAAAD//////A8AAAAAf///4H+AAB////gAAAAA//////wPgAAAAH////h/4AAf///4AAAAAP/////8D8AAAAD////8//AAD////gAAAAD//////B/gAAAA/////P/4AAf///8AAAAAf/////x/8AAAAP//////+AAH////AAAAAD/////8f/gAAAD///////gAA////8AAAAA/////+P//AAAA///////2AAP//vfAAAAAH///D////4AAAP///////gAD//wHwAAAAB///wf///+AAAH////////AAf/wB8AAAAAf//4AR///gAAA///////44AD/4AfAAAAAAf/8AAf//wAAAP///////P+Af+ADwAAAAAA/+AAH//+AAAB///////z/wD/AAAAAAAAAB/gAD///wAAAP////////+AQAAAAAAAAAAf4AA///8AAAB/////////AAAAAAAAAAAAH+AAP///AAAAf////////wAAAAAAAAAAAA/AAB///wAAAH////////4AAAAAAAAAAAAPgAAf//oAAAB////////wAGAAAAAAAAAADwAAD//+AAAAf///////8ADwAAAAAAAAAB4AAA///gAAAD////////AB+AAAAAAAAAAcAAAP//4AAAA//////B/+APgAAAAAAAAAAAAAH//+AAAAP/////wf/gD8AAAAAAAAAAAAAB///AAAAB/////8H/4A/AAAAAAAAAAAAAAf//gAAAAP/////B//APwAAAAAAAAAAAAAH//gAAAAD/////wf/wD/AAAAAAAAAAAAAB//gAAAAA/////8H/+A/4AAAAAAAAAAAAAD/wAAAAAH/////D//wP+AAAAAAAAAAAAAA/4AAAAAB/////8//8B/gAAAAAAAAAAAAAP+AAAAAAfP///////4P4AAAAAAAAAAAAAD/gAAAAADz/+/////+D+AAAAAAAAAAAAAB/wAAAAAA8f/H/////g/gAAAAAAAAAAAAAYAAAAAAAHH/h/////8P4AAAAAAAAAAAAAAAAAAAAAAB/4P////3D/AAAAAAAAAAAAAAAAAAAAAAAf8D///vwx/wAAAAAAAAAAAAAAAAAAAAAAGAAP/+B8e/wAAAAAAAAAAAAAAAAAAAAAADgACf/Afn/8AAAAAAAAAAAAAAAAAAAAAAA4AAj/gH///AAAAAAAAAAAAAAAAAAAAAAAMAAd/4B////AAAAAAAAAAAAAAAAAAAAAAAAAH/+Af///4AAAAAAAAAAAAAAAAAAAAAAAAB//gH///8AAAAAAAAAAAAAAAAAAAAAAAAAf/4D///+AAAAAAAAAAAAAAAAAAAAAAAAAP/gB////gAAAAAAAAAAAAAAAAAAAAAAAAH/wAf///wAAAAAAAAAAAAAAAAAAAAAAAAP/4AGf//8AAAAAAAAAAAAAAAAAAAAAAAAD/+AAD///gAAAAAAAAAAAAAAAAAAAAAAAB//gAAf//4AAAAAAAAAAAAAAAAAAAAAAAAf/4AAH//8AAAAAAAAAAAAAAAAAAAAAAAAH//AAB///AAAAAAAAAAAAAAAAAAAAAAAAB///+H///wAAAAAAAAAAAAAAAAAAAAAAAAf///w////AAAAAAAAAAAAAAAAAAAAAAAAD///+P///4AAAAAAAAAAAAAAAAAAAAAAAA////h///+AAAAAAAAAAAAAAAAAAAAAAAAH//58f///AAAAAAAAAAAAAAAAAAAAAAAAA//+Pn///wAAAAAAAAAAAAAAAAAAAAAAAAP//h8///8AAAAAAAAAAAAAAAAAAAAAAAAD//Ifn//+AAAAAAAAAAAAAAAAAAAAAAAAAH/wP4P/4AAAAAAAAAAAAAAAAAAAAAAAAAB/8D8BwYAAAAAAAAAAAAAAAAAAAAAAAAAAP/B8AAGAAAAAAAAAAAAAAAAAAAAAAAAAAABg8AAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+
+function seaWash() {
+  const width = 200;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = width;
+  const context = canvas.getContext('2d');
+  const image = context.createImageData(width, width);
+  const bytes = Uint8Array.from(atob(SEA_WASH), (char) => char.charCodeAt(0));
+  const data = image.data;
+  for (let i = 0; i < width * width; i++) {
+    if (((bytes[i >> 3] >> (7 - (i & 7))) & 1) === 0) continue;
+    const pixel = i * 4;
+    data[pixel] = 90;
+    data[pixel + 1] = 100;
+    data[pixel + 2] = 112;
+    data[pixel + 3] = 210;
+  }
+  context.putImageData(image, 0, 0);
+  return canvas;
+}
+
+// Paper, the sea wash and three craters. A photograph sat too sharp against
+// the painted city.
+function drawMoon() {
+  const size = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  const center = size / 2;
+  const ground = context.createRadialGradient(center, center, size * 0.08, center, center, center);
+  ground.addColorStop(0, '#f6efe2');
+  ground.addColorStop(0.75, '#efe3cc');
+  ground.addColorStop(1, '#e4d3b6');
+  context.fillStyle = ground;
+  context.fillRect(0, 0, size, size);
+
+  const random = createRandom(1700);
+  for (let i = 0; i < 10; i++) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = 50 + random() * 90;
+    const blot = context.createRadialGradient(x, y, 0, x, y, radius);
+    blot.addColorStop(0, `rgba(255, 248, 230, ${0.08 + random() * 0.1})`);
+    blot.addColorStop(1, 'rgba(255, 248, 230, 0)');
+    context.fillStyle = blot;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // The wash is stored small. Blur it as it scales up, so the coasts stay
+  // soft instead of stepping.
+  context.save();
+  context.imageSmoothingEnabled = true;
+  context.filter = 'blur(5px)';
+  context.drawImage(seaWash(), 0, 0, size, size);
+  context.restore();
+
+  const crater = (x, y, radius) => {
+    const cx = x * size;
+    const cy = y * size;
+    const r = radius * size;
+    context.fillStyle = 'rgba(255, 250, 240, 0.65)';
+    context.beginPath();
+    context.arc(cx, cy, r, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = 'rgba(150, 140, 124, 0.75)';
+    context.beginPath();
+    context.arc(cx + r * 0.16, cy + r * 0.18, r * 0.52, 0, Math.PI * 2);
+    context.fill();
+  };
+  crater(0.33, 0.42, 0.018); // Copernicus
+  crater(0.175, 0.36, 0.01); // Aristarchus
+  crater(0.43, 0.83, 0.014); // Tycho
+
+  const limb = context.createRadialGradient(center, center, center * 0.7, center, center, center);
+  limb.addColorStop(0, 'rgba(120, 96, 64, 0)');
+  limb.addColorStop(1, 'rgba(120, 96, 64, 0.28)');
+  context.fillStyle = limb;
+  context.globalCompositeOperation = 'multiply';
+  context.fillRect(0, 0, size, size);
+  return canvas;
+}
+
 // A short fringe of light. The disc covers the middle of this sprite, so only
 // the falloff past its edge is seen.
 function drawMoonGlow() {
@@ -78,10 +167,8 @@ function createSky() {
   stars.frustumCulled = false;
   sky.add(stars);
 
-  // Near side, north up, from the Lunar Reconnaissance Orbiter. Left out of
-  // filmic tone mapping, which flattens the seas. The photo's corners are the
-  // limb colour so the mipmaps do not pick up black.
-  const moonMap = new THREE.TextureLoader().load(new URL('./moon.jpg', import.meta.url).href);
+  // A painted disc, not a lit surface: filmic tone mapping would flatten the wash.
+  const moonMap = new THREE.CanvasTexture(drawMoon());
   moonMap.colorSpace = THREE.SRGBColorSpace;
   moonMap.anisotropy = 8;
   const moon = new THREE.Mesh(

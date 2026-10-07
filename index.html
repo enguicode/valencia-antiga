@@ -807,37 +807,55 @@
       border-radius: 3px;
     }
 
-    #info .hours {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-      margin: 0 0 12px;
+    #info .pair {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 22px;
     }
 
+    /* The hours are a row of cards that slides sideways; the one that comes
+       to rest in the middle is the hour. */
+    #info .hours {
+      position: relative;
+      display: flex;
+      gap: 10px;
+      margin: 0 0 12px;
+      padding: 4px 30% 8px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #info .hours::-webkit-scrollbar { display: none; }
+
     #info .hours button {
-      padding: 0 0 5px;
+      flex: 0 0 100%;
+      padding: 0 0 7px;
       font: inherit;
-      font-size: 0.8rem;
       color: var(--ink);
       background: var(--paper-item);
       border: 1px solid var(--rule);
-      border-radius: 4px;
+      border-radius: 6px;
       overflow: hidden;
       cursor: pointer;
+      scroll-snap-align: center;
+      opacity: 0.6;
+      transform: scale(0.92);
+      transition: opacity 0.2s, transform 0.2s;
     }
 
     #info .hours .sky {
       display: grid;
       place-items: center;
-      aspect-ratio: 4 / 3;
-      margin-bottom: 4px;
+      aspect-ratio: 16 / 10;
+      margin-bottom: 6px;
       background: linear-gradient(var(--top), var(--low));
     }
 
     #info .hours .sky::before {
       content: "";
-      width: 58%;
-      max-width: 34px;
+      width: 34%;
       aspect-ratio: 1;
       background: #fff6de;
       -webkit-mask: var(--icon) center / contain no-repeat;
@@ -848,11 +866,10 @@
       border-color: var(--ink);
       box-shadow: 0 0 0 1px var(--ink);
       font-weight: bold;
+      opacity: 1;
+      transform: none;
     }
 
-    @media (max-width: 440px) {
-      #info .hours { grid-template-columns: repeat(3, 1fr); }
-    }
     #info .hours button[data-hour="6.6"] { --top: #aab6dc; --low: #f4b08a; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.500 6.500L12 4l2.500 2.500'/%3E%3C/svg%3E"); }
     #info .hours button[data-hour="10"] { --top: #8fc6f2; --low: #e6f2fb; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='11' r='3.200'/%3E%3Cpath d='M9 4.800v1.400M2.8 11h1.400M13.8 11h1.400M4.6 6.6l1 1M12.4 7.6l1 -1M3 19h18'/%3E%3C/svg%3E"); }
     #info .hours button[data-hour="13"] { --top: #4f9fe4; --low: #b9defa; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4.200'/%3E%3Cpath d='M12 3v2.200M12 18.800V21M3 12h2.200M18.800 12H21M5.600 5.600l1.600 1.600M16.800 16.800l1.600 1.600M5.600 18.400l1.600-1.600M16.800 7.200l1.600-1.600'/%3E%3C/svg%3E"); }
@@ -925,28 +942,39 @@
 
     .boat-picker .dots span.on { background: var(--ink); }
 
-    .boat-picker .choose {
-      margin-top: 8px;
-      padding: 8px 18px;
+    #info .foot {
+      position: sticky;
+      bottom: -22px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin: 18px -24px -22px;
+      padding: 12px 24px 22px;
+      background: var(--paper);
+      border-top: 1px solid var(--rule);
+    }
+
+    #info .close,
+    #info .save {
+      padding: 8px 16px;
       font: inherit;
-      color: #f4e9d2;
-      background: var(--fill);
-      border: 0;
       border-radius: 3px;
       cursor: pointer;
     }
 
     #info .close {
-      display: block;
-      margin: 18px 0 0 auto;
-      padding: 8px 16px;
-      font: inherit;
+      color: var(--ink);
+      background: transparent;
+      border: 1px solid var(--rule);
+    }
+
+    #info .save {
       color: #f4e9d2;
       background: var(--fill);
-      border: 0;
-      border-radius: 3px;
-      cursor: pointer;
+      border: 1px solid var(--fill);
     }
+
+    #info.plain .save { display: none; }
 
     #debug {
       top: calc(max(10px, env(safe-area-inset-top)) + 44px);
@@ -1155,14 +1183,24 @@
     </section>
     <section id="settings-section">
     <h2 data-i18n="settings.title">Ajustes</h2>
-    <p><label><span data-i18n="settings.language">Idioma:</span>
-      <select id="language">
-        <option value="es" lang="es">Castellano</option>
-        <option value="ca" lang="ca-valencia">Valencià</option>
-        <option value="en" lang="en">English</option>
-      </select>
-    </label></p>
-    <p><span data-i18n="settings.hour">Hora del día:</span></p>
+    <p class="pair">
+      <label><span data-i18n="settings.language">Idioma:</span>
+        <select id="language">
+          <option value="es" lang="es">Castellano</option>
+          <option value="ca" lang="ca-valencia">Valencià</option>
+          <option value="en" lang="en">English</option>
+        </select>
+      </label>
+      <label><span data-i18n="settings.quality">Calidad gráfica:</span>
+        <select id="quality">
+          <option value="auto" data-i18n="quality.auto">Automática</option>
+          <option value="high" data-i18n="quality.high">Alta</option>
+          <option value="medium" data-i18n="quality.medium">Media</option>
+          <option value="low" data-i18n="quality.low">Baja</option>
+        </select>
+      </label>
+    </p>
+    <p><span data-i18n="settings.hour">Hora del día:</span> <span class="hint" data-i18n="hour.hint">desliza para cambiarla</span></p>
     <div class="hours" role="group" aria-label="Hora del día" data-i18n-label="settings.hour">
       <button type="button" data-hour="6.6" aria-pressed="false"><span class="sky"></span><span data-i18n="hour.dawn">Alba</span></button>
       <button type="button" data-hour="10" aria-pressed="false"><span class="sky"></span><span data-i18n="hour.morning">Mañana</span></button>
@@ -1190,7 +1228,6 @@
       </div>
       <p class="name" aria-live="polite"></p>
       <div class="dots" aria-hidden="true"></div>
-      <button type="button" class="choose" data-i18n="boat.choose">Elegir esta</button>
       <select id="boat-type" hidden>
         <option value="albufera" data-i18n="boat.albufera">De la Albufera, con percha</option>
         <option value="lateen" data-i18n="boat.lateen">De río, con timonel sentado</option>
@@ -1199,15 +1236,6 @@
       </select>
     </div>
     <p><button id="reset-found" class="reset-found" type="button" data-i18n="settings.reset">Volver a empezar los puntos de interés</button></p>
-    <p><label><span data-i18n="settings.quality">Calidad gráfica:</span>
-      <select id="quality">
-        <option value="auto" data-i18n="quality.auto">Automática</option>
-        <option value="high" data-i18n="quality.high">Alta</option>
-        <option value="medium" data-i18n="quality.medium">Media</option>
-        <option value="low" data-i18n="quality.low">Baja</option>
-      </select>
-    </label></p>
-
     </section>
     <section id="credits-section">
     <h2 data-i18n="credits.title">Créditos y fuentes</h2>
@@ -1228,7 +1256,10 @@
     </ul>
     <p data-i18n="version">Versión 1.0.</p>
     </section>
-    <button id="close-info" class="close" type="button" data-i18n="close">Cerrar</button>
+    <div class="foot">
+      <button id="close-info" class="close" type="button" data-i18n="close">Cerrar</button>
+      <button id="save-settings" class="save" type="button" data-i18n="save">Guardar</button>
+    </div>
   </dialog>
 
   <script>

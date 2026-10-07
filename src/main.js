@@ -59,8 +59,6 @@ try {
 boat.setType(boatSelect.value);
 boatSelect.addEventListener('change', () => {
   boat.setType(boatSelect.value);
-  // Choosing a boat is the last thing done in the sheet: back to the river.
-  if (infoDialog.open) infoDialog.close();
   try {
     localStorage.setItem('valencia-antiga.boat', boatSelect.value);
   } catch {
@@ -258,7 +256,7 @@ let started = false;
 const startButton = document.getElementById('start');
 const startTourButton = document.getElementById('start-tour');
 const infoDialog = document.getElementById('info');
-createBoatPicker(document.getElementById('boat-picker'), boatSelect, () => infoDialog.open);
+const boatPicker = createBoatPicker(document.getElementById('boat-picker'), boatSelect, () => infoDialog.open);
 
 function start(withTour) {
   started = true;
@@ -360,11 +358,61 @@ for (const opener of document.querySelectorAll('[data-open]')) {
     // The sheet holds the controls, the settings and the credits; only the
     // part that was asked for is shown.
     for (const section of infoDialog.querySelectorAll('section')) section.hidden = section.id !== opener.dataset.open;
+    const settings = opener.dataset.open === 'settings-section';
+    infoDialog.classList.toggle('plain', !settings);
     infoDialog.showModal();
     infoDialog.scrollTop = 0;
+    if (settings) openSettings();
   });
 }
 document.getElementById('close-info').addEventListener('click', () => infoDialog.close());
+
+// The settings are tried out as they are changed, and kept only if the sheet
+// is saved: closing it any other way puts back what there was.
+const settingSelects = [languageSelect, document.getElementById('quality'), hourSelect];
+const hourCards = document.querySelector('#info .hours');
+let settingsBefore = null;
+function centreHour(smooth) {
+  const card = hourCards.querySelector('[aria-pressed="true"]');
+  if (!card) return;
+  hourCards.scrollTo({ left: card.offsetLeft - (hourCards.clientWidth - card.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'instant' });
+}
+function openSettings() {
+  settingsBefore = settingSelects.map((select) => select.value);
+  boatPicker.reset();
+  centreHour(false);
+}
+document.getElementById('save-settings').addEventListener('click', () => {
+  settingsBefore = null;
+  if (boatSelect.value !== boatPicker.shown) {
+    boatSelect.value = boatPicker.shown;
+    boatSelect.dispatchEvent(new Event('change'));
+  }
+  infoDialog.close();
+});
+infoDialog.addEventListener('close', () => {
+  if (!settingsBefore) return;
+  settingSelects.forEach((select, i) => {
+    if (select.value === settingsBefore[i]) return;
+    select.value = settingsBefore[i];
+    select.dispatchEvent(new Event('change'));
+  });
+  settingsBefore = null;
+});
+// Sliding the cards changes the hour: the one left in the middle is it.
+let hourSettling = 0;
+hourCards.addEventListener('scroll', () => {
+  clearTimeout(hourSettling);
+  hourSettling = setTimeout(() => {
+    const middle = hourCards.scrollLeft + hourCards.clientWidth / 2;
+    const nearest = [...hourCards.children].reduce((best, card) =>
+      Math.abs(card.offsetLeft + card.offsetWidth / 2 - middle) < Math.abs(best.offsetLeft + best.offsetWidth / 2 - middle) ? card : best);
+    if (nearest.dataset.hour === hourSelect.value) return;
+    hourSelect.value = nearest.dataset.hour;
+    hourSelect.dispatchEvent(new Event('change'));
+  }, 110);
+});
+for (const card of hourCards.children) card.addEventListener('click', () => centreHour(true));
 
 // Third-person camera: sits behind and above the boat and eases towards that spot.
 const CAMERA_BACK = 15;

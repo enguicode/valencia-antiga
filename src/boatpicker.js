@@ -4,7 +4,7 @@ import { COLORS } from './config.js';
 import { onLanguageChange } from './i18n.js';
 
 // The boats, shown one at a time on a little stage of their own in the
-// settings: slide sideways to see the next one, and choose it with the button.
+// settings: slide sideways to see the next one; saving the sheet chooses it.
 // The list underneath is the plain <select>, which stays the source of truth.
 
 const GAP = 22; // metres between one boat and the next on the stage
@@ -71,11 +71,6 @@ export function createBoatPicker(root, select, isShowing) {
 
   root.querySelector('.prev').addEventListener('click', () => show(shown - 1));
   root.querySelector('.next').addEventListener('click', () => show(shown + 1));
-  root.querySelector('.choose').addEventListener('click', () => {
-    select.value = types[shown];
-    select.dispatchEvent(new Event('change'));
-    describe();
-  });
   root.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft') show(shown - 1);
     if (event.key === 'ArrowRight') show(shown + 1);
@@ -141,4 +136,17 @@ export function createBoatPicker(root, select, isShowing) {
     renderer.render(scene, camera);
   }
   frame();
+
+  return {
+    // The boat on the stage, which becomes the visitor's when the sheet is saved.
+    get shown() {
+      return types[shown];
+    },
+    // Back to the boat in use, when the sheet is closed without saving.
+    reset() {
+      shown = Math.max(0, types.indexOf(select.value));
+      position = shown;
+      describe();
+    },
+  };
 }

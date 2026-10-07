@@ -15,6 +15,7 @@ const STAGING = {
   lateen: { scale: 1.3, lift: 0 },
   jetski: { scale: 3.1, lift: 1.2 },
   speedboat: { scale: 2, lift: 1.3 },
+  hydroplane: { scale: 1.75, lift: 1.3 },
 };
 const SLIDE_PIXELS = 46; // a drag longer than this moves on to the next boat
 

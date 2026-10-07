@@ -54,11 +54,12 @@ export const BOAT_TYPES = {
   },
 };
 export const DEFAULT_BOAT = 'albufera';
-// Not of the period, and not pretending to be: a jet ski and a motor launch,
-// three and five times as fast as a boat under sail.
+// Not of the period, and not pretending to be: a jet ski, a motor launch and
+// a racing hydroplane, three, five and eight times as fast as a boat under sail.
 const FAST_CRAFT = {
   jetski: { pace: 3, build: createJetSki },
   speedboat: { pace: 5, build: createSpeedboat },
+  hydroplane: { pace: 8, build: createHydroplane },
 };
 
 const stationZ = (type, t) => (t * type.length) / 2;
@@ -509,6 +510,46 @@ function createSpeedboat() {
     spray: { at: [0, 0.15, z(-1) - 0.4], width: 1.7 },
     lantern: [0, LAUNCH.sheer(1) + 0.3, z(1) - 0.1],
     lid: createLidGeometry(LAUNCH),
+  };
+}
+
+// The racing hydroplane: a flat hull riding on two sponsons, an open cockpit,
+// the engine under a cowl behind it and a wing on two fins at the stern.
+function createHydroplane() {
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const pieces = {};
+  const add = (material, geometry, x = 0, y = 0, z = 0) => {
+    const piece = geometry.index ? geometry.toNonIndexed() : geometry;
+    piece.translate(x, y, z);
+    (pieces[material] ??= []).push(piece);
+  };
+  // Centre hull, tapering to the bow, and the deck that ties in the sponsons
+  add('shell', new THREE.BoxGeometry(1.5, 0.36, 4.6), 0, 0.34, -0.7);
+  add('shell', new THREE.CylinderGeometry(0.02, 0.75, 1.9, 4, 1).rotateY(Math.PI / 4).rotateX(Math.PI / 2).scale(1, 0.34, 1), 0, 0.34, 2.55);
+  add('accent', new THREE.BoxGeometry(3.3, 0.12, 1.7), 0, 0.5, 1);
+  for (const side of [-1, 1]) {
+    add('shell', new THREE.BoxGeometry(0.72, 0.34, 2.9), side * 1.3, 0.2, 1.5);
+    add('accent', new THREE.CylinderGeometry(0.02, 0.36, 1.3, 4, 1).rotateY(Math.PI / 4).rotateX(Math.PI / 2).scale(1, 0.48, 1), side * 1.3, 0.2, 3.6);
+    // Fins and the wing they carry
+    add('accent', new THREE.BoxGeometry(0.08, 1, 0.8), side * 0.62, 1, -2.55);
+  }
+  add('shell', new THREE.BoxGeometry(2.3, 0.08, 0.62), 0, 1.52, -2.55);
+  // Cockpit coaming, engine cowl and its scoop
+  add('saddle', new THREE.BoxGeometry(0.86, 0.2, 1.2), 0, 0.6, 0.25);
+  add('accent', new THREE.BoxGeometry(0.95, 0.46, 1.7), 0, 0.72, -1.5);
+  add('saddle', new THREE.BoxGeometry(0.5, 0.26, 0.5), 0, 1.02, -1.05);
+  // The boatman, low in the cockpit, hat and all
+  add('shirt', new THREE.CapsuleGeometry(0.19, 0.22, 4, 10), 0, 0.86, 0.1);
+  for (const side of [-1, 1]) add('shirt', spar(v(side * 0.2, 1, 0.12), v(side * 0.12, 0.8, 0.62), 0.055));
+  add('skin', new THREE.SphereGeometry(0.14, 12, 10), 0, 1.24, 0.12);
+  add('straw', new THREE.CylinderGeometry(0.3, 0.3, 0.025, 14), 0, 1.35, 0.12);
+  add('straw', new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12), 0, 1.42, 0.12);
+
+  return {
+    geometries: Object.fromEntries(Object.entries(pieces).map(([name, list]) => [name, mergeGeometries(list)])),
+    materials: { ...MATERIALS, shell: paint(0xf3f0e6, 0.3), accent: paint(0xd2a316, 0.35), saddle: paint(0x24211e, 0.8) },
+    spray: { at: [0, 0.25, -3.1], width: 2.3 },
+    lantern: [0, 0.62, 3.3],
   };
 }
 

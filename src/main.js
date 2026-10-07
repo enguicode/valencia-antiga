@@ -550,7 +550,8 @@ function updateCamera(dt, snap = false) {
   }
 
   const quick = orbit.idle < ORBIT.holdSeconds || boat.state.underBridge > 0.3 || (focus.left > 0 && focus.flight);
-  const ease = snap ? 1 : 1 - Math.exp(-dt * (quick ? 9 : 3));
+  // A fast craft would leave the camera far astern: it keeps up the faster it goes.
+  const ease = snap ? 1 : 1 - Math.exp(-dt * (quick ? 9 : Math.max(3, boat.state.speed / 7)));
   camera.position.lerp(cameraGoal, ease);
   lookAt.lerp(lookGoal, ease);
   // The camera never whips round: when the place a card is about lies astern,

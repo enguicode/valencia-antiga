@@ -64,7 +64,8 @@ valencia-antiga/
 │   └── deploy.sh       publica en Cloudflare Pages
 └── docs/
     ├── sources.md      de dónde sale cada dato y cuánto fiarse
-    └── multiplayer-plan.md
+    ├── multiplayer-plan.md
+    └── sea-plan.md
 ```
 
 | Módulo | De qué se ocupa |
@@ -159,6 +160,7 @@ Después, sobre esa base: las dos barcas con su manejo, las texturas, las sombra
 
 ## Para más adelante
 
+- Seguir río abajo hasta el mar: la huerta, la desembocadura, el Grau y la playa, para quien quiera seguir navegando al acabar el paseo, sin tocar el mapa ni el recorrido. El plan está en [docs/sea-plan.md](docs/sea-plan.md); previsto para la semana del 12 de octubre de 2026.
 - Una barca por cada persona conectada. El plan está en [docs/multiplayer-plan.md](docs/multiplayer-plan.md); no está empezado.
 - Bajar de la barca y entrar andando por una puerta.
 - Ver varias épocas: la València musulmana, la de 1700 y la de ahora.

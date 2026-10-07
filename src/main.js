@@ -116,11 +116,16 @@ const guide = createGuide(points, layout, path, camera, {
     focus.subject = subject;
     // Places close to the river get a zoom from the boat; far ones, and any
     // asked for from the logbook, a flight, with a longer look when asked for.
-    focus.flight =
-      !subject.moon &&
-      (requested || subject.fly || Math.hypot(subject.x - boat.state.x, subject.z - boat.state.z) > FLIGHT.beyond);
+    const distance = Math.hypot(subject.x - boat.state.x, subject.z - boat.state.z);
+    focus.flight = !subject.moon && (requested || subject.fly || distance > FLIGHT.beyond);
     focus.hold = requested ? FLIGHT.hold * 2 : FLIGHT.hold;
-    focus.total = focus.flight ? FLIGHT.out + focus.hold + FLIGHT.back : FOCUS.seconds;
+    const stretch = THREE.MathUtils.clamp(distance / LONG_FLIGHT.speed / FLIGHT.out, 1, LONG_FLIGHT.slowest);
+    focus.out = FLIGHT.out * stretch;
+    focus.back = FLIGHT.back * stretch;
+    focus.bend = subject.facing
+      ? THREE.MathUtils.clamp((distance - LONG_FLIGHT.bendFrom) * LONG_FLIGHT.bend, 0, LONG_FLIGHT.widest)
+      : 0;
+    focus.total = focus.flight ? focus.out + focus.hold + focus.back : FOCUS.seconds;
     if (borrowed) focus.total += 4; // stay with the moon once the light has gone
     focus.left = focus.total;
   },
@@ -387,9 +392,13 @@ const UNDER_BRIDGE = { back: 8.5, up: 2.9 };
 // A place too far to zoom in on is visited instead: the camera flies out to
 // a spot in front of it, hovers, and flies back to the boat.
 const FLIGHT = { beyond: 200, out: 3.5, hold: 3.5, back: 3, standOff: 1.25, above: 20 };
-const focus = { subject: null, left: 0, total: 0, hold: 0, flight: false };
+// A long flight takes longer, so it does not rush, and swings wide so that
+// it reaches the place from the front instead of sliding in sideways.
+const LONG_FLIGHT = { speed: 75, slowest: 2, bendFrom: 150, bend: 0.4, widest: 140 };
+const focus = { subject: null, left: 0, total: 0, out: 0, hold: 0, back: 0, bend: 0, flight: false };
 const MOON_DIRECTION = new THREE.Vector3(-0.4, 0.8, -0.3).normalize(); // where the moon hangs in the sky
 const flightSpot = new THREE.Vector3();
+const flightBend = new THREE.Vector3();
 const chasePosition = new THREE.Vector3();
 const chaseLook = new THREE.Vector3();
 
@@ -435,8 +444,8 @@ function updateCamera(dt, snap = false) {
   if (focus.left > 0 && focus.flight) {
     const { subject } = focus;
     const elapsed = focus.total - focus.left;
-    const going = THREE.MathUtils.smoothstep(elapsed, 0, FLIGHT.out);
-    const returning = THREE.MathUtils.smoothstep(elapsed, FLIGHT.out + focus.hold, focus.total);
+    const going = THREE.MathUtils.smootherstep(elapsed, 0, focus.out);
+    const returning = THREE.MathUtils.smootherstep(elapsed, focus.out + focus.hold, focus.total);
     const away = going - returning; // 0 at the boat, 1 at the place
     // Hover in front of the place if it has a front, otherwise on the boat's side of it.
     let [dx, dz] = subject.facing ?? [boat.mesh.position.x - subject.x, boat.mesh.position.z - subject.z];
@@ -445,11 +454,13 @@ function updateCamera(dt, snap = false) {
     dz /= distance;
     const standOff = subject.span * (subject.standOff ?? FLIGHT.standOff);
     flightSpot.set(subject.x + dx * standOff, subject.y + (subject.above ?? FLIGHT.above), subject.z + dz * standOff);
-    cameraGoal.lerpVectors(chasePosition, flightSpot, away);
-    // Rise over the roofs on the way there and back. A short hop stays low;
-    // a long crossing can ask for more.
-    const rise = subject.cruise ?? (subject.fly ? 4 : 18);
-    cameraGoal.y += Math.sin(away * Math.PI) * rise;
+    // A curve from the boat to the spot, pulled out in front of the place.
+    flightBend.set(flightSpot.x + dx * focus.bend, flightSpot.y, flightSpot.z + dz * focus.bend);
+    cameraGoal.lerpVectors(flightBend, flightSpot, away);
+    flightBend.lerpVectors(chasePosition, flightBend, away);
+    cameraGoal.lerpVectors(flightBend, cameraGoal, away);
+    // Rise over the roofs on the way there and back, unless it is a short hop.
+    cameraGoal.y += Math.sin(away * Math.PI) * (subject.fly ? 4 : 18);
     lookGoal.set(subject.x, subject.y, subject.z).lerp(chaseLook, 1 - Math.min(1, away * 2.5));
   } else if (focus.left > 0) {
     const { subject } = focus;

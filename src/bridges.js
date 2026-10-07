@@ -11,7 +11,7 @@ import { createInstances } from './instancing.js';
 
 const SPAN = RIVER.width + BANK.slopeRun * 2 + 4;
 const DECK_TOP = 8.5;
-const RAMP = 35;
+const RAMP = 29;
 const PIER = 3;
 const ARCH = { spring: 2, rise: 4.5 };
 const PARAPET = { height: 0.9, thickness: 0.5 };

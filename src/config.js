@@ -3,10 +3,12 @@
 // city sits on its right-hand bank.
 
 export const RIVER = {
-  width: 96,
+  width: 108,
   margin: 2.5, // how close the boat may get to a bank
   sampleSpacing: 5,
-  upstreamRun: 250, // navigable water before the first historic bridge
+  // Navigable water before the first historic bridge: far enough upstream to
+  // pass the corner where the wall leaves the river and abreast of Quart.
+  upstreamRun: 750,
   downstreamRun: 200, // and after the last one
 };
 

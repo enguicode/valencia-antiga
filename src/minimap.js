@@ -46,7 +46,8 @@ export function createMinimap(canvas, layout, path, guide) {
     pen.strokeStyle = hex(COLORS.water);
     pen.lineWidth = Math.max(3, RIVER.width * scale) * ratio;
     pen.beginPath();
-    path.samples.forEach((sample, i) => (i ? pen.lineTo(px(sample.x), py(sample.z)) : pen.moveTo(px(sample.x), py(sample.z))));
+    // The run to the sea is not part of the map. Only the tour's centreline is drawn.
+    path.citySamples.forEach((sample, i) => (i ? pen.lineTo(px(sample.x), py(sample.z)) : pen.moveTo(px(sample.x), py(sample.z))));
     pen.stroke();
 
     pen.beginPath();
@@ -85,8 +86,11 @@ export function createMinimap(canvas, layout, path, guide) {
       context.strokeStyle = '#2e2418';
       context.stroke();
     }
+    // Past the end of the tour the boat is off this map. The mark stays on the
+    // downstream edge instead of leaving the sheet.
+    const pinned = state.s > path.end ? path.pointAt(path.end) : state;
     context.save();
-    context.translate(px(state.x), py(state.z));
+    context.translate(px(pinned.x), py(pinned.z));
     context.rotate(-state.heading + Math.PI); // heading 0 points south on the map
     context.scale(detail, detail);
     context.beginPath();

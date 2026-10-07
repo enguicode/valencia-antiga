@@ -6,18 +6,38 @@ import { TEXTURES } from './materials.js';
 const COLUMNS = 13;
 
 // Shared by the water mesh and the boat, so the hull rides the same swell it floats on.
+// Upriver the formula is unchanged. A longer swell fades in only past the city,
+// where the channel opens toward the sea.
 export function waveHeight(x, z, time) {
-  return (
+  const river =
     Math.sin(z * 0.18 + time * 1.3) * 0.16 +
     Math.sin(x * 0.31 + z * 0.07 - time * 0.9) * 0.13 +
-    Math.sin((x + z) * 0.55 + time * 2.1) * 0.07
-  );
+    Math.sin((x + z) * 0.55 + time * 2.1) * 0.07;
+  const open = THREE.MathUtils.smoothstep(x, 2400, 3600);
+  if (open === 0) return river;
+  const swell = Math.sin(x * 0.018 + time * 0.42) * 0.32 + Math.sin(z * 0.012 - time * 0.27) * 0.2;
+  return river * (1 - 0.45 * open) + swell * open;
 }
 
 export function createWater(path) {
-  const half = RIVER.width / 2 + BANK.slopeRun;
-  const profile = Array.from({ length: COLUMNS }, (_, i) => [-half + (2 * half * i) / (COLUMNS - 1), 0]);
-  const geometry = buildRibbon(path.samples, profile);
+  // The city channel keeps its width. It opens only on the way to the sea,
+  // past the end of the tour, so the water under the walled stretch is the
+  // same mesh it was.
+  const cityHalf = RIVER.width / 2 + BANK.slopeRun;
+  const halfAt = (sample) => {
+    if (sample.s < path.mouth - 600) return cityHalf;
+    if (sample.s < path.mouth) {
+      const t = THREE.MathUtils.smoothstep(sample.s, path.mouth - 600, path.mouth);
+      return cityHalf + (480 - cityHalf) * t;
+    }
+    const span = Math.max(path.step, path.seaEnd - path.mouth);
+    const t = Math.min(1, (sample.s - path.mouth) / span);
+    return 480 + (700 - 480) * t;
+  };
+  const geometry = buildRibbon(path.samples, (sample) => {
+    const half = halfAt(sample);
+    return Array.from({ length: COLUMNS }, (_, i) => [-half + (2 * half * i) / (COLUMNS - 1), 0]);
+  });
 
   // Smooth water: the swell moves the surface, and two layers of a ripple
   // normal map sliding over each other give it its texture. What it reflects

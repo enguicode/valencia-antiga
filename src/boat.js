@@ -1095,8 +1095,21 @@ export function createBoat(path, bridgeGuide) {
     row: 0, // nearest centreline sample
     underBridge: 0, // 0 in open water, 1 right under a bridge
   };
-  const limit = RIVER.width / 2 - RIVER.margin;
   const forward = new THREE.Vector3();
+
+  // Upriver the banks stay where they are. The channel opens only on the
+  // way to the sea, and always inside the water mesh.
+  function bankLimit(s) {
+    const base = RIVER.width / 2 - RIVER.margin;
+    if (s <= path.mouth - 600) return base;
+    if (s < path.mouth) {
+      const t = THREE.MathUtils.smoothstep(s, path.mouth - 600, path.mouth);
+      return base + (340 - base) * t;
+    }
+    const span = Math.max(path.step, path.seaEnd - path.mouth);
+    const t = Math.min(1, (s - path.mouth) / span);
+    return 340 + (480 - 340) * t;
+  }
 
   function update(dt, input, time, speedLimit = Infinity) {
     state.speed += input.throttle * ACCELERATION * pace * dt;
@@ -1118,6 +1131,7 @@ export function createBoat(path, bridgeGuide) {
     state.z += dirZ * state.speed * dt;
 
     const { sample, s, lateral, index } = path.project(state.x, state.z);
+    const limit = bankLimit(s);
     if (Math.abs(lateral) > limit) {
       const excess = lateral - Math.sign(lateral) * limit;
       state.x -= sample.rx * excess;
@@ -1134,7 +1148,9 @@ export function createBoat(path, bridgeGuide) {
     state.underBridge = guided.closeness;
     animateBoat(model, dt, time, { closeness: guided.closeness, speed: state.speed });
 
-    const overshoot = s < path.start ? s - path.start : s > path.end ? s - path.end : 0;
+    // The tour still ends at path.end. The boat may go on, as far as the sea.
+    const stop = path.seaEnd ?? path.end;
+    const overshoot = s < path.start ? s - path.start : s > stop ? s - stop : 0;
     if (overshoot !== 0) {
       state.x -= sample.tx * overshoot;
       state.z -= sample.tz * overshoot;

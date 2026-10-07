@@ -14,13 +14,13 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 
 | | |
 | --- | --- |
-| **Navegar** | 3 km de río, desde la altura de las Torres de Quart hasta pasado el de la Mar. La barca frena contra las orillas y, al llegar a un puente, se encauza sola por un arco y abate la vela. |
+| **Navegar** | 3 km de río, que son el paseo, desde la altura de las Torres de Quart hasta pasado el de la Mar; el río sigue si se continúa. La barca frena contra las orillas y, al llegar a un puente, se encauza sola por un arco y abate la vela. |
 | **Encontrar los puntos** | Junto a cada sitio flota un aro claro. Al entrar sale la ficha, la cámara mira el lugar (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Una flecha en el borde lleva al más cercano que falte. |
 | **La luna** | Al entrar en el aro anochece solo, sin botón: la cámara mira al cielo y sale la ficha. Al alejarte vuelve la hora que había, salvo que la cambies tú. En el listado se ve una luna, no el nombre, hasta que se consigue. |
 | **Repasar** | La cuenta de arriba a la izquierda abre el cuaderno. Lo no descubierto sale en blanco. Lo encontrado lleva un ojo que lleva la cámara hasta ese sitio. El ojo de la luna, si es de día, deja el cielo de noche mientras dura la ficha y luego devuelve la hora que había. |
 | **Recorrido guiado** | La barca baja sola por el centro y pasa por los dieciocho aros. Arrastrar solo mueve la cámara. |
 | **La hora** | Al entrar, la portada premarca día, atardecer o noche según el reloj del visitante, con su huso horario. Desde ahí solo cambia a mano. De noche se encienden ventanas, faroles y luciérnagas, y los carteles de la interfaz pasan a un tono oscuro. |
-| **El final** | Pasado el Pont de la Mar el río se pierde en un banco de niebla. Quien lo atraviesa sale al principio del paseo. |
+| **El final** | El paseo acaba pasado el Pont de la Mar, y quien quiera sigue por la huerta, la desembocadura, el Grau y la playa. El mapa y los dieciocho puntos siguen igual; mar adentro, la niebla devuelve al principio. |
 | **La barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. Y, fuera de época a propósito, una moto de agua que va tres veces más rápido, una lancha motora que va cinco y un hidroplano de carreras que va ocho. Se eligen en los ajustes, en un escaparate en 3D que se pasa deslizando. |
 | **El idioma** | Castellano, valenciano o inglés, en la portada y en los ajustes. |
 | **Donar** | En la portada, junto a Créditos, y también en Ayuda y en Créditos. El importe lo elige quien paga. |
@@ -75,6 +75,7 @@ valencia-antiga/
 | `config.js` | Medidas, colores y utilidades |
 | `path.js` | El eje del río y lo que se repite a lo largo |
 | `water.js`, `environment.js`, `riverside.js` | Agua; cielo, luces, orillas y árboles; pretiles, escaleras y azud |
+| `sea.js` | Huerta, desembocadura, playa y Grau |
 | `walls.js`, `bridges.js`, `city.js`, `landmarks.js` | Muralla y puertas; puentes; casas; edificios singulares |
 | `materials.js` | Texturas pintadas por código |
 | `boat.js` | Las dos barcas, su manejo y su animación |
@@ -161,7 +162,6 @@ Después, sobre esa base: las dos barcas con su manejo, las texturas, las sombra
 
 ## Para más adelante
 
-- Seguir río abajo hasta el mar: la huerta, la desembocadura, el Grau y la playa, para quien quiera seguir navegando al acabar el paseo, sin tocar el mapa ni el recorrido. El plan está en [docs/sea-plan.md](docs/sea-plan.md); previsto para la semana del 12 de octubre de 2026.
 - Una barca por cada persona conectada. El plan está en [docs/multiplayer-plan.md](docs/multiplayer-plan.md); no está empezado.
 - Bajar de la barca y entrar andando por una puerta.
 - Ver varias épocas: la València musulmana, la de 1700 y la de ahora.

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createRiverPath } from './path.js';
 import { createEnvironment } from './environment.js';
+import { createSea } from './sea.js';
 import { createWater } from './water.js';
 import { createWalls } from './walls.js';
 import { createCity } from './city.js';
@@ -69,6 +70,7 @@ water.mesh.renderOrder = DRAW_ORDER.water;
 const city = createCity(layout);
 const life = createLife(layout, path, city.userData.chimneys, bridgeGuide);
 const nightLights = createNightLights(layout, path);
+const sea = createSea(scene, path, layout, water.material);
 scene.add(
   water.mesh,
   createWalls(layout, path),
@@ -134,7 +136,6 @@ const guide = createGuide(points, layout, path, camera, {
   isShowing: () => focus.left > 0,
 });
 scene.add(guide.group);
-for (const button of document.querySelectorAll('.reset-found')) button.addEventListener('click', () => guide.reset());
 
 // The logbook: tapping the tally lists every point. Those not yet found are
 // there too, as blanks: known to exist, not what they are.
@@ -151,8 +152,8 @@ document.getElementById('status').addEventListener('click', () => {
       item.append(title, text);
       if (!entry.found) {
         item.className = 'unknown';
-        title.textContent = entry.bonus ? '☾ ? ? ?' : '? ? ?'; // a moon, as a clue
-        text.textContent = t(entry.bonus ? 'journal.night' : 'journal.unknown');
+        title.textContent = entry.bonus === 'night' ? '☾ ? ? ?' : '? ? ?'; // a moon, as a clue
+        text.textContent = t(entry.bonus === 'night' ? 'journal.night' : 'journal.unknown');
         return item;
       }
       title.textContent = localized(entry.title);
@@ -351,6 +352,38 @@ const setMenu = (open) => {
 };
 menuToggle.addEventListener('click', () => setMenu(!document.body.classList.contains('menu-open')));
 // Opening a dialog is the end of the errand: fold it away.
+
+// Resetting forgets the points already found. Ask first, and say what that does.
+const resetDialog = document.getElementById('reset-confirm');
+function explainReset() {
+  const count = guide.tally();
+  const night = guide.found.has('lluna');
+  const sea = guide.found.has('grau');
+  const nothing = count.found === 0 && !night && !sea;
+  document.getElementById('reset-do').hidden = nothing;
+  const cancel = document.getElementById('reset-cancel');
+  cancel.dataset.i18n = nothing ? 'close' : 'reset.no';
+  cancel.textContent = t(cancel.dataset.i18n);
+  const parts = [nothing ? t('reset.none') : t('reset.body', count)];
+  if (!nothing && night) parts.push(t('reset.night'));
+  if (!nothing && sea) parts.push(t('reset.sea'));
+  document.getElementById('reset-explain').textContent = parts.join(' ');
+}
+for (const button of document.querySelectorAll('.reset-found')) {
+  button.addEventListener('click', () => {
+    setMenu(false);
+    explainReset();
+    if (!resetDialog.open) resetDialog.showModal();
+  });
+}
+document.getElementById('reset-cancel').addEventListener('click', () => resetDialog.close());
+document.getElementById('reset-do').addEventListener('click', () => {
+  guide.reset();
+  resetDialog.close();
+});
+onLanguageChange(() => {
+  if (resetDialog.open) explainReset();
+});
 
 for (const opener of document.querySelectorAll('[data-open]')) {
   opener.addEventListener('click', () => {
@@ -581,6 +614,23 @@ function showTourNotice() {
   tourNoticeTimer = setTimeout(() => tourNotice.classList.remove('visible'), 4500);
 }
 
+// Once, on leaving the tour. Sailing back upstream arms it again.
+const seaNotice = document.getElementById('sea-notice');
+let seaAnnounced = false;
+let seaNoticeTimer = 0;
+function updateSeaNotice() {
+  if (!seaNotice || !started) return;
+  if (boat.state.s > path.end + 8 && !seaAnnounced) {
+    seaAnnounced = true;
+    seaNotice.classList.add('visible');
+    clearTimeout(seaNoticeTimer);
+    seaNoticeTimer = setTimeout(() => seaNotice.classList.remove('visible'), 6500);
+  } else if (boat.state.s < path.end - 40) {
+    seaAnnounced = false;
+    seaNotice.classList.remove('visible');
+  }
+}
+
 // Where the mist starts to close in before the end of the river, where it is
 // at its thickest, how near the end the way through is, and the seconds it
 // takes to lift once through.
@@ -610,8 +660,8 @@ const mistBank = (() => {
   });
   const bank = new THREE.Group();
   for (const beyond of [20, 55, 95]) {
-    const at = path.pointAt(path.end + beyond);
-    const sheet = new THREE.Mesh(new THREE.PlaneGeometry(520, 90), material);
+    const at = path.pointAt(path.seaEnd + beyond);
+    const sheet = new THREE.Mesh(new THREE.PlaneGeometry(1400, 90), material);
     sheet.position.set(at.x, 45, at.z);
     sheet.rotation.y = Math.atan2(at.tx, at.tz);
     bank.add(sheet);
@@ -648,10 +698,11 @@ function frame() {
     tourNotice.classList.remove('visible');
   }
   tourWasActive = tour.active;
+  updateSeaNotice();
 
-  // The river ends in a bank of mist. It closes in after the last bridge and,
-  // sailed through, comes out at the head of the river, where it lifts.
-  const toEnd = path.end - boat.state.s;
+  // The river ends in a bank of mist, out at sea. Sailed through, it comes
+  // out at the head of the river, where it lifts. The tour itself ends earlier.
+  const toEnd = path.seaEnd - boat.state.s;
   let returned = false;
   if (started && toEnd <= MIST.gate) {
     boat.relaunch();
@@ -679,7 +730,9 @@ function frame() {
   sun.position.copy(boat.mesh.position).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
   // On a flight the water is animated and drawn around the camera, not the boat.
   const flying = focus.left > 0 && focus.flight;
-  water.update(time, flying ? path.project(camera.position.x, camera.position.z).index : boat.state.row);
+  const waterRow = flying ? path.project(camera.position.x, camera.position.z).index : boat.state.row;
+  water.update(time, waterRow);
+  sea.update(time, waterRow);
   life.update(dt, time, boat.state, atmosphere.state);
   sound.update(dt, boat.state.speed);
   nightLights.update(time, atmosphere.state.night);
@@ -693,7 +746,8 @@ function frame() {
   if (started) guide.update(time, boat.state);
   minimap.update(boat.state);
 
-  const distance = Math.round(boat.state.s - path.start);
+  // The count stays the length of the tour, even while the boat sails on.
+  const distance = Math.round(Math.min(boat.state.s, path.end) - path.start);
   if (distance !== shownDistance) {
     shownDistance = distance;
     distanceLabel.textContent = distance;

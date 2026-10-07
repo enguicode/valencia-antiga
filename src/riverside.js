@@ -21,10 +21,12 @@ export function createRiverside(layout, path) {
   const stone = createSurface('masonry', 3, { color: COLORS.stone, side: THREE.DoubleSide });
   const group = new THREE.Group();
   const top = BANK.height + PRETIL.parapet;
+  // Parapets end with the tour. Further down the banks are earth and reeds.
+  const walled = path.citySamples.filter((sample) => sample.s <= path.garden);
 
   for (const side of [-1, 1]) {
     const wall = new THREE.Mesh(
-      buildRibbon(path.samples, [
+      buildRibbon(walled, [
         [side * PRETIL.offset, PRETIL.foot],
         [side * PRETIL.offset, top],
         [side * (PRETIL.offset + PRETIL.thickness), top],
@@ -41,7 +43,7 @@ export function createRiverside(layout, path) {
   const dummy = new THREE.Object3D();
   const every = Math.round(BALL_SPACING / path.step);
   path.samples.forEach((sample, i) => {
-    if (i % every !== 0 || sample.s < path.start - 150 || sample.s > path.end + 150) return;
+    if (i % every !== 0 || sample.s < path.start - 150 || sample.s > path.garden) return;
     for (const side of [-1, 1]) {
       const lateral = side * (PRETIL.offset + PRETIL.thickness / 2);
       dummy.position.set(sample.x + sample.rx * lateral, top + 0.35, sample.z + sample.rz * lateral);

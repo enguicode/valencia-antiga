@@ -109,6 +109,23 @@ LANDMARKS = [
     ("Convento del Corpus Christi", "corpus-christi", "church", {"inside": 38}),
 ]
 
+# From Pont del Regne to the sea. The first two are today's bridges over the
+# old bed. The rest is an estimated course to a shoreline just east of the
+# Drassanes, well west of the modern beach. See docs/sources.md.
+SEA_LATLON = [
+    (39.45814, -0.35443),  # Pont de Montolivet
+    (39.45486, -0.34977),  # Pont de l'Assut de l'Or
+    (39.455198, -0.343416),  # estimated bend toward the east
+    (39.456097, -0.337596),
+    (39.456636, -0.332708),  # shore, about 1700
+    (39.456636, -0.327122),  # offshore, where the boat runs out
+    (39.456636, -0.322699),  # past that, so the mist has water under it
+]
+SEA_MOUTH = (39.456636, -0.332708)
+SEA_OFFSHORE = (39.456636, -0.327122)
+GRAU_CHURCH = (39.46082, -0.33434)  # Santa Maria del Mar
+GRAU_YARDS = (39.46133, -0.33355)  # Drassanes del Grau
+
 ORIGIN_NAME = "Torres dels Serrans"
 TOWER_SPACING = 70  # metres between wall vertices, which is where towers go
 ANGLE_BINS = 90
@@ -365,6 +382,15 @@ def main():
         "origin": {"name": ORIGIN_NAME, "lat": round(origin[0], 6), "lon": round(origin[1], 6)},
         "axes": "x east, z south, metres from the origin",
         "river": rounded(river),
+        "sea": {
+            "course": rounded(to_local(p) for p in SEA_LATLON),
+            "mouth": [round(v, 1) for v in to_local(SEA_MOUTH)],
+            "offshore": [round(v, 1) for v in to_local(SEA_OFFSHORE)],
+            "grau": {
+                "church": {"name": "Santa Maria del Mar", "x": round(to_local(GRAU_CHURCH)[0], 1), "z": round(to_local(GRAU_CHURCH)[1], 1)},
+                "yards": {"name": "Drassanes del Grau", "x": round(to_local(GRAU_YARDS)[0], 1), "z": round(to_local(GRAU_YARDS)[1], 1)},
+            },
+        },
         "bridges": [{**b, "x": round(b["x"], 1), "z": round(b["z"], 1)} for b in bridges],
         "wall": rounded(wall),
         "gates": gates,

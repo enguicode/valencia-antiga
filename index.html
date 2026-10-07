@@ -232,6 +232,60 @@
       cursor: pointer;
     }
 
+    /* Asked before forgetting the points already found. */
+    #reset-confirm {
+      width: min(440px, calc(100% - 28px));
+      padding: 20px 22px;
+      color: var(--ink);
+      font: inherit;
+      line-height: 1.45;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+    }
+
+    #reset-confirm::backdrop { background: rgba(46, 36, 24, 0.5); }
+
+    #reset-confirm h2 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+    }
+
+    #reset-confirm p {
+      margin: 0;
+      font-size: 0.92rem;
+    }
+
+    #reset-confirm .foot {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    #reset-confirm .close,
+    #reset-confirm .save {
+      padding: 8px 16px;
+      font: inherit;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #reset-confirm .close {
+      color: var(--ink);
+      background: transparent;
+      border: 1px solid var(--rule);
+    }
+
+    #reset-confirm .save {
+      color: #f4e9d2;
+      background: var(--fill);
+      border: 1px solid var(--fill);
+    }
+
+    #reset-confirm .save[hidden] { display: none; }
+
     #help {
       left: 50%;
       bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px);
@@ -252,7 +306,8 @@
       pointer-events: none;
     }
 
-    #tour-notice {
+    #tour-notice,
+    #sea-notice {
       left: 50%;
       bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px);
       transform: translateX(-50%);
@@ -264,7 +319,8 @@
       transition: opacity 0.4s ease;
     }
 
-    #tour-notice.visible { opacity: 1; }
+    #tour-notice.visible,
+    #sea-notice.visible { opacity: 1; }
 
     #help .touch { display: none; }
 
@@ -371,16 +427,6 @@
       background: var(--parchment);
       border: 1px solid var(--rule);
       border-radius: 3px;
-    }
-
-    #reset-found {
-      padding: 8px 16px;
-      font: inherit;
-      color: #f4e9d2;
-      background: var(--fill);
-      border: 0;
-      border-radius: 3px;
-      cursor: pointer;
     }
 
     /* The menu hangs under the map. Closed, it is a tab the width of the
@@ -1040,7 +1086,8 @@
 
     /* Hints sit above the sticks instead of between them. */
     body.touch #help,
-    body.touch #tour-notice {
+    body.touch #tour-notice,
+    body.touch #sea-notice {
       bottom: calc(max(22px, env(safe-area-inset-bottom)) + 126px);
       max-width: calc(100% - 120px);
     }
@@ -1133,6 +1180,7 @@
   </div>
 
   <div id="tour-notice" class="panel" role="status" data-i18n="tour.notice"></div>
+  <div id="sea-notice" class="panel" role="status" data-i18n="sea.notice">Aquí acaba el paseo. El río sigue hasta el mar.</div>
 
   <div id="pointer">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5l16 7-16 7 4-7z" fill="#f4e9d2" stroke="#5a4a36" stroke-width="1.6" stroke-linejoin="round"/></svg>
@@ -1144,6 +1192,15 @@
     <p class="tally"></p>
     <ol></ol>
     <button id="close-journal" class="close" type="button" data-i18n="journal.close">Seguir navegando</button>
+  </dialog>
+
+  <dialog id="reset-confirm">
+    <h2 data-i18n="reset.title">Reiniciar los puntos</h2>
+    <p id="reset-explain"></p>
+    <div class="foot">
+      <button id="reset-cancel" class="close" type="button" data-i18n="reset.no" autofocus>Cancelar</button>
+      <button id="reset-do" class="save" type="button" data-i18n="reset.yes">Reiniciar</button>
+    </div>
   </dialog>
 
   <div id="debug" class="panel" hidden></div>
@@ -1187,6 +1244,7 @@
       <li data-i18n-html="help.bridges"><strong>Puentes:</strong> al acercarte, la barca se encauza sola hacia el arco más cercano y abate la vela para pasar por debajo.</li>
       <li data-i18n-html="help.menu"><strong>Menú:</strong> el botón que hay bajo el mapa despliega los ajustes, estos controles, los créditos y el reinicio de los puntos. El momento del día y el sonido tienen sus botones redondos abajo, en el centro.</li>
       <li data-i18n-html="help.tour"><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez el botón de la brújula, abajo a la izquierda.</li>
+      <li data-i18n-html="help.sea"><strong>Hasta el mar:</strong> pasado el final del paseo se puede seguir. El río va entre la huerta hasta la desembocadura, el Grau y la playa. No cuenta para los dieciocho puntos ni sale en el mapa. Mar adentro, un banco de niebla devuelve al principio.</li>
     </ul>
     <p data-i18n-html="help.donate">Si te apetece, <a href="https://www.paypal.me/ananen" target="_blank" rel="noopener">donar</a>. El importe lo eliges tú.</p>
     </section>
@@ -1245,7 +1303,6 @@
         <option value="hydroplane" data-i18n="boat.hydroplane">Hidroplano de carreras</option>
       </select>
     </div>
-    <p><button id="reset-found" class="reset-found" type="button" data-i18n="settings.reset">Reiniciar los puntos de interés</button></p>
     </section>
     <section id="credits-section">
     <h2 data-i18n="credits.title">Créditos y fuentes</h2>
@@ -1261,7 +1318,7 @@
     <h2 data-i18n="reliable.title">Qué es fiable y qué no</h2>
     <ul>
       <li data-i18n-html="reliable.yes"><strong>Fiable:</strong> dónde está cada cosa. Puentes, puertas, iglesias y palacios ocupan el lugar que ocupan hoy, o sus restos.</li>
-      <li data-i18n-html="reliable.roughly"><strong>Aproximado:</strong> la muralla sigue las calles de ronda que la sustituyeron, y el río, la línea de los puentes actuales.</li>
+      <li data-i18n-html="reliable.roughly"><strong>Aproximado:</strong> la muralla sigue las calles de ronda que la sustituyeron, y el río, la línea de los puentes actuales. Del Pont de la Mar al mar, el cauce y la costa son una estimación.</li>
       <li data-i18n-html="reliable.no"><strong>Esbozado o inventado:</strong> la forma de los edificios y sus texturas, las barcas, el número y el sitio de las torres, las casas, las escaleras, el azud, y todo lo que se mueve.</li>
     </ul>
     <p data-i18n="version">Versión 1.0.</p>

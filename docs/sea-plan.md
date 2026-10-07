@@ -1,6 +1,6 @@
 # Plan: seguir río abajo hasta el mar
 
-> **Estado:** apuntado el 7 de octubre de 2026, sin empezar. Previsto para la semana del 12 de octubre.
+> **Estado:** apuntado el 7 de octubre de 2026 y hecho el mismo día.
 
 ## Qué se quiere
 
@@ -13,6 +13,8 @@ Dos condiciones puestas por el autor:
 
 ## Lo que hay ahora
 
+Esto era el punto de partida, el 7 de octubre por la mañana, antes de hacerlo.
+
 - Desde el 7 de octubre de 2026 el final del tramo es un banco de niebla que devuelve al principio del paseo. Cuando exista el tramo del mar, esa niebla tendrá que irse al nuevo final, mar adentro, o quitarse.
 
 - El tramo navegable acaba 450 m después del Pont de la Mar (`RIVER.downstreamRun` en `src/config.js`); la barca se para ahí en seco (`path.end`, en `src/boat.js`).
@@ -21,12 +23,12 @@ Dos condiciones puestas por el autor:
 
 ## Lo que hay que averiguar antes de dibujar nada
 
-Hoy no hay ninguna fuente contrastada para este tramo. Lo que sigue son cosas por comprobar, no datos:
+Esto se preguntaba antes de dibujar. Lo que se ha podido contestar está en `docs/sources.md`, y solo hasta donde llega: el curso después del Assut y la orilla del mar siguen en estimación.
 
-1. **Por dónde iba el río.** El viejo cauce es hoy el Jardí del Túria hasta la Ciutat de les Arts; el último trecho hasta el puerto está en OpenStreetMap como cauce antiguo. Hay que ver si el trazado actual vale para 1700 o si el río divagaba.
-2. **Dónde estaba la orilla del mar.** La costa ha avanzado con las obras del puerto; la playa de 1700 quedaba más adentro que la de hoy. Sin un plano de la época, la línea de costa será una estimación y habrá que decirlo.
-3. **Cómo era el Grau.** Un pueblo aparte, con su iglesia de Santa Maria del Mar, las atarazanas, alguna defensa y un embarcadero de madera en playa abierta, sin puerto de obra hasta finales del XVIII. Todo esto es de memoria: hay que contrastar qué había en pie hacia 1700 y qué forma tenía.
-4. **Qué había entre la ciudad y el mar.** Huerta, alquerías, acequias, el camino del Grau, algún molino. Y qué había en la otra orilla.
+1. **Por dónde iba el río.** El viejo cauce es hoy el Jardí del Túria hasta la Ciutat de les Arts; el último trecho hasta el puerto está en OpenStreetMap como cauce antiguo. Hay que ver si el trazado actual vale para 1700 o si el río divagaba. Del Pont del Regne al Assut de l'Or, sí: el curso pasa por el centro de los puentes actuales de Montolivet y del Assut de l'Or, como el resto del cauce, y es el jardín de hoy, que ocupa el viejo cauce. Del Assut a la costa, no: sigue en estimación. Ese tramo está enterrado, la línea va hacia el este y sale al mar al sur del Grau, y no se ha cotejado con un plano de 1700.
+2. **Dónde estaba la orilla del mar.** La costa ha avanzado con las obras del puerto; la playa de 1700 quedaba más adentro que la de hoy. Sin un plano de la época, la línea de costa será una estimación y habrá que decirlo. Sigue en estimación: unos 70 m al este de las Drassanes, muy al oeste de la playa de ahora. Los grabados de finales del XVIII aún las ponen junto al mar, y la playa actual queda cerca de 1 km más afuera. El texto de la ficha lo dice.
+3. **Cómo era el Grau.** Un pueblo aparte, con su iglesia de Santa Maria del Mar, las atarazanas, alguna defensa y un embarcadero de madera en playa abierta, sin puerto de obra hasta finales del XVIII. Todo esto es de memoria: hay que contrastar qué había en pie hacia 1700 y qué forma tenía. Contrastado en lo que había en pie; la forma es un esbozo. La iglesia está donde está hoy: la torre, acabada hacia 1689, obras desde 1683, y el templo sin terminar hasta 1736. En la escena se ve entero, con cúpula. Las atarazanas, cinco naves de unos 10 por 48 m del siglo XIV, seguían en pie junto a la playa como almacén (provisiones en 1707, sal en 1715). El embarcadero es de madera, en playa abierta. Hubo obras de Tomás Güelda a finales del XVII, pero no un puerto de obra, y no se ha dibujado un muelle de piedra. De alguna defensa, las fuentes usadas no dicen nada.
+4. **Qué había entre la ciudad y el mar.** Huerta, alquerías, acequias, el camino del Grau, algún molino. Y qué había en la otra orilla. Huerta, cañas, acequias, alquerías y barras: es lo que las fuentes dicen que había, sin plano de cada pieza, y el detalle está inventado. El camino del Grau y algún molino se quedaron en la pregunta: no salen pieza por pieza. En la otra orilla, Natzaret ya existía al sur; en la escena solo hay huerta y tres barracas, no el pueblo, a propósito.
 
 Dónde mirar: la web de jdiezarnal.com (tiene páginas del Grau y de las atarazanas), la Viquipèdia, y planos y vistas del Grau del XVIII. Como siempre, cada dato va a `docs/sources.md` con su grado de fiabilidad.
 
@@ -59,16 +61,20 @@ Dónde mirar: la web de jdiezarnal.com (tiene páginas del Grau y de las ataraza
 
 ## Decisiones pendientes del autor
 
+Eran estas, y se cerraron el mismo día.
+
 1. **La marca de la barca en el mapa** cuando se sale del tramo: que se quede parada en el borde, que desaparezca, o que una flecha indique que se ha seguido río abajo.
 2. **Aviso al pasar el final:** nada, o un cartel breve («Aquí acaba el paseo; el río sigue hasta el mar»).
 3. **Fichas en el tramo nuevo:** ninguna, o alguna que no cuente para el total (el Grau, la playa), como la de la luna.
 4. **Cuánto detalle para el Grau:** depende de lo que den las fuentes; si dan poco, un esbozo honesto antes que inventar.
 
+## Qué se decidió
+
+1. En el mapa, la marca de la barca se queda en el borde de aguas abajo. No desaparece y no hay flecha.
+2. Un aviso breve, y una sola vez, al pasar el final: «Aquí acaba el paseo. El río sigue hasta el mar.»
+3. Una ficha, la del Grau, que no cuenta, como la de la luna salvo que no cambia la hora. No está en el cuaderno hasta que se encuentra, y la flecha no lleva hasta ella.
+4. El Grau es un esbozo honesto a partir de las fuentes de más arriba. La orilla del mar es una estimación, y el texto lo dice.
+
 ## Orden propuesto
 
-1. Fuentes: trazado, costa y Grau. Sin esto no se dibuja.
-2. Trazado y los dos finales, con el río vacío hasta el mar. Comprobar que el paseo de ahora no cambia.
-3. Huerta y orillas.
-4. Desembocadura, mar y playa.
-5. El Grau.
-6. Decisiones del mapa, el aviso y las fichas.
+Ese era el orden, y es el orden en que se hizo. Ya está: primero las fuentes (trazado, costa y Grau), luego el trazado y los dos finales, la huerta y las orillas, la desembocadura con el mar y la playa, el Grau, y al final el mapa, el aviso y la ficha.

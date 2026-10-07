@@ -33,6 +33,8 @@ const SUBJECTS = {
   quart: { aim: 18, span: 46, standOff: 1, above: -9 },
   // Far from the water: the camera goes in closer than its width would ask.
   palace: { aim: 12, span: 150, standOff: 0.75, above: 14 },
+  // The Grau church stands back from the mouth, on the beach.
+  grau: { aim: 14, span: 90, fly: true, standOff: 0.65, above: 12 },
   // Convents stand back from the bank: the camera goes over to them.
   convent: { aim: 9, span: 90, fly: true, standOff: 0.8, above: 9 },
 };
@@ -143,6 +145,10 @@ export function createGuide(points, layout, path, camera, elements) {
       const { sample } = path.project(bridge.x, bridge.z);
       ({ x, z } = sample);
       facing = [-sample.tx, -sample.tz];
+    } else if (type === 'sea') {
+      const place = layout.sea.grau[id];
+      ({ x, z } = place);
+      kind = 'grau';
     } else {
       const landmark = layout.landmarks.find((item) => item.id === id);
       ({ x, z } = landmark);
@@ -159,19 +165,22 @@ export function createGuide(points, layout, path, camera, elements) {
     return {
       s: Math.max(s + offset, path.start + EARLIEST_RING),
       side: type === 'bridge' ? 0 : Math.sign(lateral) || 1,
+      // The Grau ring sits out toward the village, still in water the boat can reach.
+      reach: type === 'sea' ? Math.min(Math.abs(lateral) * 0.72, 300) : RING_OFFSET,
       subject: { ...preset, x, z, facing },
     };
   };
 
   const group = new THREE.Group();
   const markers = points.map((point, i) => {
-    const { s, side, subject } = locate(point.at);
+    const { s, side, subject, reach } = locate(point.at);
     // The night-only point is about the moon: that is what the camera turns to.
-    if (point.bonus) subject.moon = true;
-    subject.y = (point.at.type === 'bridge' || point.at.type === 'start' ? 0 : BANK.height) + subject.aim;
+    if (point.bonus === 'night') subject.moon = true;
+    const ground = point.at.type === 'sea' ? 1.2 : point.at.type === 'bridge' || point.at.type === 'start' ? 0 : BANK.height;
+    subject.y = ground + subject.aim;
     const centre = path.pointAt(s);
-    const x = centre.x + centre.rx * side * RING_OFFSET;
-    const z = centre.z + centre.rz * side * RING_OFFSET;
+    const x = centre.x + centre.rx * side * (reach ?? RING_OFFSET);
+    const z = centre.z + centre.rz * side * (reach ?? RING_OFFSET);
     const state = found.has(point.id) ? 'found' : 'pending';
 
     const ring = new THREE.Group();
@@ -181,7 +190,7 @@ export function createGuide(points, layout, path, camera, elements) {
     edge.renderOrder = fill.renderOrder = 3; // over the water
     ring.add(fill, edge);
 
-    const pin = new THREE.Sprite(pins[state === 'pending' && point.bonus ? 'moon' : state]);
+    const pin = new THREE.Sprite(pins[state === 'pending' && point.bonus === 'night' ? 'moon' : state]);
     pin.center.set(0.5, 0); // the tip of the pin is the anchor
     pin.scale.set(PIN_SIZE * 0.75, PIN_SIZE, 1);
     pin.renderOrder = 4;
@@ -204,7 +213,7 @@ export function createGuide(points, layout, path, camera, elements) {
     const state = found.has(marker.id) ? 'found' : 'pending';
     marker.edge.material = rings[state].edge;
     marker.fill.material = rings[state].fill;
-    marker.pin.material = pins[state === 'pending' && marker.bonus ? 'moon' : state];
+    marker.pin.material = pins[state === 'pending' && marker.bonus === 'night' ? 'moon' : state];
   };
 
   let shown = null;
@@ -220,7 +229,7 @@ export function createGuide(points, layout, path, camera, elements) {
       return;
     }
     // Leaving the moon's ring is what brings the daylight back.
-    if (leaving?.bonus) onLeave?.();
+    if (leaving?.bonus === 'night') onLeave?.();
     const first = !found.has(marker.id);
     if (first) {
       found.add(marker.id);
@@ -245,9 +254,11 @@ export function createGuide(points, layout, path, camera, elements) {
     const count = tally();
     // The card says which point this is, going down the river; how many
     // have been found is the counter's business.
-    card.querySelector('.tally').textContent = marker.bonus
+    card.querySelector('.tally').textContent = marker.bonus === 'night'
       ? t('card.bonus')
-      : count.found === count.total && !marker.repeat
+      : marker.bonus === 'sea'
+        ? t('card.sea')
+        : count.found === count.total && !marker.repeat
         ? t('card.all', count)
         : t('card.number', { number: marker.number, total: count.total }) + (marker.repeat ? t('card.again') : '');
   }
@@ -284,7 +295,8 @@ export function createGuide(points, layout, path, camera, elements) {
       marker.ring.scale.setScalar(1 + Math.sin(time * 2 + marker.phase) * 0.035);
       marker.pin.position.set(marker.x, 5 + Math.sin(time * 1.6 + marker.phase) * 0.6, marker.z);
       if (distance < RING_RADIUS) entered = marker;
-      if (!found.has(marker.id) && distance < nearestDistance) {
+      // The Grau is not part of the errand: the arrow keeps pointing at the tour.
+      if (!found.has(marker.id) && marker.bonus !== 'sea' && distance < nearestDistance) {
         nearest = marker;
         nearestDistance = distance;
       }
@@ -334,6 +346,7 @@ export function createGuide(points, layout, path, camera, elements) {
   // The points in the order the river reaches them, for the logbook.
   const entries = () =>
     [...markers]
+      .filter((marker) => marker.bonus !== 'sea' || found.has(marker.id))
       .sort((a, b) => Boolean(a.bonus) - Boolean(b.bonus) || path.project(a.x, a.z).s - path.project(b.x, b.z).s)
       .map((marker) => ({ ...marker, found: found.has(marker.id) }));
 

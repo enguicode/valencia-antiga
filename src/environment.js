@@ -214,12 +214,15 @@ function createSky() {
 // wall, then flat ground at street level behind it. The flat part is kept
 // perfectly level so the folds it makes on the inside of bends cannot be seen.
 function createBank(path, side) {
+  // Stone banks stop where the tour does. Past that the ground is the huerta,
+  // built with the sea. The samples up to here are the ones the tour already had.
+  const walled = path.citySamples.filter((sample) => sample.s <= path.garden);
   const half = RIVER.width / 2;
-  const shore = buildRibbon(path.samples, [
+  const shore = buildRibbon(walled, [
     [side * (half - 2), -2],
     [side * PRETIL.offset, PRETIL.foot],
   ]);
-  const street = buildRibbon(path.samples, [
+  const street = buildRibbon(walled, [
     [side * (PRETIL.offset + PRETIL.thickness), BANK.height],
     [side * (half + BANK.extent), BANK.height],
   ]);
@@ -251,18 +254,28 @@ function createCrownGeometry() {
 
 // Orchard trees on the bank opposite the city.
 function createTrees(path, clearings) {
-  const count = Math.round(path.length / 4.5);
+  // Same draw as before, on the city centreline only. Trees that used to
+  // fall past the end of the tour (in the mist) are skipped, but the random
+  // numbers are still consumed so the ones upstream do not move.
+  const samples = path.citySamples;
+  const count = Math.round(path.cityLength / 4.5);
   const random = createRandom(1704);
   const foliage = [];
   const trunks = [];
   const dummy = new THREE.Object3D();
   for (let i = 0; i < count; i++) {
-    const sample = path.samples[Math.floor(random() * path.samples.length)];
+    const sample = samples[Math.floor(random() * samples.length)];
     const lateral = -(PRETIL.offset + 4 + random() ** 2 * 130);
     const x = sample.x + sample.rx * lateral;
     const z = sample.z + sample.rz * lateral;
     const scale = 0.7 + random() * 0.9;
     if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
+    // Past the tour these used to stand in the mist. The yaw is still drawn
+    // so every later tree keeps the place it had.
+    if (sample.s > path.garden) {
+      random();
+      continue;
+    }
 
     dummy.rotation.set(0, random() * Math.PI, 0);
     dummy.scale.setScalar(scale);

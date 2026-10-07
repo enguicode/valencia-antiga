@@ -361,5 +361,22 @@
     },
     "source": "https://billiken.lat/entretenimiento/luna-de-valencia-de-donde-viene-esa-expresion/",
     "sourceName": "Billiken"
+  },
+  {
+    "id": "grau",
+    "bonus": "sea",
+    "at": { "type": "sea", "id": "church" },
+    "title": {
+      "es": "El Grau",
+      "ca": "El Grau",
+      "en": "The Grau"
+    },
+    "text": {
+      "es": "El pueblo del puerto, aparte de la ciudad, entre el río y el Riuet. Hacia 1700 la iglesia de Santa Maria del Mar estaba a medio hacer: la torre, desde 1689, y el templo no se acabó hasta 1736. En la escena se ve entera, con la cúpula, aunque entonces todavía no lo estaba. Las atarazanas, cinco naves del siglo XIV, seguían en pie junto a la playa, ya como almacén. No había puerto de obra: la playa era abierta y los barcos fondeaban al raso. La orilla del mar, en la escena, es una estimación.",
+      "ca": "El poble del port, a banda de la ciutat, entre el riu i el Riuet. Cap al 1700 l'església de Santa Maria del Mar estava a mig fer: la torre, des del 1689, i el temple no es va acabar fins al 1736. A l'escena es veu sencera, amb la cúpula, encara que llavors encara no ho estava. Les drassanes, cinc naus del segle XIV, seguien en peu vora la platja, ja com a magatzem. No hi havia port d'obra: la platja era oberta i els vaixells fondejaven al ras. La vora de la mar, a l'escena, és una estimació.",
+      "en": "The port village, separate from the city, between the river and the Riuet. Around 1700 the church of Santa Maria del Mar was half built: the tower had stood since 1689, and the church was not finished until 1736. The scene shows it complete, dome and all, even though it was not finished then. The shipyards, five naves from the 14th century, still stood by the beach, by then as a warehouse. There was no built harbour: the beach was open and ships anchored offshore. The shoreline in the scene is an estimate."
+    },
+    "source": "https://www.jdiezarnal.com/valenciaiglesiadesantamariadelmar.html",
+    "sourceName": "jdiezarnal.com"
   }
 ]

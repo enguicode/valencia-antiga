@@ -153,6 +153,23 @@ Rehecho una segunda vez con los dos artículos de Luis Arciniega (Universitat de
 - **Con fuente:** las barcas de la Albufera eran de fondo plano, sin quilla, de dos puntas y antiguamente embreadas; el barquet medía de 4,6 a 5 m y el barquetot de 7 a 11; la entena podía ser bastante más larga que la barca; la percha pasa de 3 m. ([maritima-et-mechanika.org](https://maritima-et-mechanika.org/maritime/albufera/Boats-of-the-Albufera.html))
 - **Importante:** no hay constancia de barcas de la Albufera, ni de navegación, en el Turia a su paso por València hacia 1700. El río no era navegable; la madera bajaba suelta, guiada por gancheros. **El paseo en barca es, por tanto, una licencia de este proyecto.**
 
+## Río abajo, hasta el mar (7 de octubre de 2026)
+
+El paseo sigue acabando donde acababa, pasado el Pont de la Mar. A partir de ahí el río continúa, y el banco de niebla se ha ido mar adentro.
+
+| Elemento | De dónde sale | Fiabilidad |
+| --- | --- | --- |
+| Curso del Regne al Assut de l'Or | Centro de los puentes actuales de Montolivet y del Assut de l'Or en OpenStreetMap, como el resto del cauce | Aproximado: es el jardín de hoy, que ocupa el viejo cauce |
+| Del Assut a la costa | Estimación. Ese tramo está enterrado. La línea va hacia el este y sale al mar al sur del Grau | Estimado. No se ha cotejado con un plano de 1700 |
+| Orilla del mar | Unos 70 m al este de las Drassanes, muy al oeste de la playa actual. La costa avanzó con el puerto | Estimado. Los grabados de finales del XVIII aún las ponen junto al mar; la playa de ahora queda cerca de 1 km más afuera |
+| Santa Maria del Mar | Posición actual del templo. Torre acabada hacia 1689; obras desde 1683; templo terminado en 1736. En la escena se ve entero, con cúpula | Posición fiable. La forma es un esbozo, y en 1700 la obra no estaba acabada |
+| Drassanes del Grau | Cinco naves de unos 10 por 48 m, del siglo XIV, en la plaza de hoy. Hacia 1700 seguían en pie como almacén (provisiones en 1707, sal en 1715) | La planta, en lo grueso, es fiable. La forma es un esbozo |
+| Embarcadero | De madera, en playa abierta. Hubo obras de Tomás Güelda a finales del XVII, pero no un puerto de obra | Esbozo. No se ha dibujado un muelle de piedra |
+| Huerta, cañas, acequias, alquerías, barras | Lo que las fuentes dicen que había entre la ciudad y el mar, sin plano de cada pieza | Inventado en el detalle |
+| La otra orilla | Natzaret ya existía al sur. En la escena solo hay huerta y tres barracas, no el pueblo | A propósito |
+
+Las atarazanas y la iglesia, en jdiezarnal.com: [atarazanas](https://www.jdiezarnal.com/valenciaatarazanas.html) y [Santa Maria del Mar](https://www.jdiezarnal.com/valenciaiglesiadesantamariadelmar.html). La ficha del Ayuntamiento: [Atarazanas del Grau](https://www.valencia.es/-/infociudad-atarazanas-del-grau). El río, el Riuet y el mar como límites del Grau los cuenta Boira Maiques, Josep Vicent: «El paisatge tradicional del Grau de València als gravats i plànols històrics (segles XVI-XIX)», Cuadernos de Geografía de la Universitat de València, 108-109, 2022, pp. 399-424 (<https://turia.uv.es/index.php/CGUV/article/view/23657>). No se ha usado para 1700 la idea de que la playa romana llegaba a la plaça d'Hondures: esa plaza está tierra adentro, en Algirós.
+
 ## Pendiente
 
 - Cotejar muralla, puertas y puentes con el plano de Tomás Vicente Tosca (1704). Todavía no se ha usado: el trazado actual sale solo del callejero moderno.

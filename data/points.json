@@ -21,7 +21,7 @@
     "id": "pretils",
     "at": {
       "type": "start",
-      "offset": 605
+      "offset": 405
     },
     "title": {
       "es": "Los pretiles del río",
@@ -308,7 +308,7 @@
     "bonus": "night",
     "at": {
       "type": "start",
-      "offset": 1000
+      "offset": 800
     },
     "title": {
       "es": "La luna de València",

@@ -7,8 +7,8 @@ export const RIVER = {
   margin: 2.5, // how close the boat may get to a bank
   sampleSpacing: 5,
   // Navigable water before the first historic bridge: far enough upstream to
-  // pass the corner where the wall leaves the river and abreast of Quart.
-  upstreamRun: 750,
+  // pass the corner where the wall leaves the river.
+  upstreamRun: 550,
   downstreamRun: 200, // and after the last one
 };
 

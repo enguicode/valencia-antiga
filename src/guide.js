@@ -10,6 +10,9 @@ import { t, localized, onLanguageChange } from './i18n.js';
 
 const STORAGE_KEY = 'valencia-antiga.found';
 const RING_RADIUS = 18;
+// No ring sits upstream of this, measured from the head of the navigable
+// reach. Quart's nearest water is just beyond the weir.
+const EARLIEST_RING = 90;
 const RING_OFFSET = 14; // from the middle of the river, towards the place
 const CARD_STAYS_WITHIN = 75; // metres from the ring before the card goes
 const VISIBLE_WITHIN = 750;
@@ -149,7 +152,7 @@ export function createGuide(points, layout, path, camera, elements) {
     }
     const preset = type === 'gate' && id === 'quart' ? SUBJECTS.quart : (SUBJECTS[kind] ?? SUBJECTS.convent);
     return {
-      s: s + offset,
+      s: Math.max(s + offset, path.start + EARLIEST_RING),
       side: type === 'bridge' ? 0 : Math.sign(lateral) || 1,
       subject: { ...preset, x, z, facing },
     };

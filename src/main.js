@@ -8,6 +8,7 @@ import { createBridges, createBridgeGuide } from './bridges.js';
 import { createLandmarks, landmarkClearings } from './landmarks.js';
 import { createRiverside } from './riverside.js';
 import { createBoat, DRAW_ORDER } from './boat.js';
+import { createBoatPicker } from './boatpicker.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
 import { createGuide, createTour, sourceLabel } from './guide.js';
@@ -58,6 +59,8 @@ try {
 boat.setType(boatSelect.value);
 boatSelect.addEventListener('change', () => {
   boat.setType(boatSelect.value);
+  // Choosing a boat is the last thing done in the sheet: back to the river.
+  if (infoDialog.open) infoDialog.close();
   try {
     localStorage.setItem('valencia-antiga.boat', boatSelect.value);
   } catch {
@@ -255,6 +258,7 @@ let started = false;
 const startButton = document.getElementById('start');
 const startTourButton = document.getElementById('start-tour');
 const infoDialog = document.getElementById('info');
+createBoatPicker(document.getElementById('boat-picker'), boatSelect, () => infoDialog.open);
 
 function start(withTour) {
   started = true;
@@ -397,6 +401,11 @@ const FLIGHT = { beyond: 200, out: 3.5, hold: 3.5, back: 3, standOff: 1.25, abov
 const LONG_FLIGHT = { speed: 75, slowest: 2, bendFrom: 150, bend: 0.4, widest: 140 };
 const focus = { subject: null, left: 0, total: 0, out: 0, hold: 0, back: 0, bend: 0, flight: false };
 const MOON_DIRECTION = new THREE.Vector3(-0.4, 0.8, -0.3).normalize(); // where the moon hangs in the sky
+// Radians a second at most, how quickly it gets there and how soon it eases off.
+const TURN = { fastest: 1.9, gather: 5, settle: 6 };
+let turnRate = 0;
+const turnFrom = new THREE.Quaternion();
+const turnTo = new THREE.Quaternion();
 const flightSpot = new THREE.Vector3();
 const flightBend = new THREE.Vector3();
 const chasePosition = new THREE.Vector3();
@@ -492,7 +501,17 @@ function updateCamera(dt, snap = false) {
   const ease = snap ? 1 : 1 - Math.exp(-dt * (quick ? 9 : 3));
   camera.position.lerp(cameraGoal, ease);
   lookAt.lerp(lookGoal, ease);
+  // The camera never whips round: when the place a card is about lies astern,
+  // it gathers speed, turns no faster than a set rate and slows into the
+  // view. Dragging by hand is not held back.
+  turnFrom.copy(camera.quaternion);
   camera.lookAt(lookAt);
+  if (!snap && orbit.idle >= ORBIT.holdSeconds) {
+    turnTo.copy(camera.quaternion);
+    const wanted = Math.min(TURN.fastest, turnFrom.angleTo(turnTo) * TURN.settle);
+    turnRate = Math.min(wanted, turnRate + TURN.gather * dt);
+    camera.quaternion.copy(turnFrom).rotateTowards(turnTo, turnRate * dt);
+  }
   if (Math.abs(camera.fov - wantedFov) > 0.05) {
     camera.fov += (wantedFov - camera.fov) * (snap ? 1 : 1 - Math.exp(-dt * 2.5));
     camera.updateProjectionMatrix();

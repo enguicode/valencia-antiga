@@ -807,6 +807,82 @@
       border-radius: 3px;
     }
 
+    #info .hint {
+      color: var(--muted);
+      font-size: 0.9em;
+    }
+
+    .boat-picker {
+      margin: 0 0 12px;
+      text-align: center;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .boat-picker .stage {
+      position: relative;
+      background: var(--paper-item);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .boat-picker canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      touch-action: pan-y;
+      cursor: grab;
+    }
+
+    .boat-picker canvas:active { cursor: grabbing; }
+
+    .boat-picker .prev,
+    .boat-picker .next {
+      position: absolute;
+      top: 50%;
+      width: 36px;
+      height: 48px;
+      margin-top: -24px;
+      font: inherit;
+      font-size: 1.7rem;
+      line-height: 1;
+      color: var(--ink);
+      background: var(--chip);
+      border: 1px solid var(--rule);
+      cursor: pointer;
+    }
+
+    .boat-picker .prev { left: 0; border-left: 0; border-radius: 0 3px 3px 0; }
+    .boat-picker .next { right: 0; border-right: 0; border-radius: 3px 0 0 3px; }
+
+    .boat-picker .name {
+      margin: 8px 0 4px;
+      font-weight: bold;
+    }
+
+    .boat-picker .dots span {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin: 0 3px;
+      border-radius: 50%;
+      background: var(--rule);
+    }
+
+    .boat-picker .dots span.on { background: var(--ink); }
+
+    .boat-picker .choose {
+      margin-top: 8px;
+      padding: 8px 18px;
+      font: inherit;
+      color: #f4e9d2;
+      background: var(--fill);
+      border: 0;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
     #info .close {
       display: block;
       margin: 18px 0 0 auto;
@@ -1037,14 +1113,23 @@
         <option value="23.5" data-i18n="hour.night">Noche</option>
       </select>
     </label></p>
-    <p><label><span data-i18n="settings.boat">Barca:</span>
-      <select id="boat-type">
+    <p><span data-i18n="settings.boat">Barca:</span> <span class="hint" data-i18n="boat.hint">desliza para ver las demás</span></p>
+    <div id="boat-picker" class="boat-picker" tabindex="0">
+      <div class="stage">
+        <button type="button" class="prev" data-i18n-label="boat.prev" aria-label="Barca anterior">‹</button>
+        <canvas></canvas>
+        <button type="button" class="next" data-i18n-label="boat.next" aria-label="Barca siguiente">›</button>
+      </div>
+      <p class="name" aria-live="polite"></p>
+      <div class="dots" aria-hidden="true"></div>
+      <button type="button" class="choose" data-i18n="boat.choose">Elegir esta</button>
+      <select id="boat-type" hidden>
         <option value="albufera" data-i18n="boat.albufera">De la Albufera, con percha</option>
         <option value="lateen" data-i18n="boat.lateen">De río, con timonel sentado</option>
         <option value="jetski" data-i18n="boat.jetski">Moto de agua</option>
         <option value="speedboat" data-i18n="boat.speedboat">Lancha motora</option>
       </select>
-    </label></p>
+    </div>
     <p><button id="reset-found" class="reset-found" type="button" data-i18n="settings.reset">Volver a empezar los puntos de interés</button></p>
     <p><label><span data-i18n="settings.quality">Calidad gráfica:</span>
       <select id="quality">

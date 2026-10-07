@@ -73,8 +73,9 @@ BRIDGE_GATES = {
 # see docs/sources.md.
 LANDMARKS = [
     ("el Micalet", "micalet", "micalet", {}),
-    # The cathedral runs north-south, apse to the north (axis is [east, south]).
-    ("Catedral de València", "seu", "cathedral", {"axis": [0, -1], "length": 94, "width": 28}),
+    # The cathedral runs from its foot, where the Micalet is, to the apse in the
+    # east-north-east, on the same grid as the tower (axis is [east, south]).
+    ("Catedral de València", "seu", "cathedral", {"axis": [0.841, -0.542], "length": 94, "width": 28}),
     ("Llotja de la Seda", "llotja", "llotja", {}),
     ("Palau del Real de València", "palau-real", "palace", {"alignToRiver": True}),
     ("Reial Monestir de la Santíssima Trinitat", "trinitat", "convent", {"alignToRiver": True}),

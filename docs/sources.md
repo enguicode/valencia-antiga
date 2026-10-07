@@ -125,7 +125,8 @@ Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de
 ### Micalet y Seu
 
 - **Con fuente:** Micalet, prisma octogonal de 50,85 m hasta la terraza, igual que su perímetro, con contrafuertes en las ocho aristas y cuatro cuerpos (macizo, «presó», casa del campanero y sala de campanas con ocho ventanales); la crestería gótica calada no se derribó hasta el XVIII; la espadaña de piedra es de 1660-1736. Seu, 94 m de largo y 53,65 m en el crucero; cimborrio octogonal de dos cuerpos con ocho ventanas de alabastro cada uno; Obra Nova de tres pisos de arcos (1566); puerta de los Apóstoles con rosetón de 6,45 m; Aula Capitular de 13 m de lado y 16 de alto. ([Wikipedia: El Miguelete](https://es.wikipedia.org/wiki/El_Miguelete), [Catedral](https://es.wikipedia.org/wiki/Catedral_de_Santa_María_de_Valencia))
-- **Estimado:** la altura de cada cuerpo del Micalet, la altura de la nave (23 m), las cubiertas en terraza y la orientación (eje norte-sur con el ábside al norte, deducida de hacia dónde miran las puertas).
+- **Estimado:** la altura de cada cuerpo del Micalet, la altura de la nave (23 m) y las cubiertas en terraza.
+- **Orientación y unión con la torre:** el eje de la Seu sigue la huella de OpenStreetMap, de los pies al ábside hacia el este-nordeste, en la misma retícula que la torre. El Micalet queda atravesado al pie de la nave y unido a ella: se construyó exento, pero quedó unido a finales del siglo XV al prolongarse la nave central ([Wikipedia: El Miguelete](https://es.wikipedia.org/wiki/El_Miguelete)). La puerta va entre la torre y el Aula Capitular. Hasta la v1.27.0 la Seu estaba dibujada de norte a sur, por una deducción errónea, y la torre quedaba suelta.
 - **Decisión para 1700:** crestería en pie y, en lugar de la espadaña acabada, un armazón sencillo con la campana de las horas.
 
 ### Palau del Real

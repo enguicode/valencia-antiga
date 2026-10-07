@@ -121,13 +121,15 @@ const MODELS = {
   },
 
   // The cathedral: 94 m long and 53.65 m across the transept, apse to the
-  // north (+X here). Flat terraces rather than pitched roofs, Gothic pinnacles
-  // still in place, and the two-storey lantern with its alabaster windows.
+  // east-north-east (+X here). The Micalet stands across the foot of the
+  // nave, joined to it since the nave was lengthened at the end of the 15th
+  // century. Flat terraces rather than pitched roofs, Gothic pinnacles still
+  // in place, and the two-storey lantern with its alabaster windows.
   cathedral(add, { length = 94, width = 28 }) {
     const nave = 23;
     const transept = 53.65;
     const crossing = length * 0.2;
-    const west = -1; // local -Z looks west, towards the Apostles' door
+    const west = -1; // local -Z looks north-north-west, towards the Apostles' door
     add('box', [0, 0, 0], [length, nave, width], STONE);
     add('box', [0, nave, 0], [length + 0.6, 0.9, width + 0.6], PALE);
     add('box', [crossing, 0, 0], [width * 0.78, nave, transept], STONE);
@@ -156,15 +158,16 @@ const MODELS = {
         add('pyramid', [x, nave - 2, side * (width / 2 + 1.4)], [1.6, 4, 1.6], PALE);
         add('box', [x + 4.5, 10, side * (width / 2 + 0.05)], [0.35, 8, 2.2], DARK, FACING_Z);
       }
-      // Transept doors: the Apostles' to the west, with its rose window; the Almoina to the east
+      // Transept doors: the Apostles' on one arm, with its rose window; the Almoina on the other
       const end = side * (transept / 2 + 0.05);
       add('box', [crossing, 0, end], [0.4, 9, 5.5], DARK, FACING_Z);
       add('box', [crossing, 0, side * (transept / 2 + 0.35)], [0.5, 11.5, 8.5], PALE, FACING_Z);
       if (side === west) add('oct', [crossing, 13.5, end - 0.4], [6.45, 0.9, 6.45], ALABASTER);
     }
-    // Chapter house by the foot of the nave, and the plain south front of 1700
+    // Chapter house by the foot of the nave, and the plain front of 1700: the
+    // door is squeezed in between the bell tower and the chapter house
     add('box', [-length / 2 + 8, 0, -west * (width / 2 + 8)], [13, 16, 13], STONE);
-    add('box', [-length / 2 - 0.05, 0, 0], [0.4, 8, 4.5], DARK);
+    add('box', [-length / 2 - 0.05, 0, -west * 10.5], [0.4, 8, 4.5], DARK);
   },
 
   llotja(add) {

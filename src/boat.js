@@ -185,13 +185,25 @@ function createLidGeometry(type) {
 export const DRAW_ORDER = { lid: 1, water: 2 };
 const LID_MATERIAL = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide });
 
-// Floorboards: the hull's outline, narrowed, laid flat near the bottom.
+// Half the hull's width at a given height. Zero once that height is below
+// the keel, which is what kept the flat sole sticking out under the stern.
+function hullHalfWidth(type, t, y) {
+  const rise = type.sheer(t) - type.keel(t);
+  const fraction = rise > 1e-4 ? (y - type.keel(t)) / rise : 0;
+  if (fraction <= 0) return 0;
+  const a = Math.min(1, fraction ** (1 / type.turn));
+  return type.halfBeam(t) * a ** type.flare;
+}
+
+// Floorboards: the hull's outline at the sole's height, laid flat.
 function createSoleGeometry(type) {
   const outline = new THREE.Shape();
-  const steps = 14;
+  const steps = 16;
   const edge = (i) => {
-    const t = -0.86 + (1.72 * i) / steps;
-    return [type.halfBeam(t) * type.sole.width, stationZ(type, t)];
+    const t = -0.92 + (1.84 * i) / steps;
+    const inside = hullHalfWidth(type, t, type.sole.height);
+    const half = Math.min(type.halfBeam(t) * type.sole.width, inside * 0.92);
+    return [half, stationZ(type, t)];
   };
   for (let i = 0; i <= steps; i++) {
     const [x, z] = edge(i);
@@ -254,6 +266,24 @@ function spar(from, to, radius) {
   return geometry;
 }
 
+// Rudder blade in profile: the stock is the y axis, x runs aft, and the
+// top of the stock sits on the origin. Thickness is centred on x.
+function rudderBlade(height, depth) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(depth * 0.18, -height * 0.08);
+  shape.lineTo(depth * 0.85, -height * 0.38);
+  shape.lineTo(depth, -height * 0.7);
+  shape.lineTo(depth * 0.58, -height);
+  shape.lineTo(0.02, -height * 0.9);
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.05, bevelEnabled: false });
+  geometry.translate(0, 0, -0.025);
+  geometry.rotateY(Math.PI / 2); // extrude thickness to x; aft (+x in the shape) to -z
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 // Each type is built once: a boat is then a handful of meshes over these
 // shared geometries, one per material.
 function createParts(type) {
@@ -303,6 +333,75 @@ function createParts(type) {
     add('deck', new THREE.BoxGeometry(halfBeam(t) * 1.86, 0.06, 0.3), 0, sheer(t) - 0.14, z(t));
   }
 
+  // A rubbing strake just under the rail, in deck colour: another dark tube
+  // would disappear into the gunwale, above all on the tarred hull.
+  for (const side of [-1, 1]) {
+    const wale = [];
+    for (let i = 0; i <= 14; i++) {
+      const t = -0.9 + (1.8 * i) / 14;
+      const frac = 0.9;
+      wale.push(v(
+        side * (halfBeam(t) * frac ** type.flare + 0.045),
+        type.keel(t) + (sheer(t) - type.keel(t)) * frac ** type.turn,
+        z(t),
+      ));
+    }
+    add('deck', new THREE.TubeGeometry(new THREE.CatmullRomCurve3(wale), 28, 0.038, 5));
+  }
+
+  // The chase camera looks down into an otherwise empty hold. A floor timber
+  // and a knee each side, kept clear of the thwarts, the cargo and the crew.
+  const frameAt = type.crew === 'poling' ? [-0.58, 0.08, 0.6] : [-0.78, -0.32, 0.34];
+  for (const t of frameAt) {
+    const y0 = type.sole.height + 0.03;
+    const y1 = Math.max(y0 + 0.18, sheer(t) - 0.14);
+    const inner = hullHalfWidth(type, t, y0);
+    const outer = hullHalfWidth(type, t, y1);
+    if (inner < 0.25 || outer < 0.3) continue;
+    const zz = z(t);
+    const span = inner * 1.5;
+    add('trim', new THREE.BoxGeometry(span, 0.04, 0.06), 0, y0, zz);
+    for (const side of [-1, 1]) {
+      add('deck', spar(v(side * span * 0.42, y0 + 0.02, zz), v(side * outer * 0.78, y1, zz), 0.026));
+    }
+  }
+
+  // Breasthook in the eyes, with a cleat on it, and another where the sheet
+  // comes aboard. Same shape convention as the sole: shape y becomes z.
+  const hookT = 0.72;
+  const hookY = sheer(hookT) - 0.08;
+  const hook = new THREE.Shape();
+  const hookBeam = halfBeam(hookT) * 0.78;
+  hook.moveTo(-hookBeam, z(hookT));
+  hook.lineTo(0, z(0.97));
+  hook.lineTo(hookBeam, z(hookT));
+  hook.closePath();
+  const hookGeometry = new THREE.ShapeGeometry(hook);
+  hookGeometry.rotateX(Math.PI / 2);
+  hookGeometry.translate(0, hookY, 0);
+  add('deck', hookGeometry);
+  const cleat = (x, y, zz) => {
+    add('trim', new THREE.BoxGeometry(0.06, 0.045, 0.16), x, y, zz);
+    add('trim', new THREE.BoxGeometry(0.16, 0.035, 0.045), x, y + 0.032, zz - 0.045);
+    add('trim', new THREE.BoxGeometry(0.16, 0.035, 0.045), x, y + 0.032, zz + 0.045);
+  };
+  cleat(0, hookY + 0.04, z(0.86));
+  cleat(halfBeam(-0.7) * 0.62, sheer(-0.7) - 0.02, z(-0.7));
+
+  add('trim', new THREE.BoxGeometry(0.24, 0.055, 0.24), mastFoot.x, type.sole.height + 0.035, mastFoot.z);
+  add('trim', new THREE.TorusGeometry(0.125, 0.03, 6, 12).rotateX(Math.PI / 2), mastFoot.x, mastFoot.y + 0.05, mastFoot.z);
+
+  const coilAt = type.crew === 'poling' ? [-0.38, z(0.48)] : [0.4, z(-0.22)];
+  for (const [radius, lift] of [[0.15, 0], [0.1, 0.032], [0.055, 0.058]]) {
+    add(
+      'trim',
+      new THREE.TorusGeometry(radius, 0.02, 5, 12).rotateX(Math.PI / 2),
+      coilAt[0],
+      type.sole.height + 0.03 + lift,
+      coilAt[1],
+    );
+  }
+
   // Rig: raked mast, yard and a lateen sail sheeted out to port
   const mastHead = v(...type.mast.head);
   const tack = v(...type.sail.tack);
@@ -323,9 +422,16 @@ function createParts(type) {
   sailGeometry.translate(-mastFoot.x, -mastFoot.y, -mastFoot.z);
   sailGeometry.applyMatrix4(sailFrame.clone().invert());
 
-  // Rudder and tiller
+  // Rudder and tiller. The head of the blade meets the tiller; the heel
+  // stays down where the old slab reached the water. Two pins hinge it.
   const { rudder } = type;
-  add('trim', new THREE.BoxGeometry(0.06, rudder.height, rudder.depth), 0, rudder.drop, z(-1) - rudder.depth / 2);
+  const headY = sheer(-1) - 0.04;
+  const heelY = rudder.drop - rudder.height / 2;
+  add('trim', rudderBlade((headY - heelY) / 0.92, rudder.depth * 1.2), 0, headY, z(-1) + 0.02);
+  for (const fraction of [0.34, 0.7]) {
+    const pin = new THREE.CylinderGeometry(0.028, 0.028, 0.12, 6).rotateZ(Math.PI / 2);
+    add('trim', pin, 0, headY + (heelY - headY) * fraction, z(-1) + 0.01);
+  }
   add('trim', spar(v(0, sheer(-1) - 0.05, z(-1) - 0.1), v(0.1, sheer(-1) + 0.35, z(-1) + 1.15), 0.035));
 
   if (type.crew === 'seated') {
@@ -339,6 +445,10 @@ function createParts(type) {
     add('straw', new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12), 0.12, 1.56, seat);
     add('deck', spar(v(-0.55, 0.42, -2.2), v(-0.62, 0.5, 1.9), 0.035));
     add('deck', new THREE.BoxGeometry(0.16, 0.03, 0.6), -0.63, 0.5, 2.1);
+    // Thole pins the oar lies between, rather than a loose stick on the floor.
+    for (const x of [-0.45, -0.7]) {
+      add('trim', new THREE.CylinderGeometry(0.022, 0.022, 0.2, 6), x, 0.46, -0.45);
+    }
   } else {
     // The boatman stands aft and pushes on a long pole that reaches the bottom.
     const post = z(-0.72);
@@ -363,6 +473,15 @@ function createParts(type) {
   add('sack', sack(), -0.25, floor + 0.2, load + 0.15);
   add('sack', sack().rotateY(0.9), 0.05, floor + 0.52, load + 0.05);
   add('deck', new THREE.CylinderGeometry(0.24, 0.2, 0.5, 12), -0.3, floor + 0.27, load - 1.1);
+  // An esparto basket beside the sacks, dark so it does not vanish into the
+  // deck. Only the Albufera boat carries one.
+  if (type.crew === 'poling') {
+    const bx = 0.42;
+    const bz = load - 0.95;
+    add('trim', new THREE.CylinderGeometry(0.2, 0.15, 0.28, 8), bx, floor + 0.15, bz);
+    add('deck', new THREE.TorusGeometry(0.2, 0.022, 5, 10).rotateX(Math.PI / 2), bx, floor + 0.28, bz);
+    add('sack', new THREE.SphereGeometry(0.11, 8, 6).scale(1, 0.4, 1), bx, floor + 0.26, bz);
+  }
 
   const geometries = Object.fromEntries(
     Object.entries(pieces).map(([material, list]) => [material, mergeGeometries(list)]),

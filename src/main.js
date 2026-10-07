@@ -266,10 +266,11 @@ function start(withTour) {
   orbit.idle = ORBIT.holdSeconds;
   if (withTour) document.getElementById('tour').click();
 }
-// The start screen offers the three moments of the day; they drive the same
-// setting as the sky button and the hour in the settings.
+// The start screen offers three moments of the day and the settings six,
+// each a button with its own sky; they drive the same setting as the sky
+// button, which is kept in a list that is not shown.
 const hourSelect = document.getElementById('hour');
-const momentButtons = [...document.querySelectorAll('#intro .moments button')];
+const momentButtons = [...document.querySelectorAll('#intro .moments button, #info .hours button')];
 const showMoment = () => {
   for (const button of momentButtons) {
     button.setAttribute('aria-pressed', String(button.dataset.hour === hourSelect.value));
@@ -356,8 +357,11 @@ menuToggle.addEventListener('click', () => setMenu(!document.body.classList.cont
 for (const opener of document.querySelectorAll('[data-open]')) {
   opener.addEventListener('click', () => {
     setMenu(false);
+    // The sheet holds the controls, the settings and the credits; only the
+    // part that was asked for is shown.
+    for (const section of infoDialog.querySelectorAll('section')) section.hidden = section.id !== opener.dataset.open;
     infoDialog.showModal();
-    document.getElementById(opener.dataset.open).scrollIntoView();
+    infoDialog.scrollTop = 0;
   });
 }
 document.getElementById('close-info').addEventListener('click', () => infoDialog.close());

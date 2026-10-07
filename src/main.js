@@ -446,8 +446,10 @@ function updateCamera(dt, snap = false) {
     const standOff = subject.span * (subject.standOff ?? FLIGHT.standOff);
     flightSpot.set(subject.x + dx * standOff, subject.y + (subject.above ?? FLIGHT.above), subject.z + dz * standOff);
     cameraGoal.lerpVectors(chasePosition, flightSpot, away);
-    // Rise over the roofs on the way there and back, unless it is a short hop.
-    cameraGoal.y += Math.sin(away * Math.PI) * (subject.fly ? 4 : 18);
+    // Rise over the roofs on the way there and back. A short hop stays low;
+    // a long crossing can ask for more.
+    const rise = subject.cruise ?? (subject.fly ? 4 : 18);
+    cameraGoal.y += Math.sin(away * Math.PI) * rise;
     lookGoal.set(subject.x, subject.y, subject.z).lerp(chaseLook, 1 - Math.min(1, away * 2.5));
   } else if (focus.left > 0) {
     const { subject } = focus;

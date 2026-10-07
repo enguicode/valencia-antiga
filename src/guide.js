@@ -26,8 +26,10 @@ const SUBJECTS = {
   start: { aim: 2, span: 60 },
   // Seen from the west, where the cathedral stands behind it and not in front.
   micalet: { aim: 34, span: 110, facing: [-0.94, 0.34] },
-  // Off the river, on the west wall. The flight frames both round towers.
-  quart: { aim: 17, span: 48, fly: true, standOff: 1.15, above: 4 },
+  // Off the river, on the west wall. Close on the two towers, and high
+  // enough on the way there to clear the roofs. `fly` would stay low and
+  // cut through the houses.
+  quart: { aim: 18, span: 46, standOff: 1, above: -9, cruise: 48 },
   palace: { aim: 14, span: 150 },
   // Convents stand back from the bank: the camera goes over to them.
   convent: { aim: 9, span: 90, fly: true, standOff: 0.8, above: 9 },

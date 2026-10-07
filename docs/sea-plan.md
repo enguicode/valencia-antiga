@@ -13,6 +13,8 @@ Dos condiciones puestas por el autor:
 
 ## Lo que hay ahora
 
+- Desde el 7 de octubre de 2026 el final del tramo es un banco de niebla que devuelve al principio del paseo. Cuando exista el tramo del mar, esa niebla tendrá que irse al nuevo final, mar adentro, o quitarse.
+
 - El tramo navegable acaba 200 m después del Pont de la Mar (`RIVER.downstreamRun` en `src/config.js`); la barca se para ahí en seco (`path.end`, en `src/boat.js`).
 - El curso del río sale de los puentes actuales sobre el viejo cauce (`RIVER_BRIDGES` en `scripts/build-layout.py`) y termina en el Pont del Regne de València: unos 800 m más allá del final navegable. De ahí al mar no hay datos.
 - El mar no existe en la escena. El suelo llega a 1.100 m del río (`BANK.extent`) y la niebla tapa el resto.

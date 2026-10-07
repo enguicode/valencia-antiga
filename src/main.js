@@ -581,6 +581,46 @@ function showTourNotice() {
   tourNoticeTimer = setTimeout(() => tourNotice.classList.remove('visible'), 4500);
 }
 
+// Where the mist starts to close in before the end of the river, where it is
+// at its thickest, how near the end the way through is, and the seconds it
+// takes to lift once through.
+const MIST = { from: 170, thick: 30, gate: 3, lifts: 5 };
+const mistVeil = document.getElementById('mist');
+let arriving = 0;
+let shownMist = 0;
+// Seen from upstream it is a pale wall across the river, the colour of the haze.
+const mistBank = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 128;
+  const pen = canvas.getContext('2d');
+  const fade = pen.createLinearGradient(0, 0, 0, 128);
+  fade.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  fade.addColorStop(0.55, 'rgba(255, 255, 255, 0.75)');
+  fade.addColorStop(1, 'rgba(255, 255, 255, 1)');
+  pen.fillStyle = fade;
+  pen.fillRect(0, 0, 4, 128);
+  const material = new THREE.MeshBasicMaterial({
+    map: new THREE.CanvasTexture(canvas),
+    transparent: true,
+    opacity: 0.6,
+    depthWrite: false,
+    fog: false,
+    side: THREE.DoubleSide,
+  });
+  const bank = new THREE.Group();
+  for (const beyond of [20, 55, 95]) {
+    const at = path.pointAt(path.end + beyond);
+    const sheet = new THREE.Mesh(new THREE.PlaneGeometry(520, 90), material);
+    sheet.position.set(at.x, 45, at.z);
+    sheet.rotation.y = Math.atan2(at.tx, at.tz);
+    bank.add(sheet);
+  }
+  bank.material = material;
+  scene.add(bank);
+  return bank;
+})();
+
 const clock = new THREE.Clock();
 let shownDistance = -1;
 let frames = 0;
@@ -609,7 +649,30 @@ function frame() {
   }
   tourWasActive = tour.active;
 
+  // The river ends in a bank of mist. It closes in after the last bridge and,
+  // sailed through, comes out at the head of the river, where it lifts.
+  const toEnd = path.end - boat.state.s;
+  let returned = false;
+  if (started && toEnd <= MIST.gate) {
+    boat.relaunch();
+    tour.stop();
+    focus.left = 0;
+    orbit.yaw = 0;
+    orbit.lift = 0;
+    arriving = 1;
+    returned = true;
+  }
+  arriving = Math.max(0, arriving - dt / MIST.lifts);
+  const closing = returned ? 0 : THREE.MathUtils.smoothstep(MIST.from - toEnd, 0, MIST.from - MIST.thick);
+  atmosphere.state.mist = Math.max(closing, arriving);
+  if (atmosphere.state.mist !== shownMist) {
+    shownMist = atmosphere.state.mist;
+    mistVeil.style.opacity = (shownMist ** 1.6 * 0.94).toFixed(3);
+  }
+
   atmosphere.update(dt);
+  if (shownMist > 0) mistVeil.style.backgroundColor = `#${scene.fog.color.getHexString()}`;
+  mistBank.material.color.copy(scene.fog.color);
   // While the camera is showing a place off, the boat idles along.
   boat.update(dt, axes, time, focus.left > 0 ? FOCUS.speed : Infinity);
   sun.target.position.copy(boat.mesh.position);
@@ -623,7 +686,7 @@ function frame() {
   city.userData.facades.emissiveIntensity = atmosphere.state.night * 1.4;
   if (started) updateOrbit(dt, axes);
   if (axes.looking) focus.left = 0; // looking around by hand takes the camera back
-  updateCamera(dt);
+  updateCamera(dt, returned);
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
   renderer.render(scene, camera);

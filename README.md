@@ -20,6 +20,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 | **Repasar** | La cuenta de arriba a la izquierda abre el cuaderno. Lo no descubierto sale en blanco. Lo encontrado lleva un ojo que lleva la cámara hasta ese sitio. El ojo de la luna, si es de día, deja el cielo de noche mientras dura la ficha y luego devuelve la hora que había. |
 | **Recorrido guiado** | La barca baja sola por el centro y pasa por los dieciocho aros. Arrastrar solo mueve la cámara. |
 | **La hora** | Al entrar, la portada premarca día, atardecer o noche según el reloj del visitante, con su huso horario. Desde ahí solo cambia a mano. De noche se encienden ventanas, faroles y luciérnagas, y los carteles de la interfaz pasan a un tono oscuro. |
+| **El final** | Pasado el Pont de la Mar el río se pierde en un banco de niebla. Quien lo atraviesa sale al principio del paseo. |
 | **La barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. Y, fuera de época a propósito, una moto de agua que va tres veces más rápido, una lancha motora que va cinco y un hidroplano de carreras que va ocho. Se eligen en los ajustes, en un escaparate en 3D que se pasa deslizando. |
 | **El idioma** | Castellano, valenciano o inglés, en la portada y en los ajustes. |
 | **Donar** | En la portada, junto a Créditos, y también en Ayuda y en Créditos. El importe lo elige quien paga. |

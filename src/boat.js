@@ -779,5 +779,10 @@ export function createBoat(path, bridgeGuide) {
     return forward.set(Math.sin(state.heading), 0, Math.cos(state.heading));
   }
 
-  return { mesh, state, update, getForward, setType };
+  // Puts the boat back at the head of the river, with the way it had on.
+  function relaunch() {
+    Object.assign(state, { x: launch.x, z: launch.z, heading: Math.atan2(launch.tx, launch.tz), s: path.start + 8 });
+  }
+
+  return { mesh, state, update, getForward, setType, relaunch };
 }

@@ -6,6 +6,7 @@ import { t, onLanguageChange } from './i18n.js';
 // the tint of the water; everything in between is interpolated. The hour
 // does not advance on its own: the visitor picks it in the settings.
 
+const MIST_REACH = 24; // metres that can be seen in the thick of the mist
 const SETTLE_RATE = 0.9; // how quickly the light moves to a newly chosen hour
 
 // hour, sky top, horizon and fog, sun colour, sun strength, ambient strength, fog reach, night (0-1)
@@ -56,6 +57,7 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
     night: 0,
     light: 1,
     fogScale: 1,
+    mist: 0, // 0 in clear air, 1 inside the bank of mist at the end of the river
     sunDirection: new THREE.Vector3(0, 1, 0),
   };
   let chosenHour = state.hour;
@@ -124,8 +126,9 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
     skyMaterial.uniforms.topColor.value.lerpColors(a.top, b.top, t);
     skyMaterial.uniforms.horizonColor.value.lerpColors(a.horizon, b.horizon, t);
     scene.fog.color.copy(skyMaterial.uniforms.horizonColor.value);
-    scene.fog.far = lerp(a.reach, b.reach, t) * state.fogScale;
-    scene.fog.near = scene.fog.far * 0.18;
+    const reach = lerp(a.reach, b.reach, t) * state.fogScale;
+    scene.fog.far = lerp(reach, MIST_REACH, state.mist);
+    scene.fog.near = lerp(reach * 0.18, 0.5, state.mist);
 
     sun.color.lerpColors(a.sun, b.sun, t);
     sun.intensity = lerp(a.sunStrength, b.sunStrength, t);

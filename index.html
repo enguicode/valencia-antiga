@@ -244,6 +244,14 @@
 
     #help.dismissed { opacity: 0; }
 
+    /* The mist at the end of the river, laid over the whole view. */
+    #mist {
+      position: fixed;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
     #tour-notice {
       left: 50%;
       bottom: calc(max(22px, env(safe-area-inset-bottom)) + 52px);
@@ -1078,6 +1086,7 @@
 </head>
 <body>
   <canvas id="scene"></canvas>
+  <div id="mist" aria-hidden="true"></div>
 
   <button id="status" class="panel" type="button" title="Ver los puntos de interés" data-i18n-label="status.title">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>

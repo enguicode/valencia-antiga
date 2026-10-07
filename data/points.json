@@ -18,6 +18,25 @@
     "source": "https://es.wikipedia.org/wiki/Torres_de_Quart"
   },
   {
+    "id": "muralla",
+    "at": {
+      "type": "wall",
+      "vertex": 46,
+      "offset": -75
+    },
+    "title": {
+      "es": "La muralla",
+      "ca": "La muralla",
+      "en": "The city wall"
+    },
+    "text": {
+      "es": "Aquí la muralla llega al río y lo sigue hasta la Ciutadella. La mandó levantar Pere el Cerimoniós entre 1356 y 1370, en plena guerra con Castilla: cuatro kilómetros de tapial, reforzado después con piedra. En esta esquina se alzaba desde 1390 la torre de Santa Caterina. El derribo empezó en 1865.",
+      "ca": "Ací la muralla arriba al riu i el segueix fins a la Ciutadella. La va manar alçar Pere el Cerimoniós entre 1356 i 1370, en plena guerra amb Castella: quatre quilòmetres de tàpia, reforçada després amb pedra. En este cantó s'alçava des del 1390 la torre de Santa Caterina. L'enderroc va començar el 1865.",
+      "en": "Here the wall reaches the river and follows it down to the Ciutadella. Pere el Cerimoniós had it built between 1356 and 1370, in the middle of a war with Castile: four kilometres of rammed earth, later strengthened with stone. On this corner stood, from 1390, the tower of Santa Caterina. Demolition began in 1865."
+    },
+    "source": "https://es.wikipedia.org/wiki/Muralla_medieval_de_Valencia"
+  },
+  {
     "id": "pretils",
     "at": {
       "type": "start",

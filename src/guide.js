@@ -23,6 +23,8 @@ const SUBJECTS = {
   // A bridge is always shown whole, from upstream and a little above its deck.
   bridge: { aim: 4, span: 150, fly: true, standOff: 0.8, above: 8 },
   gate: { aim: 12, span: 52 },
+  // A stretch of curtain, at the corner where it meets the river.
+  wall: { aim: 5, span: 130 },
   start: { aim: 2, span: 60 },
   // Seen from the west, where the cathedral stands behind it and not in front.
   micalet: { aim: 34, span: 110, facing: [-0.94, 0.34] },
@@ -115,7 +117,7 @@ export function createGuide(points, layout, path, camera, elements) {
     .map((total) => total / layout.wall.length);
 
   // Also works out the subject: the spot on the place itself to look at.
-  const locate = ({ type, id, offset = 0 }) => {
+  const locate = ({ type, id, vertex, offset = 0 }) => {
     if (type === 'start') {
       const wall = path.pointAt(path.start + offset + 40);
       return {
@@ -133,6 +135,8 @@ export function createGuide(points, layout, path, camera, elements) {
       // A gate is best seen from in front: straight out from the city.
       const out = Math.hypot(x - cityCentre[0], z - cityCentre[1]);
       facing = [(x - cityCentre[0]) / out, (z - cityCentre[1]) / out];
+    } else if (type === 'wall') {
+      [x, z] = layout.wall[vertex];
     } else if (type === 'bridge') {
       const bridge = layout.bridges.find((item) => item.id === id);
       const { sample } = path.project(bridge.x, bridge.z);

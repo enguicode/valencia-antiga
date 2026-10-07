@@ -30,14 +30,14 @@ Generado por `scripts/build-layout.py` a partir de OpenStreetMap (© colaborador
 | Sant Pius V | Posición del actual Museu de Belles Arts | Dudoso para 1700: el colegio se empezó en 1683 y se terminó en el XVIII |
 | Monasterio de la Saïdia | Posición de las ruinas del Portal de Saïdia | Aproximada; el edificio es genérico |
 | Portal de Sant Vicent | Punto donde la actual calle de Sant Vicent Màrtir corta la ronda | Aproximado; la forma es inventada, igual que la del Portal de la Mar |
-| Pretiles con bolas | A lo largo de las dos orillas, a 56 m del eje del río | Existieron, pero aquí son continuos y uniformes; en 1700 la obra no estaba completa |
+| Pretiles con bolas | A lo largo de las dos orillas, a 62 m del eje del río | Existieron, pero aquí son continuos y uniformes; en 1700 la obra no estaba completa |
 | Escaleras al río | Una junto a cada puente, en el lado de la ciudad | Inventado: posición y forma |
 | Azud | Cierra el extremo de aguas arriba del tramo navegable | Inventado: no corresponde a ningún azud real |
 | Colores (cúpula azul, tejados) | Orientativos | Inventado |
 
 ## Fichas de historia (v0.4)
 
-Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las dieciséis es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026; la ficha de Quart, el 7). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
+Los textos están en `data/points.json`, en castellano, valenciano e inglés; cada ficha enlaza su fuente. Cada ficha sale al entrar con la barca en el aro claro que flota en el río junto a su sitio, y encontrar las diecisiete es el juego. Todos los datos se han contrastado con el artículo de Wikipedia en español que se indica (consultados el 6 de octubre de 2026; las fichas de Quart y de la muralla, el 7). Wikipedia es una fuente secundaria: sirve para descartar errores de memoria, no como referencia definitiva.
 
 | Ficha | Datos que afirma | Artículo |
 | --- | --- | --- |
@@ -45,6 +45,7 @@ Los textos están en `data/points.json`, en castellano, valenciano e inglés; ca
 | Pont de Sant Josep | De piedra entre 1604 y 1607, el último de los cinco | Puente de Serranos |
 | Torres dels Serrans | 1392-1398, Pere Balaguer, entrada principal, prisión de nobles desde 1586 | Torres de Serranos |
 | Torres de Quart | 1441-1460, camino de Castilla, torres de frente redondo con muro enlucido y piedra en las aristas, prisión de mujeres (la Galera) desde 1649 | Torres de Quart |
+| La muralla | Levantada por orden de Pere el Cerimoniós entre 1356 y 1370, durante la guerra con Castilla; cuatro kilómetros; de tapial, reforzada después con piedra; torre de Santa Caterina en la esquina noroeste desde 1390 (derribada en 1772); derribo desde 1865 | Muralla medieval de Valencia; Viquipèdia: Muralla cristiana de València |
 | Portal Nou | Primero un hueco en el muro; portal nuevo autorizado hacia 1419 y acabado en la década de 1470; dos torres redondas parecidas a las de Quart | Blog «Passejant València amb ulls curiosos» y castillosricsol.es (no Wikipedia) |
 | Pont dels Serrans | Reedificado en 1518 tras la riada de 1517; nueve arcos; 159,7 m | Puente de Serranos |
 | El Micalet y la Seu | 1381-1429; prisma octogonal; altura hasta la terraza igual al perímetro; cimborrio gótico | El Miguelete; Catedral de Santa María (Valencia) |

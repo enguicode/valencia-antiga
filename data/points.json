@@ -194,7 +194,7 @@
     "at": {
       "type": "landmark",
       "id": "trinitat",
-      "offset": 160
+      "offset": -30
     },
     "title": {
       "es": "Monestir de la Trinitat",
@@ -213,7 +213,7 @@
     "at": {
       "type": "landmark",
       "id": "sant-pius",
-      "offset": 130
+      "offset": 0
     },
     "title": {
       "es": "Col·legi de Sant Pius V",

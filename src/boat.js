@@ -54,6 +54,9 @@ export const BOAT_TYPES = {
   },
 };
 export const DEFAULT_BOAT = 'albufera';
+// Not of the period, and not pretending to be: a jet ski, three times as fast.
+export const JET_SKI = 'jetski';
+const JET_SKI_PACE = 3;
 
 const stationZ = (type, t) => (t * type.length) / 2;
 
@@ -392,9 +395,90 @@ function createParts(type) {
   };
 }
 
+// The jet ski: a closed hull with a saddle, the same boatman astride it with
+// his straw hat on, and a plume of spray astern that grows with the speed.
+function createJetSki() {
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const pieces = {};
+  const add = (material, geometry, x = 0, y = 0, z = 0) => {
+    const piece = geometry.index ? geometry.toNonIndexed() : geometry;
+    piece.translate(x, y, z);
+    (pieces[material] ??= []).push(piece);
+  };
+  // Hull and deck: two flattened shells, the upper one narrower
+  add('shell', new THREE.SphereGeometry(1, 20, 12).scale(0.58, 0.3, 1.65), 0, 0.12, 0);
+  add('accent', new THREE.SphereGeometry(1, 20, 12).scale(0.46, 0.3, 1.35), 0, 0.3, 0.12);
+  add('shell', new THREE.BoxGeometry(0.5, 0.34, 0.9).rotateX(-0.3), 0, 0.62, 0.62); // cowl
+  add('saddle', new THREE.BoxGeometry(0.36, 0.16, 1.15), 0, 0.62, -0.55);
+  // Steering column, handlebar and a low screen
+  add('saddle', spar(v(0, 0.7, 0.55), v(0, 1.02, 0.36), 0.05));
+  add('saddle', new THREE.CylinderGeometry(0.035, 0.035, 0.78, 8).rotateZ(Math.PI / 2), 0, 1.03, 0.36);
+  add('saddle', new THREE.BoxGeometry(0.42, 0.2, 0.03).rotateX(-0.6), 0, 0.9, 0.78);
+  // The boatman, sitting astride and leaning into it
+  const seat = -0.4;
+  for (const side of [-1, 1]) {
+    add('breeches', spar(v(side * 0.2, 0.74, seat), v(side * 0.36, 0.34, seat + 0.42), 0.085));
+    add('shirt', spar(v(side * 0.2, 1.36, seat + 0.16), v(side * 0.36, 1.05, 0.34), 0.055));
+  }
+  add('breeches', new THREE.BoxGeometry(0.38, 0.2, 0.42), 0, 0.78, seat);
+  add('shirt', new THREE.CapsuleGeometry(0.19, 0.38, 4, 10).rotateX(0.22), 0, 1.2, seat + 0.08);
+  add('skin', new THREE.SphereGeometry(0.14, 12, 10), 0, 1.68, seat + 0.2);
+  add('straw', new THREE.CylinderGeometry(0.3, 0.3, 0.025, 14), 0, 1.79, seat + 0.2);
+  add('straw', new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12), 0, 1.86, seat + 0.2);
+
+  const paint = (color, roughness) => new THREE.MeshStandardMaterial({ color, roughness });
+  const materials = {
+    ...MATERIALS,
+    shell: paint(0xf1efe8, 0.35),
+    accent: paint(0xc4372c, 0.4),
+    saddle: paint(0x24211e, 0.8),
+  };
+  // Spray: a cone lying astern, its point at the jet
+  const spray = new THREE.ConeGeometry(0.55, 2.6, 10, 1, true).rotateX(Math.PI / 2).translate(0, 0, -1.3);
+  return {
+    geometries: Object.fromEntries(Object.entries(pieces).map(([name, list]) => [name, mergeGeometries(list)])),
+    materials,
+    spray,
+    sprayMaterial: new THREE.MeshBasicMaterial({
+      color: 0xf4f7f2,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+    lantern: [0, 0.82, 1.2],
+  };
+}
+
+function createJetSkiModel() {
+  const parts = (builtParts[JET_SKI] ??= createJetSki());
+  const model = new THREE.Group();
+  for (const [name, geometry] of Object.entries(parts.geometries)) {
+    const mesh = new THREE.Mesh(geometry, parts.materials[name]);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    model.add(mesh);
+  }
+  const spray = new THREE.Mesh(parts.spray, parts.sprayMaterial);
+  spray.position.set(0, 0.2, -1.45);
+  spray.rotation.x = -0.22; // thrown up as well as back
+  spray.visible = false;
+  model.add(spray);
+  model.userData.spray = spray;
+
+  const core = new THREE.Mesh(LANTERN.geometry, LANTERN.core);
+  core.position.set(...parts.lantern);
+  const halo = new THREE.Sprite(LANTERN.halo);
+  halo.position.set(...parts.lantern);
+  halo.scale.setScalar(2.4);
+  model.add(core, halo);
+  return model;
+}
+
 const builtParts = {};
 
 export function createBoatModel(typeName = DEFAULT_BOAT) {
+  if (typeName === JET_SKI) return createJetSkiModel();
   const parts = (builtParts[typeName] ??= createParts(BOAT_TYPES[typeName]));
   const model = new THREE.Group();
   for (const [material, geometry] of Object.entries(parts.geometries)) {
@@ -460,6 +544,12 @@ const SAILING_SPEED = 3.2;
 // only scenery.
 export function animateBoat(model, dt, time, { closeness, speed, underSail = false }) {
   const data = model.userData;
+  if (data.spray) {
+    const thrust = THREE.MathUtils.clamp(speed / (MAX_SPEED * JET_SKI_PACE), 0, 1);
+    data.spray.visible = thrust > 0.03;
+    data.spray.scale.set(0.5 + thrust * 0.6, 0.4 + thrust * 0.9, 0.25 + thrust * (1 + 0.08 * Math.sin(time * 31)));
+    return;
+  }
   const poling = Boolean(data.stroke) && !underSail && Math.abs(speed) < SAILING_SPEED;
   const wanted = Math.max(THREE.MathUtils.smoothstep(closeness, 0.12, 0.55), poling ? 1 : 0);
   data.rigDown += (wanted - data.rigDown) * (1 - Math.exp(-dt * 2.2));
@@ -480,9 +570,12 @@ export function createBoat(path, bridgeGuide) {
   const mesh = new THREE.Group();
   mesh.rotation.order = 'YXZ';
   let model = null;
+  let pace = 1; // how many times faster than a boat under sail
   function setType(typeName) {
     if (model) mesh.remove(model);
-    model = createBoatModel(typeName in BOAT_TYPES ? typeName : DEFAULT_BOAT);
+    const known = typeName === JET_SKI || typeName in BOAT_TYPES;
+    model = createBoatModel(known ? typeName : DEFAULT_BOAT);
+    pace = known && typeName === JET_SKI ? JET_SKI_PACE : 1;
     mesh.add(model);
   }
   setType(DEFAULT_BOAT);
@@ -502,9 +595,9 @@ export function createBoat(path, bridgeGuide) {
   const forward = new THREE.Vector3();
 
   function update(dt, input, time, speedLimit = Infinity) {
-    state.speed += input.throttle * ACCELERATION * dt;
+    state.speed += input.throttle * ACCELERATION * pace * dt;
     state.speed -= state.speed * DRAG * dt;
-    state.speed = THREE.MathUtils.clamp(state.speed, MAX_REVERSE, MAX_SPEED);
+    state.speed = THREE.MathUtils.clamp(state.speed, MAX_REVERSE, MAX_SPEED * pace);
     // A limit is eased into rather than snapped to.
     if (state.speed > speedLimit) state.speed = Math.max(speedLimit, state.speed - 9 * dt);
 
@@ -550,7 +643,7 @@ export function createBoat(path, bridgeGuide) {
     mesh.position.set(state.x, (bow + stern) / 2, state.z);
     mesh.rotation.y = state.heading;
     mesh.rotation.x = (stern - bow) * 0.2;
-    mesh.rotation.z = input.steer * (state.speed / MAX_SPEED) * 0.12;
+    mesh.rotation.z = input.steer * (state.speed / (MAX_SPEED * pace)) * (pace > 1 ? 0.3 : 0.12);
   }
 
   function getForward() {

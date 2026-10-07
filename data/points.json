@@ -174,7 +174,7 @@
     "at": {
       "type": "gate",
       "id": "trinitat",
-      "offset": -15
+      "offset": 25
     },
     "title": {
       "es": "Portal de la Trinitat",
@@ -251,7 +251,7 @@
     "at": {
       "type": "gate",
       "id": "real",
-      "offset": 8
+      "offset": 35
     },
     "title": {
       "es": "Portal del Real",

@@ -54,9 +54,12 @@ export const BOAT_TYPES = {
   },
 };
 export const DEFAULT_BOAT = 'albufera';
-// Not of the period, and not pretending to be: a jet ski, three times as fast.
-export const JET_SKI = 'jetski';
-const JET_SKI_PACE = 3;
+// Not of the period, and not pretending to be: a jet ski and a motor launch,
+// three and five times as fast as a boat under sail.
+const FAST_CRAFT = {
+  jetski: { pace: 3, build: createJetSki },
+  speedboat: { pace: 5, build: createSpeedboat },
+};
 
 const stationZ = (type, t) => (t * type.length) / 2;
 
@@ -395,8 +398,9 @@ function createParts(type) {
   };
 }
 
-// The jet ski: a closed hull with a saddle, the same boatman astride it with
-// his straw hat on, and a plume of spray astern that grows with the speed.
+// The jet ski: a closed hull with a saddle and the same boatman astride it
+// with his straw hat on. Both fast craft throw a plume of spray astern that
+// grows with the speed.
 function createJetSki() {
   const v = (x, y, z) => new THREE.Vector3(x, y, z);
   const pieces = {};
@@ -426,32 +430,104 @@ function createJetSki() {
   add('straw', new THREE.CylinderGeometry(0.3, 0.3, 0.025, 14), 0, 1.79, seat + 0.2);
   add('straw', new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12), 0, 1.86, seat + 0.2);
 
-  const paint = (color, roughness) => new THREE.MeshStandardMaterial({ color, roughness });
-  const materials = {
-    ...MATERIALS,
-    shell: paint(0xf1efe8, 0.35),
-    accent: paint(0xc4372c, 0.4),
-    saddle: paint(0x24211e, 0.8),
-  };
-  // Spray: a cone lying astern, its point at the jet
-  const spray = new THREE.ConeGeometry(0.55, 2.6, 10, 1, true).rotateX(Math.PI / 2).translate(0, 0, -1.3);
   return {
     geometries: Object.fromEntries(Object.entries(pieces).map(([name, list]) => [name, mergeGeometries(list)])),
-    materials,
-    spray,
-    sprayMaterial: new THREE.MeshBasicMaterial({
-      color: 0xf4f7f2,
-      transparent: true,
-      opacity: 0.55,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    }),
+    materials: { ...MATERIALS, shell: paint(0xf1efe8, 0.35), accent: paint(0xc4372c, 0.4), saddle: paint(0x24211e, 0.8) },
+    spray: { at: [0, 0.2, -1.45], width: 1 },
     lantern: [0, 0.82, 1.2],
   };
 }
 
-function createJetSkiModel() {
-  const parts = (builtParts[JET_SKI] ??= createJetSki());
+// The motor launch: a planing hull with a varnished foredeck, a screen, two
+// seats and an outboard, and the boatman at the wheel.
+const LAUNCH = {
+  length: 6,
+  halfBeam: (t) => (t < 0 ? 1 - 0.07 * t * t : (1 - t ** 2.3) ** 0.75),
+  sheer: (t) => 0.58 + 0.14 * Math.max(t, 0) ** 2,
+  keel: (t) => -0.28 + 0.6 * Math.max(t, 0) ** 3,
+  flare: 0.55,
+  turn: 2.6,
+  sole: { height: 0.02, width: 0.8 },
+};
+
+function createSpeedboat() {
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const pieces = {};
+  const add = (material, geometry, x = 0, y = 0, z = 0) => {
+    const piece = geometry.index ? geometry.toNonIndexed() : geometry;
+    for (const name of Object.keys(piece.attributes)) if (name !== 'position' && name !== 'normal') piece.deleteAttribute(name);
+    if (!piece.attributes.normal) piece.computeVertexNormals();
+    piece.translate(x, y, z);
+    (pieces[material] ??= []).push(piece);
+  };
+  const z = (t) => stationZ(LAUNCH, t);
+  add('shell', createHullGeometry(LAUNCH));
+  add('shell', new THREE.BoxGeometry(LAUNCH.halfBeam(-1) * 2, 0.8, 0.06), 0, 0.17, z(-1));
+  add('saddle', createSoleGeometry(LAUNCH));
+  // Foredeck: the outline of the hull forward of the screen, laid on the sheer
+  const deck = new THREE.Shape();
+  const steps = 10;
+  const edge = (i) => {
+    const t = 0.12 + (0.88 * i) / steps;
+    return [LAUNCH.halfBeam(t), z(t)];
+  };
+  for (let i = 0; i <= steps; i++) deck[i ? 'lineTo' : 'moveTo'](...edge(i));
+  for (let i = steps; i >= 0; i--) deck.lineTo(-edge(i)[0], edge(i)[1]);
+  add('accent', new THREE.ShapeGeometry(deck).rotateX(Math.PI / 2), 0, LAUNCH.sheer(0.4) + 0.02, 0);
+  // Screen, wheel, seats and the outboard
+  add('glass', new THREE.BoxGeometry(1.7, 0.42, 0.04).rotateX(-0.55), 0, LAUNCH.sheer(0.12) + 0.2, z(0.1));
+  add('saddle', new THREE.TorusGeometry(0.17, 0.025, 6, 14).rotateX(-0.5), -0.4, 0.78, z(0.02));
+  for (const side of [-1, 1]) {
+    add('accent', new THREE.BoxGeometry(0.62, 0.14, 0.6), side * 0.4, 0.36, z(-0.22));
+    add('accent', new THREE.BoxGeometry(0.62, 0.5, 0.12), side * 0.4, 0.55, z(-0.33));
+  }
+  add('accent', new THREE.BoxGeometry(1.5, 0.14, 0.5), 0, 0.36, z(-0.78));
+  add('saddle', new THREE.BoxGeometry(0.34, 0.5, 0.42), 0, 0.85, z(-1) - 0.2);
+  add('saddle', new THREE.BoxGeometry(0.12, 0.9, 0.16), 0, 0.2, z(-1) - 0.22);
+  // The boatman at the wheel, on the port seat
+  const seat = z(-0.22);
+  add('breeches', new THREE.BoxGeometry(0.36, 0.2, 0.5), -0.4, 0.52, seat + 0.1);
+  add('shirt', new THREE.CapsuleGeometry(0.19, 0.38, 4, 10), -0.4, 0.94, seat - 0.05);
+  for (const side of [-1, 1]) {
+    add('shirt', spar(v(-0.4 + side * 0.2, 1.1, seat), v(-0.4 + side * 0.14, 0.82, z(0.0)), 0.055));
+  }
+  add('skin', new THREE.SphereGeometry(0.14, 12, 10), -0.4, 1.42, seat - 0.02);
+  add('straw', new THREE.CylinderGeometry(0.3, 0.3, 0.025, 14), -0.4, 1.53, seat - 0.02);
+  add('straw', new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12), -0.4, 1.6, seat - 0.02);
+
+  const shell = paint(0xf3f1ea, 0.35);
+  shell.side = THREE.DoubleSide;
+  return {
+    geometries: Object.fromEntries(Object.entries(pieces).map(([name, list]) => [name, mergeGeometries(list)])),
+    materials: {
+      ...MATERIALS,
+      shell,
+      accent: paint(0x7a3b1e, 0.45),
+      saddle: paint(0x24211e, 0.8),
+      glass: new THREE.MeshStandardMaterial({ color: 0x9fc4d4, roughness: 0.1, transparent: true, opacity: 0.45 }),
+    },
+    spray: { at: [0, 0.15, z(-1) - 0.4], width: 1.7 },
+    lantern: [0, LAUNCH.sheer(1) + 0.3, z(1) - 0.1],
+    lid: createLidGeometry(LAUNCH),
+  };
+}
+
+const paint = (color, roughness) => new THREE.MeshStandardMaterial({ color, roughness });
+const SPRAY = {
+  // A cone lying astern, its point at the jet
+  geometry: new THREE.ConeGeometry(0.55, 2.6, 10, 1, true).rotateX(Math.PI / 2).translate(0, 0, -1.3),
+  material: new THREE.MeshBasicMaterial({
+    color: 0xf4f7f2,
+    transparent: true,
+    opacity: 0.55,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  }),
+};
+
+function createFastModel(typeName) {
+  const craft = FAST_CRAFT[typeName];
+  const parts = (builtParts[typeName] ??= craft.build());
   const model = new THREE.Group();
   for (const [name, geometry] of Object.entries(parts.geometries)) {
     const mesh = new THREE.Mesh(geometry, parts.materials[name]);
@@ -459,12 +535,14 @@ function createJetSkiModel() {
     mesh.receiveShadow = true;
     model.add(mesh);
   }
-  const spray = new THREE.Mesh(parts.spray, parts.sprayMaterial);
-  spray.position.set(0, 0.2, -1.45);
+  const spray = new THREE.Mesh(SPRAY.geometry, SPRAY.material);
+  spray.position.set(...parts.spray.at);
   spray.rotation.x = -0.22; // thrown up as well as back
   spray.visible = false;
   model.add(spray);
   model.userData.spray = spray;
+  model.userData.sprayWidth = parts.spray.width;
+  model.userData.topSpeed = MAX_SPEED * craft.pace;
 
   const core = new THREE.Mesh(LANTERN.geometry, LANTERN.core);
   core.position.set(...parts.lantern);
@@ -472,13 +550,18 @@ function createJetSkiModel() {
   halo.position.set(...parts.lantern);
   halo.scale.setScalar(2.4);
   model.add(core, halo);
+  if (parts.lid) {
+    const lid = new THREE.Mesh(parts.lid, LID_MATERIAL);
+    lid.renderOrder = DRAW_ORDER.lid;
+    model.add(lid);
+  }
   return model;
 }
 
 const builtParts = {};
 
 export function createBoatModel(typeName = DEFAULT_BOAT) {
-  if (typeName === JET_SKI) return createJetSkiModel();
+  if (typeName in FAST_CRAFT) return createFastModel(typeName);
   const parts = (builtParts[typeName] ??= createParts(BOAT_TYPES[typeName]));
   const model = new THREE.Group();
   for (const [material, geometry] of Object.entries(parts.geometries)) {
@@ -545,9 +628,13 @@ const SAILING_SPEED = 3.2;
 export function animateBoat(model, dt, time, { closeness, speed, underSail = false }) {
   const data = model.userData;
   if (data.spray) {
-    const thrust = THREE.MathUtils.clamp(speed / (MAX_SPEED * JET_SKI_PACE), 0, 1);
+    const thrust = THREE.MathUtils.clamp(speed / data.topSpeed, 0, 1);
     data.spray.visible = thrust > 0.03;
-    data.spray.scale.set(0.5 + thrust * 0.6, 0.4 + thrust * 0.9, 0.25 + thrust * (1 + 0.08 * Math.sin(time * 31)));
+    data.spray.scale.set(
+      (0.5 + thrust * 0.6) * data.sprayWidth,
+      0.4 + thrust * 0.9,
+      0.25 + thrust * (1 + 0.08 * Math.sin(time * 31)),
+    );
     return;
   }
   const poling = Boolean(data.stroke) && !underSail && Math.abs(speed) < SAILING_SPEED;
@@ -573,9 +660,9 @@ export function createBoat(path, bridgeGuide) {
   let pace = 1; // how many times faster than a boat under sail
   function setType(typeName) {
     if (model) mesh.remove(model);
-    const known = typeName === JET_SKI || typeName in BOAT_TYPES;
+    const known = typeName in FAST_CRAFT || typeName in BOAT_TYPES;
     model = createBoatModel(known ? typeName : DEFAULT_BOAT);
-    pace = known && typeName === JET_SKI ? JET_SKI_PACE : 1;
+    pace = FAST_CRAFT[typeName]?.pace ?? 1;
     mesh.add(model);
   }
   setType(DEFAULT_BOAT);

@@ -31,6 +31,15 @@ const GATE_STYLES = {
   'sant-vicent': { kind: 'single', size: 9, height: 14.5, niches: true },
   // no tower: an arch in a taller, slightly projecting stretch of wall
   real: { kind: 'plain', width: 11, height: 12.5 },
+  // The small gates of the landward side. Russafa had two square towers and
+  // was shut only in 1707; Torrent was an arch through a battlemented tower;
+  // the Jueus gate had been a single tower since 1607 and was walled up about
+  // 1689; the Coixo and Tints gates were plain openings in the curtain.
+  russafa: { kind: 'square', radius: 3.5, height: 14, gap: 6.5, centre: 11.5 },
+  torrent: { kind: 'single', size: 8, height: 14 },
+  jueus: { kind: 'single', size: 9, height: 14.5, blocked: true },
+  coixo: { kind: 'plain', width: 9, height: 11.5 },
+  tints: { kind: 'plain', width: 9, height: 11.5 },
 };
 
 function createArchGeometry() {
@@ -198,7 +207,12 @@ export function createWalls(layout, path) {
       place(lists.passages, frame, x, style.height / 2, 0, { scale: [style.size, style.height, style.size] });
       merlonSquare(x, 0, style.size / 2, style.height + MERLON.height / 2);
       place(lists.accents, frame, x, style.height - 2.2, 0, { scale: [style.size + 0.5, 0.5, style.size + 0.5] });
-      arch(x + style.size / 2 + 0.05, 4.4, 6.4);
+      if (style.blocked) {
+        // Walled up: the arch shows as a paler patch in the tower
+        place(lists.accents, frame, x + style.size / 2 + 0.03, 3.2, 0, { scale: [0.2, 6.4, 4.4] });
+      } else {
+        arch(x + style.size / 2 + 0.05, 4.4, 6.4);
+      }
       place(lists.slits, frame, x + style.size / 2 + 0.03, style.height * 0.72, 0);
       if (style.niches) {
         // The two statues of the Vicents, put up in 1677 and 1681

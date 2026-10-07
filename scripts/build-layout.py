@@ -71,6 +71,16 @@ BRIDGE_GATES = {
 # "kind" picks the model in src/landmarks.js. The churches are today's
 # buildings on sites that, from memory, were already churches around 1700;
 # see docs/sources.md.
+# The small gates on the landward side, at the street corners where local
+# histories put them (latitude, longitude). Approximate.
+LAND_GATES = [
+    ("tints", "Portal dels Tints", (39.478267, -0.383382), "Carrer de la Corona at Guillem de Castro, by the Beneficència"),
+    ("coixo", "Portal del Coixo", (39.474009, -0.383824), "Carrer dels Carnissers at Guillem de Castro"),
+    ("torrent", "Portal de Torrent", (39.470721, -0.383463), "Carrer de l'Hospital at Guillem de Castro"),
+    ("russafa", "Portal de Russafa", (39.467236, -0.374990), "Carrer de Xàtiva at the Passeig de Russafa"),
+    ("jueus", "Portal dels Jueus", (39.470236, -0.370847), "Plaça dels Pinazo"),
+]
+
 LANDMARKS = [
     ("el Micalet", "micalet", "micalet", {}),
     # The cathedral runs from its foot, where the Micalet is, to the apse in the
@@ -96,7 +106,7 @@ LANDMARKS = [
     ("Església de Sant Agustí i Santa Caterina", "sant-agusti", "church", {}),
     ("Església de la Santíssima Creu", "carme", "church", {}),
     ("Església de la Companyia de Jesús", "companyia", "church", {}),
-    ("Convento del Corpus Christi", "corpus-christi", "church", {}),
+    ("Convento del Corpus Christi", "corpus-christi", "church", {"inside": 38}),
 ]
 
 ORIGIN_NAME = "Torres dels Serrans"
@@ -297,6 +307,23 @@ def main():
             "placement": "where the wall coming from Quart reaches the river",
         })
 
+    for gate_id, name, position, where in LAND_GATES:
+        gates.append({"id": gate_id, "name": name, "vertex": nearest_wall_vertex(to_local(position)), "placement": where})
+
+    def is_inside(point, polygon):
+        odd = False
+        for (ax, az), (bx, bz) in zip(polygon, polygon[1:] + polygon[:1]):
+            if (az > point[1]) != (bz > point[1]) and point[0] < (bx - ax) * (point[1] - az) / (bz - az) + ax:
+                odd = not odd
+        return odd
+
+    def distance_to_wall(point):
+        best = float("inf")
+        for a, b in zip(wall, wall[1:] + wall[:1]):
+            t = max(0, min(1, ((point[0] - a[0]) * (b[0] - a[0]) + (point[1] - a[1]) * (b[1] - a[1])) / math.dist(a, b) ** 2))
+            best = min(best, math.dist(point, (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)))
+        return best
+
     landmarks = []
     for name, landmark_id, kind, options in LANDMARKS:
         candidates = [e for e in by_name.get(name, []) if e["type"] != "node"] or by_name.get(name, [])
@@ -316,6 +343,19 @@ def main():
             axis, length, width = principal_axis(points)
             entry.update(axis=[round(axis[0], 3), round(axis[1], 3)], length=round(length), width=round(width))
         entry.update(options)
+        # A building that stood within the walls can fall outside the smoothed
+        # line: it is pulled towards the middle of the city until it stands
+        # `inside` metres within the wall.
+        clearance = entry.pop("inside", None)
+        if clearance is not None:
+            x, z, moved = entry["x"], entry["z"], 0
+            reach = math.dist((x, z), centre)
+            towards = ((centre[0] - x) / reach, (centre[1] - z) / reach)
+            while not (is_inside((x, z), wall) and distance_to_wall((x, z)) >= clearance):
+                x, z, moved = x + towards[0], z + towards[1], moved + 1
+            if moved:
+                entry.update(x=round(x, 1), z=round(z, 1))
+                entry["moved"] = f"pulled {moved} m inside the wall, whose smoothed line passes behind it"
         landmarks.append(entry)
 
     def rounded(points):

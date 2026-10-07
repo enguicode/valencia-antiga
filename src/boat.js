@@ -685,8 +685,9 @@ export function createBoat(path, bridgeGuide) {
     state.speed += input.throttle * ACCELERATION * pace * dt;
     state.speed -= state.speed * DRAG * dt;
     state.speed = THREE.MathUtils.clamp(state.speed, MAX_REVERSE, MAX_SPEED * pace);
-    // A limit is eased into rather than snapped to.
-    if (state.speed > speedLimit) state.speed = Math.max(speedLimit, state.speed - 9 * dt);
+    // A limit is eased into rather than snapped to. The fast craft brake
+    // harder, or they would be at the next ring before the card was read.
+    if (state.speed > speedLimit) state.speed = Math.max(speedLimit, state.speed - 9 * pace * dt);
 
     // The rudder needs way on to bite; keep a little authority at rest so the
     // boat can still be pointed somewhere.

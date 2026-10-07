@@ -6,7 +6,7 @@ Paseo en barca, en el navegador, por el viejo cauce del Turia y la València amu
 
 **[Entrar al paseo](https://valencia-antiga.pages.dev/)** · castellano, valenciano e inglés · no hay nada que instalar
 
-El río hacía entonces de foso. Desde el agua se ven la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Hay diecisiete puntos de interés que descubrir, cada uno con su ficha, y uno más: al entrar en su aro se hace de noche. Es «quedarse a la luna de València».
+El río hacía entonces de foso. Desde el agua se ven la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios. Hay dieciocho puntos de interés que descubrir, cada uno con su ficha, y uno más: al entrar en su aro se hace de noche. Es «quedarse a la luna de València».
 
 Es una reconstrucción aproximada. Los sitios están donde estaban; las formas son un esbozo. Qué es fiable y qué no está en [docs/sources.md](docs/sources.md).
 
@@ -18,7 +18,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 | **Encontrar los puntos** | Junto a cada sitio flota un aro claro. Al entrar sale la ficha, la cámara mira el lugar (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Una flecha en el borde lleva al más cercano que falte. |
 | **La luna** | Al entrar en el aro anochece solo, sin botón: la cámara mira al cielo y sale la ficha. Al alejarte vuelve la hora que había, salvo que la cambies tú. En el listado se ve una luna, no el nombre, hasta que se consigue. |
 | **Repasar** | La cuenta de arriba a la izquierda abre el cuaderno. Lo no descubierto sale en blanco. Lo encontrado lleva un ojo que lleva la cámara hasta ese sitio. El ojo de la luna, si es de día, deja el cielo de noche mientras dura la ficha y luego devuelve la hora que había. |
-| **Recorrido guiado** | La barca baja sola por el centro y pasa por los diecisiete aros. Arrastrar solo mueve la cámara. |
+| **Recorrido guiado** | La barca baja sola por el centro y pasa por los dieciocho aros. Arrastrar solo mueve la cámara. |
 | **La hora** | Al entrar, la portada premarca día, atardecer o noche según el reloj del visitante, con su huso horario. Desde ahí solo cambia a mano. De noche se encienden ventanas, faroles y luciérnagas, y los carteles de la interfaz pasan a un tono oscuro. |
 | **La barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. Y, fuera de época a propósito, una moto de agua que va tres veces más rápido y una lancha motora que va cinco. |
 | **El idioma** | Castellano, valenciano o inglés, en la portada y en los ajustes. |
@@ -39,7 +39,7 @@ La pantalla se deja casi libre. Arriba a la izquierda, los puntos y los metros. 
 ## Qué hay en la escena
 
 - **El río.** El curso real del viejo cauce, con agua animada, pretiles de piedra con bolas, escaleras y un azud que cierra el tramo aguas arriba.
-- **La muralla.** El perímetro completo, unos 4,7 km y 10 m de alto. Torres redondas solo en el frente del río, con la de Santa Caterina, mayor, en la esquina donde la muralla llega al agua, y siete puertas con forma propia: Portal Nou, Serrans, Trinitat, Real y de la Mar en ese lado, más Quart y Sant Vicent.
+- **La muralla.** El perímetro completo, unos 4,7 km y 10 m de alto. Torres redondas solo en el frente del río, con la de Santa Caterina, mayor, en la esquina donde la muralla llega al agua, y doce puertas con forma propia: Portal Nou, Serrans, Trinitat, Real y de la Mar en ese lado; Quart y Sant Vicent; y las pequeñas del lado de tierra, Tints, Coixo, Torrent, Russafa y Jueus, esta última tapiada.
 - **Los cinco puentes.** Sant Josep, Serrans, Trinitat, Real y de la Mar, cada uno con sus arcos, su ancho, sus tajamares y sus casalicios o estatuas.
 - **Edificios.** El Micalet, la Seu, la Lonja, el Palau del Real, los conventos de la Trinitat, Sant Pius V, Sant Doménec y la Saïdia, y quince iglesias.
 - **Alrededor.** Unas 2.600 casas, árboles, otras siete barcas, lavanderas, humo y pájaros.
@@ -128,7 +128,7 @@ Colocar cada cosa donde estaba cuesta más que el 3D. Las reglas:
 | --- | --- |
 | Dónde están puentes, puertas y edificios | De OpenStreetMap. Fiable. |
 | El curso del río y el perímetro de la muralla | Aproximados y suavizados. |
-| Las diecisiete fichas | Contrastadas con Wikipedia en español, que es fuente secundaria. Los portales Nou, de la Trinitat y del Real, además, con blogs de historia local. |
+| Las dieciocho fichas | Contrastadas con Wikipedia en español, que es fuente secundaria. Los portales Nou, de la Trinitat y del Real, además, con blogs de historia local. |
 | La muralla cristiana, de 1356-1370, y el derribo desde 1865 | Contrastado con Wikipedia en español y en valenciano. |
 | La forma de puertas, puentes, Micalet, Seu, Palau del Real, Trinitat y Sant Pius V | Rehecha según lo que dicen las fuentes. Las medidas que faltan, estimadas. |
 | Navegar el Turia | Licencia. Hacia 1700 el río no era navegable. |

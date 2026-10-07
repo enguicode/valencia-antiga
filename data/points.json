@@ -18,6 +18,26 @@
     "source": "https://es.wikipedia.org/wiki/Torres_de_Quart"
   },
   {
+    "id": "corpus-christi",
+    "at": {
+      "type": "landmark",
+      "id": "corpus-christi",
+      "offset": 45
+    },
+    "title": {
+      "es": "Convent del Corpus Christi",
+      "ca": "Convent del Corpus Christi",
+      "en": "Convent of Corpus Christi"
+    },
+    "text": {
+      "es": "Carmelitas descalzas. Lo fundó en 1681 Juan Bautista Fos y, tras un primer asiento en Russafa, se trasladó aquí, junto al Portal de la Corona. La primera piedra del convento se puso el 15 de octubre de 1687: hacia 1700 era uno de los más nuevos de la ciudad. Sigue en su sitio.",
+      "ca": "Carmelites descalces. El va fundar el 1681 Joan Baptista Fos i, després d'un primer lloc a Russafa, es va traslladar ací, vora el Portal de la Corona. La primera pedra del convent es va posar el 15 d'octubre de 1687: cap al 1700 era un dels més nous de la ciutat. Continua al seu lloc.",
+      "en": "Discalced Carmelite nuns. Founded in 1681 by Juan Bautista Fos, it soon moved from Russafa to this spot by the Corona gate. The first stone of the convent was laid on 15 October 1687, so around 1700 it was one of the newest in the city. It is still here."
+    },
+    "source": "https://cultural.valencia.es/en/monument/corpus-christi-monastery/",
+    "sourceName": "València Cultural"
+  },
+  {
     "id": "muralla",
     "at": {
       "type": "wall",
@@ -182,12 +202,12 @@
       "en": "Portal de la Trinitat"
     },
     "text": {
-      "es": "También llamado Portal dels Catalans, frente al Pont de la Trinitat. Tuvo dos torres cuadradas gemelas, rematadas por almenas, unidas por un cuerpo central más bajo donde se abría un arco de medio punto. En 1862 ya era un simple arco con frontón.",
-      "ca": "També anomenat Portal dels Catalans, davant del Pont de la Trinitat. Va tindre dues torres quadrades bessones, rematades per merlets, unides per un cos central més baix on s'obria un arc de mig punt. El 1862 ja era un simple arc amb frontó.",
-      "en": "Also known as the Portal dels Catalans, facing the Pont de la Trinitat. It had two twin square towers topped with battlements, joined by a lower central body with a round arch. By 1862 it was a plain arch with a pediment."
+      "es": "También llamado Portal dels Catalans, frente al Pont de la Trinitat. Los planos de 1608 y de 1704 lo dibujan con dos torres gemelas, rematadas por almenas, unidas por un cuerpo central más bajo donde se abría el arco. En 1862 ya era un simple arco con frontón.",
+      "ca": "També anomenat Portal dels Catalans, davant del Pont de la Trinitat. Els plànols de 1608 i de 1704 el dibuixen amb dues torres bessones, rematades per merlets, unides per un cos central més baix on s'obria l'arc. El 1862 ja era un simple arc amb frontó.",
+      "en": "Also known as the Portal dels Catalans, facing the Pont de la Trinitat. The plans of 1608 and 1704 draw it with twin towers topped with battlements, joined by a lower central body with the arch. By 1862 it was a plain arch with a pediment."
     },
-    "source": "https://castillosricsol.es/murallas-cristianas-de-valencia/",
-    "sourceName": "castillosricsol.es"
+    "source": "https://www.jdiezarnal.com/valenciamurallasvalencia.html",
+    "sourceName": "jdiezarnal.com"
   },
   {
     "id": "monestir-trinitat",

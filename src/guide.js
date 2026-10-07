@@ -27,11 +27,12 @@ const SUBJECTS = {
   wall: { aim: 5, span: 130 },
   start: { aim: 2, span: 60 },
   // Seen from the west, where the cathedral stands behind it and not in front.
-  micalet: { aim: 34, span: 110, facing: [-0.94, 0.34] },
+  micalet: { aim: 34, span: 110, facing: [-0.94, 0.34], above: 32 },
   // Off the river, on the west wall. Close on the two towers and from below.
   // The way there is over open country, outside the wall.
   quart: { aim: 18, span: 46, standOff: 1, above: -9 },
-  palace: { aim: 14, span: 150 },
+  // Far from the water: the camera goes in closer than its width would ask.
+  palace: { aim: 12, span: 150, standOff: 0.75, above: 14 },
   // Convents stand back from the bank: the camera goes over to them.
   convent: { aim: 9, span: 90, fly: true, standOff: 0.8, above: 9 },
 };

@@ -140,6 +140,7 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
     state.light = ambient / 1.3;
     stars.material.opacity = state.night * 0.9;
     moon.material.opacity = state.night;
+    moon.userData.glow.material.opacity = state.night;
 
     // The sun rises in the east, crosses the south and sets in the west, a
     // little to the north at both ends as it does in summer. At night the

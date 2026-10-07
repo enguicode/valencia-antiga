@@ -21,9 +21,10 @@ function seaWash() {
   for (let i = 0; i < width * width; i++) {
     if (((bytes[i >> 3] >> (7 - (i & 7))) & 1) === 0) continue;
     const pixel = i * 4;
-    data[pixel] = 90;
-    data[pixel + 1] = 100;
-    data[pixel + 2] = 112;
+    // Bone ink. A cool grey read as a photograph against the paper.
+    data[pixel] = 207;
+    data[pixel + 1] = 187;
+    data[pixel + 2] = 156;
     data[pixel + 3] = 210;
   }
   context.putImageData(image, 0, 0);
@@ -76,7 +77,7 @@ function drawMoon() {
     context.beginPath();
     context.arc(cx, cy, r, 0, Math.PI * 2);
     context.fill();
-    context.fillStyle = 'rgba(150, 140, 124, 0.75)';
+    context.fillStyle = 'rgba(176, 150, 118, 0.7)';
     context.beginPath();
     context.arc(cx + r * 0.16, cy + r * 0.18, r * 0.52, 0, Math.PI * 2);
     context.fill();

@@ -31,14 +31,30 @@ const KEYS = [
   night,
 }));
 
-// The sky button steps through these three; the settings offer the rest.
+// The round button beside the sticks steps through the same six hours as the
+// settings, in clock order. The cover still starts on day, dusk or night.
+const HOURS = [
+  { value: '6.6', id: 'dawn' },
+  { value: '10', id: 'morning' },
+  { value: '13', id: 'noon' },
+  { value: '18', id: 'afternoon' },
+  { value: '20', id: 'sunset' },
+  { value: '23.5', id: 'night' },
+];
 const QUICK_HOURS = [18, 20, 23.5];
 const ICONS = {
-  day: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
-  dusk: '<path d="M6.2 16a5.8 5.8 0 0 1 11.6 0M2.5 16h19M5 20h14M12 4.5v3M4.6 8.6l2.1 2.1M19.4 8.6l-2.1 2.1"/>',
-  night: '<path d="M19.5 14.2A8 8 0 0 1 9.8 4.5a8 8 0 1 0 9.7 9.7z"/>',
+  dawn: '<path d="M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.5 6.5 12 4l2.5 2.5"/>',
+  morning: '<circle cx="9" cy="11" r="3.2"/><path d="M9 4.8v1.4M2.8 11h1.4M13.8 11h1.4M4.6 6.6l1 1M12.4 7.6l1-1M3 19h18"/>',
+  noon: '<circle cx="12" cy="12" r="4.2"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M5.6 18.4l1.6-1.6M16.8 7.2l1.6-1.6"/>',
+  afternoon: '<circle cx="15" cy="11" r="3.2"/><path d="M15 4.8v1.4M8.8 11h1.4M19.8 11h1.4M10.6 6.6l1 1M18.4 7.6l1-1M3 19h18"/>',
+  sunset: '<path d="M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.5 7.5 12 10l2.5-2.5"/>',
+  night: '<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5zM17.5 4v2.4M16.3 5.2h2.4"/>',
 };
 const phaseOf = (hour) => (hour >= 21 || hour < 5.5 ? 'night' : hour >= 19 || hour < 7.5 ? 'dusk' : 'day');
+const momentIndex = (value) => {
+  const index = HOURS.findIndex((item) => item.value === value);
+  return index === -1 ? 0 : index;
+};
 
 const lerp = THREE.MathUtils.lerp;
 
@@ -69,26 +85,26 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
   let easeSeconds = 0;
   const waterBase = new THREE.Color(COLORS.water);
 
-  const showPhase = () => {
-    const phase = phaseOf(chosenHour);
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[phase]}</svg><span class="label">${t(`sky.${phase}`)}</span>`;
-    button.setAttribute('aria-label', t(`sky.${phase}.next`));
-    button.title = t(`sky.${phase}.next`);
+  const showMoment = () => {
+    const moment = HOURS[momentIndex(select.value)];
+    const label = t(`hour.${moment.id}.next`);
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[moment.id]}</svg><span class="label">${t(`hour.${moment.id}`)}</span>`;
+    button.setAttribute('aria-label', label);
+    button.title = label;
   };
-  showPhase();
-  onLanguageChange(showPhase);
+  showMoment();
+  onLanguageChange(showMoment);
 
-  // One press moves on to the next of day, dusk and night.
+  // One press moves on to the next hour: dawn, morning, midday, afternoon, sunset, night.
   button.addEventListener('click', () => {
-    const order = ['day', 'dusk', 'night'];
-    const next = QUICK_HOURS[(order.indexOf(phaseOf(chosenHour)) + 1) % order.length];
-    select.value = String(next);
+    const next = HOURS[(momentIndex(select.value) + 1) % HOURS.length];
+    select.value = next.value;
     select.dispatchEvent(new Event('change'));
   });
 
   select.addEventListener('change', () => {
     chosenHour = Number(select.value);
-    showPhase();
+    showMoment();
   });
 
   // Cover the change of hour in about `seconds`, so a borrowed night can

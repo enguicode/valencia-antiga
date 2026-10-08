@@ -82,7 +82,7 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 ## Aspecto (texturas, barca y luz)
 
 - **Texturas:** pintadas por código, sin fotografías. El lienzo lejos del río lleva tongadas de tapial; el frente del río, las puertas de piedra y los puentes siguen en sillería. Las cubiertas son teja curva, con los canales a favor de la pendiente. El despiece, el ancho de cada tongada, el número de plantas y las ventanas siguen siendo inventados.
-- **Moto de agua, lancha motora, hidroplano de carreras y lancha offshore:** opciones del selector anacrónicas a propósito y sin ninguna pretensión histórica. Van tres, cinco, diez y ocho veces más rápido, en ese orden.
+- **Moto de agua, lancha motora, lancha offshore e hidroplano de carreras:** opciones del selector anacrónicas a propósito y sin ninguna pretensión histórica. Van tres, cinco, ocho y diez veces más rápido, en ese orden.
 - **Barcas:** cuatro de época, a elegir en los ajustes, y las cuatro rápidas de arriba. La «de la Albufera» imita de memoria las barcas tradicionales del lago (fondo plano, casco bajo y embreado, dos puntas, vela latina grande y barquero empujando con la percha); no se ha contrastado con ninguna fuente ni con planos, y no consta que navegaran por el Turia. La «de río» es una barca de vela latina genérica. La góndola y el junco son barcas de su época, de Venecia y de China, dibujadas de memoria y sin fuente para el Turia; van a la misma velocidad que las otras dos. El junco abate la vela bajo los puentes; la góndola no lleva vela.
 - **Sombras y reflejos:** las sombras son las del sol de la escena; el agua refleja el cielo, no la ciudad.
 

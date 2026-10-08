@@ -55,14 +55,15 @@ export const BOAT_TYPES = {
 };
 export const DEFAULT_BOAT = 'albufera';
 // Gondola and junk are of the period, just not of this river. The rest are
-// not pretending to be: three, five, eight and ten times a boat under sail.
+// not pretending to be: the jet ski three times, the launch five, the
+// offshore eight and the hydroplane ten.
 const CRAFT = {
   gondola: { pace: 1, build: createGondola },
   junk: { pace: 1, build: createJunk },
   jetski: { pace: 3, build: createJetSki },
   speedboat: { pace: 5, build: createSpeedboat },
-  hydroplane: { pace: 8, build: createHydroplane },
-  offshore: { pace: 10, build: createOffshore },
+  hydroplane: { pace: 10, build: createHydroplane },
+  offshore: { pace: 8, build: createOffshore },
 };
 
 const stationZ = (type, t) => (t * type.length) / 2;
@@ -1167,14 +1168,14 @@ function createMarkTexture() {
   context.font = '700 58px sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.fillText('10', 80, 44);
+  context.fillText('8', 80, 44);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
-// The ten-times boat: a cabin cruiser's length with a racer's drives, not
-// another hydroplane. The 10 on the cabin is the only number it carries.
+// Eight times a sailing boat: a cabin cruiser's length with a racer's drives,
+// not another hydroplane. The 8 on the cabin is the only number it carries.
 const OFFSHORE_HULL = {
   length: 8.8,
   halfBeam: (t) => {

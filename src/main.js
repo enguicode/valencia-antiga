@@ -736,7 +736,9 @@ function frame() {
   life.update(dt, time, boat.state, atmosphere.state);
   sound.update(dt, boat.state.speed);
   nightLights.update(time, atmosphere.state.night);
-  city.userData.facades.emissiveIntensity = atmosphere.state.night * 1.4;
+  const windowGlow = atmosphere.state.night * 1.4;
+  city.userData.facades.emissiveIntensity = windowGlow;
+  if (sea.facades) sea.facades.emissiveIntensity = windowGlow;
   if (started) updateOrbit(dt, axes);
   if (axes.looking) focus.left = 0; // looking around by hand takes the camera back
   updateCamera(dt, returned);

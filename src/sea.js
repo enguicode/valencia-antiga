@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { RIVER, BANK, COLORS, createRandom, yawTowards } from './config.js';
-import { createSurface } from './materials.js';
+import { TEXTURES, createSurface } from './materials.js';
 import { createInstances } from './instancing.js';
 import { waveHeight } from './water.js';
 import { PRETIL } from './riverside.js';
+import { createCrownGeometry } from './environment.js';
 
 const SAND = 0xd2b48c;
 const BRICK = 0xa85a3a;
@@ -58,14 +59,15 @@ export function createSea(scene, path, layout, waterMaterial) {
   }
 
   // A ditch each side, sitting on the fields. Detail, not a surveyed channel.
-  const ditchSamples = stretch.filter((sample) => sample.s >= path.garden + 120 && sample.s <= path.mouth - 620);
+  // It starts as the parapet sinks, so the bank does not go bare between the two.
+  const ditchSamples = stretch.filter((sample) => sample.s >= path.garden + 70 && sample.s <= path.mouth - 620);
   let ditchMaterial = null;
   if (ditchSamples.length > 1) {
     ditchMaterial = new THREE.MeshStandardMaterial({ color: waterMaterial.color, roughness: 0.6 });
     for (const side of [-1, 1]) {
       // Wider lateral second, so the north ditch faces up like the south one.
       const mesh = new THREE.Mesh(ribbon(ditchSamples, (sample) => {
-        const y = fieldHeight(sample.s) + 0.06;
+        const y = fieldHeight(sample.s) + 0.12;
         const inner = side * 96;
         const outer = side * 100;
         return side > 0 ? [[inner, y], [outer, y]] : [[outer, y], [inner, y]];
@@ -74,7 +76,24 @@ export function createSea(scene, path, layout, waterMaterial) {
     }
   }
 
-  group.add(createReeds(path, stretch, fieldHeight, shore), createOrchards(path, shore), createFarms(path, fieldHeight, shore));
+  const facades = new THREE.MeshStandardMaterial({
+    map: TEXTURES.facade,
+    emissive: 0xffffff,
+    emissiveMap: TEXTURES.facadeGlow,
+    emissiveIntensity: 0,
+    roughness: 0.95,
+  });
+  group.add(
+    createReeds(path, stretch, fieldHeight, shore),
+    createOrchards(path, fieldHeight, shore),
+    createFarms(path, fieldHeight, shore, facades),
+    createParapetEnd(path, fieldHeight),
+    createCamino(path, fieldHeight, shore),
+    createPlots(path, fieldHeight, shore, fieldReach),
+    createEdgeTrees(path, fieldHeight, shore),
+    createBarracas(path, fieldHeight, shore),
+    createMill(path, fieldHeight, shore),
+  );
 
   const beach = createBeach(mouth, path);
   const sea = createSeaPlane(mouth, waterMaterial);
@@ -90,7 +109,7 @@ export function createSea(scene, path, layout, waterMaterial) {
     sea.animate(time);
   }
 
-  return { update };
+  return { update, facades };
 }
 
 function ribbon(samples, sectionAt) {
@@ -150,7 +169,7 @@ function createReeds(path, stretch, fieldHeight, shore) {
   );
 }
 
-function createOrchards(path, shore) {
+function createOrchards(path, fieldHeight, shore) {
   const random = createRandom(1710);
   const trunks = [];
   const crowns = [];
@@ -159,16 +178,18 @@ function createOrchards(path, shore) {
     const s = path.garden + 80 + random() * (path.mouth - path.garden - 430);
     const sample = path.pointAt(s);
     const side = random() < 0.5 ? -1 : 1;
-    const lateral = side * (shore(s) + 16 + random() * 180);
+    // Behind the track and the ditch, so the row along the bank stays readable.
+    const lateral = side * (shore(s) + 40 + random() * 150);
     const x = sample.x + sample.rx * lateral;
     const z = sample.z + sample.rz * lateral;
     const scale = 0.7 + random() * 0.8;
+    const ground = fieldHeight(s);
     dummy.rotation.set(0, random() * Math.PI, 0);
     dummy.scale.setScalar(scale);
-    dummy.position.set(x, 1.15 + scale, z);
+    dummy.position.set(x, ground + scale, z);
     dummy.updateMatrix();
     trunks.push({ matrix: dummy.matrix.clone() });
-    dummy.position.set(x, 1.15 + scale * 3.6, z);
+    dummy.position.set(x, ground + scale * 3.6, z);
     dummy.updateMatrix();
     crowns.push({ matrix: dummy.matrix.clone() });
   }
@@ -188,7 +209,7 @@ function createOrchards(path, shore) {
   return group;
 }
 
-function createFarms(path, fieldHeight, shore) {
+function createFarms(path, fieldHeight, shore, facades) {
   const random = createRandom(1708);
   const bodies = [];
   const roofs = [];
@@ -199,7 +220,7 @@ function createFarms(path, fieldHeight, shore) {
     const s = path.garden + 200 + random() * Math.max(40, path.mouth - path.garden - 700);
     const sample = path.pointAt(s);
     const side = i < 4 ? 1 : -1;
-    const lateral = side * (shore(s) + 20 + random() * 140);
+    const lateral = side * (shore(s) + 120 + random() * 70);
     const width = 12 + random() * 4;
     const depth = 8 + random() * 4;
     const height = 7 + random() * 2;
@@ -219,9 +240,234 @@ function createFarms(path, fieldHeight, shore) {
   }
   const group = new THREE.Group();
   group.add(
-    createInstances(new THREE.BoxGeometry(1, 1, 1), createSurface('mottle', 4, { color: 0xffffff }), bodies),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
     createInstances(roofGeometry, createSurface('tiles', 3), roofs),
   );
+  return group;
+}
+
+// The stone parapet used to stop in a cut. For a short run it sinks into the bank.
+function createParapetEnd(path, fieldHeight) {
+  const run = 80;
+  const samples = path.samples.filter((sample) => sample.s >= path.garden - 0.01 && sample.s <= path.garden + run);
+  if (samples.length < 2) return new THREE.Group();
+  const stone = createSurface('masonry', 3, { color: COLORS.stone, side: THREE.DoubleSide });
+  const top = BANK.height + PRETIL.parapet;
+  const group = new THREE.Group();
+  for (const side of [-1, 1]) {
+    group.add(new THREE.Mesh(ribbon(samples, (sample) => {
+      const t = THREE.MathUtils.smoothstep(sample.s, path.garden, path.garden + run);
+      const ground = fieldHeight(sample.s);
+      const crest = THREE.MathUtils.lerp(top, ground + 0.2, t);
+      const foot = THREE.MathUtils.lerp(PRETIL.foot, ground + 0.08, t);
+      const street = THREE.MathUtils.lerp(BANK.height, ground + 0.08, t);
+      const inner = side * PRETIL.offset;
+      const outer = side * (PRETIL.offset + PRETIL.thickness);
+      return [
+        [inner, foot],
+        [inner, crest],
+        [outer, crest],
+        [outer, street],
+      ];
+    }), stone));
+  }
+  return group;
+}
+
+// Dirt track on the north bank, from the end of the street toward the Grau.
+// The line is not a survey of the camí del Grau; it is the way a boat would
+// keep seeing that road once the parapet has stopped.
+function createCamino(path, fieldHeight, shore) {
+  const samples = path.samples.filter((sample) => sample.s >= path.garden + 36 && sample.s <= path.mouth - 280);
+  if (samples.length < 2) return new THREE.Group();
+  const material = createSurface('mottle', 4, { color: 0x9a7d52, side: THREE.DoubleSide });
+  return new THREE.Mesh(ribbon(samples, (sample) => {
+    const y = fieldHeight(sample.s) + 0.14;
+    const inner = -(shore(sample.s) + 17);
+    const outer = -(shore(sample.s) + 23);
+    return [[outer, y], [inner, y]];
+  }), material);
+}
+
+// Strips of crop and stubble, so the bank reads as worked ground, not one lawn.
+function createPlots(path, fieldHeight, shore, fieldReach) {
+  const crop = createSurface('mottle', 8, { color: 0xffffff });
+  const items = [];
+  const dummy = new THREE.Object3D();
+  const colors = [0x4c7a34, 0x6e8f3e, 0xc4a15a, 0x3f6a30];
+  const band = 34;
+  let index = 0;
+  for (let s = path.garden + 100; s < path.mouth - 260; s += band) {
+    const sample = path.pointAt(s + 11);
+    const yaw = yawTowards(sample.tx, sample.tz);
+    const near = shore(s) + 32;
+    const far = Math.min(shore(s) + 210, fieldReach(s) - 16);
+    const spans = [];
+    if (s >= path.mouth - 620) {
+      if (far - near > 12) spans.push([near, far]);
+    } else {
+      if (near < 88) spans.push([near, Math.min(far, 88)]);
+      if (far > 108) spans.push([Math.max(near, 108), far]);
+    }
+    for (const side of [-1, 1]) {
+      for (const [inner, outer] of spans) {
+        if (outer - inner < 10) continue;
+        const lateral = side * ((inner + outer) / 2);
+        dummy.rotation.set(0, yaw, 0);
+        dummy.position.set(
+          sample.x + sample.rx * lateral,
+          fieldHeight(s) + 0.06,
+          sample.z + sample.rz * lateral,
+        );
+        dummy.scale.set(22, 0.08, outer - inner);
+        dummy.updateMatrix();
+        items.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(colors[index % colors.length]) });
+        index += 1;
+      }
+    }
+  }
+  return createInstances(new THREE.BoxGeometry(1, 1, 1), crop, items);
+}
+
+// The city orchard stops with the parapet. The same trees carry on along the
+// north bank, one row, not a second forest.
+function createEdgeTrees(path, fieldHeight, shore) {
+  const trunks = [];
+  const crowns = [];
+  const dummy = new THREE.Object3D();
+  const random = createRandom(1716);
+  const end = path.mouth - 240;
+  for (let s = path.garden + 8; s < end; s += 22) {
+    const sample = path.pointAt(s);
+    const lateral = -(shore(s) + 10 + random() * 3);
+    const x = sample.x + sample.rx * lateral;
+    const z = sample.z + sample.rz * lateral;
+    const scale = 0.75 + random() * 0.7;
+    const ground = fieldHeight(s);
+    dummy.rotation.set(0, random() * Math.PI, 0);
+    dummy.scale.setScalar(scale);
+    dummy.position.set(x, ground + scale, z);
+    dummy.updateMatrix();
+    trunks.push({ matrix: dummy.matrix.clone() });
+    dummy.position.set(x, ground + scale * 3.8, z);
+    dummy.updateMatrix();
+    crowns.push({ matrix: dummy.matrix.clone() });
+    dummy.scale.setScalar(scale * 0.7);
+    dummy.position.set(
+      x + sample.tx * scale * 1.5,
+      ground + scale * 4.9,
+      z + sample.tz * scale * 1.5,
+    );
+    dummy.updateMatrix();
+    crowns.push({ matrix: dummy.matrix.clone() });
+  }
+  const group = new THREE.Group();
+  group.add(
+    createInstances(
+      new THREE.CylinderGeometry(0.3, 0.42, 2, 7),
+      new THREE.MeshStandardMaterial({ color: COLORS.trunk, roughness: 1 }),
+      trunks,
+    ),
+    createInstances(
+      createCrownGeometry(),
+      createSurface('mottle', 2.2, { color: COLORS.foliage }),
+      crowns,
+    ),
+  );
+  return group;
+}
+
+// Low thatched huts. The shape is the barraca of the huerta, not a named house.
+function createBarracas(path, fieldHeight, shore) {
+  const random = createRandom(1714);
+  const walls = [];
+  const roofs = [];
+  const dummy = new THREE.Object3D();
+  const roofGeometry = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4);
+  roofGeometry.rotateY(Math.PI / 4);
+  const thatch = new THREE.Color(0xc4a86a);
+  for (let s = path.garden + 160; s < path.mouth - 700; s += 190) {
+    for (const side of [-1, 1]) {
+      if (random() < 0.22) continue;
+      const at = s + (random() - 0.5) * 36;
+      const sample = path.pointAt(at);
+      const lateral = side * (shore(at) + 52 + random() * 18);
+      if (Math.abs(lateral) < waterHalf(path, at) + 14) continue;
+      const x = sample.x + sample.rx * lateral;
+      const z = sample.z + sample.rz * lateral;
+      const ground = fieldHeight(at);
+      const length = 8 + random() * 2;
+      const width = 4.2 + random() * 0.6;
+      const height = 2.3 + random() * 0.4;
+      const roof = 3.2 + random() * 0.6;
+      const yaw = yawTowards(sample.tx, sample.tz) + (random() - 0.5) * 0.4;
+      dummy.rotation.set(0, yaw, 0);
+      dummy.position.set(x, ground + height / 2, z);
+      dummy.scale.set(length, height, width);
+      dummy.updateMatrix();
+      walls.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(0xf4efe4) });
+      dummy.position.set(x, ground + height + roof / 2, z);
+      dummy.scale.set(length * 1.05, roof, width * 1.15);
+      dummy.updateMatrix();
+      roofs.push({ matrix: dummy.matrix.clone(), color: thatch });
+    }
+  }
+  const group = new THREE.Group();
+  group.add(
+    createInstances(new THREE.BoxGeometry(1, 1, 1), createSurface('mottle', 3, { color: 0xffffff }), walls),
+    createInstances(roofGeometry, createSurface('mottle', 2, { color: 0xffffff }), roofs),
+  );
+  return group;
+}
+
+// One mill beside the north ditch. A type, not a mill we can place by name.
+function createMill(path, fieldHeight, shore) {
+  const s = path.garden + 480;
+  const sample = path.pointAt(s);
+  const ground = fieldHeight(s);
+  const yaw = yawTowards(sample.tx, sample.tz);
+  const houseLateral = -(Math.max(shore(s) + 48, 114));
+  const x = sample.x + sample.rx * houseLateral;
+  const z = sample.z + sample.rz * houseLateral;
+  const group = new THREE.Group();
+  const walls = new THREE.Mesh(
+    new THREE.BoxGeometry(8, 5.2, 6),
+    createSurface('mottle', 3, { color: 0xe7d7b4 }),
+  );
+  walls.position.set(x, ground + 2.6, z);
+  walls.rotation.y = yaw;
+  const roof = new THREE.Mesh(
+    new THREE.ConeGeometry(Math.SQRT1_2, 1, 4),
+    createSurface('tiles', 3, { color: COLORS.roofs[1] }),
+  );
+  roof.geometry.rotateY(Math.PI / 4);
+  roof.scale.set(8.6, 2.4, 6.6);
+  roof.position.set(x, ground + 5.2 + 1.2, z);
+  roof.rotation.y = yaw;
+  const wheel = new THREE.Mesh(
+    new THREE.TorusGeometry(1.5, 0.12, 8, 18),
+    createSurface('planks', 1.2, { color: COLORS.wood }),
+  );
+  wheel.geometry.rotateY(Math.PI / 2);
+  const wheelLateral = -(Math.max(shore(s) + 36, 100));
+  wheel.position.set(
+    sample.x + sample.rx * wheelLateral,
+    ground + 1.7,
+    sample.z + sample.rz * wheelLateral,
+  );
+  wheel.rotation.y = yaw;
+  const bridge = new THREE.Mesh(
+    new THREE.BoxGeometry(2.4, 0.16, 16),
+    createSurface('planks', 2, { color: COLORS.wood }),
+  );
+  const bridgeLateral = -(Math.max(shore(s) + 30, 98));
+  bridge.position.set(
+    sample.x + sample.rx * bridgeLateral + sample.tx * 7,
+    ground + 0.45,
+    sample.z + sample.rz * bridgeLateral + sample.tz * 7,
+  );
+  bridge.rotation.y = yaw;
+  group.add(walls, roof, wheel, bridge);
   return group;
 }
 

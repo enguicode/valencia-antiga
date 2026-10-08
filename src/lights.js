@@ -45,7 +45,7 @@ export function createNightLights(layout, path) {
   // Lamps along the city-side parapet
   const every = Math.round(48 / path.step);
   path.samples.forEach((sample, i) => {
-    if (i % every !== 0 || sample.s < path.start - 100 || sample.s > path.end + 100) return;
+    if (i % every !== 0 || sample.s < path.start - 100 || sample.s > path.garden) return;
     const lateral = PRETIL.offset + 0.4;
     add(sample.x + sample.rx * lateral, BANK.height + 2.1, sample.z + sample.rz * lateral, LAMP, 0.9);
   });

@@ -238,7 +238,7 @@ function createBank(path, side) {
 
 // A lumpy sphere: each vertex is pushed in or out by an amount that depends
 // only on where it is, so the seam of the sphere stays closed.
-function createCrownGeometry() {
+export function createCrownGeometry() {
   const geometry = new THREE.SphereGeometry(2.6, 8, 6);
   const positions = geometry.attributes.position;
   const vertex = new THREE.Vector3();

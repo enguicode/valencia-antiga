@@ -131,7 +131,9 @@ export function createBoatPicker(root, select, isShowing) {
       let slot = i - position;
       slot -= Math.round(slot / types.length) * types.length;
       boat.turntable.position.x = slot * GAP;
-      boat.turntable.visible = Math.abs(slot) < 1.2;
+      // The stage is wide enough that the next boat would show as a slice
+      // while this one is sitting still. It comes in only as the slide starts.
+      boat.turntable.visible = Math.abs(slot) < 0.85;
       boat.turntable.rotation.y = 0.9 + time * 0.35;
       animateBoat(boat.model, dt, time, { closeness: 0, speed: 0, underSail: true });
     }

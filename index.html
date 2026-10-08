@@ -861,67 +861,61 @@
       border-radius: 3px;
     }
 
-    #info .pair {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 22px;
-    }
-
-    /* The hours are a row of cards that slides sideways; the one that comes
-       to rest in the middle is the hour. */
+    /* Six little skies, all in view. Tapping one is the hour. */
     #info .hours {
-      position: relative;
-      display: flex;
-      gap: 10px;
-      margin: 0 0 12px;
-      padding: 4px 30% 8px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0 0 4px;
     }
-
-    #info .hours::-webkit-scrollbar { display: none; }
 
     #info .hours button {
-      flex: 0 0 100%;
-      padding: 0 0 7px;
+      min-width: 0;
+      padding: 0 0 5px;
       font: inherit;
+      font-size: 0.72rem;
+      line-height: 1.15;
       color: var(--ink);
       background: var(--paper-item);
       border: 1px solid var(--rule);
-      border-radius: 6px;
+      border-radius: 8px;
       overflow: hidden;
       cursor: pointer;
-      scroll-snap-align: center;
-      opacity: 0.6;
-      transform: scale(0.92);
-      transition: opacity 0.2s, transform 0.2s;
+      opacity: 0.72;
+      transition: opacity 0.2s, border-color 0.2s;
     }
 
     #info .hours .sky {
       display: grid;
       place-items: center;
-      aspect-ratio: 16 / 10;
-      margin-bottom: 6px;
+      aspect-ratio: 5 / 4;
+      margin-bottom: 4px;
       background: linear-gradient(var(--top), var(--low));
     }
 
     #info .hours .sky::before {
       content: "";
-      width: 34%;
+      width: 42%;
       aspect-ratio: 1;
       background: #fff6de;
       -webkit-mask: var(--icon) center / contain no-repeat;
       mask: var(--icon) center / contain no-repeat;
     }
 
+    #info .hours .name {
+      display: block;
+      padding: 0 3px;
+      text-align: center;
+    }
+
     #info .hours button[aria-pressed="true"] {
       border-color: var(--ink);
       box-shadow: 0 0 0 1px var(--ink);
-      font-weight: bold;
       opacity: 1;
-      transform: none;
+    }
+
+    @media (max-width: 600px) {
+      #info .hours { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     #info .hours button[data-hour="6.6"] { --top: #aab6dc; --low: #f4b08a; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.500 6.500L12 4l2.500 2.500'/%3E%3C/svg%3E"); }
@@ -936,8 +930,47 @@
       font-size: 0.9em;
     }
 
+    /* Settings only: the help and the credits keep the looser sheet. */
+    #settings-section { line-height: 1.3; }
+
+    #settings-section > p {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 14px 0 6px;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    /* The real hour list stays in the page for the sky button. This rule would
+       otherwise show it, because it sets display on every paragraph. */
+    #settings-section > p[hidden] { display: none; }
+
+    #settings-section .pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 14px;
+      margin: 0;
+    }
+
+    #settings-section .pair label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      font-size: 0.78rem;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    #settings-section .pair select {
+      width: 100%;
+      font-style: normal;
+      color: var(--ink);
+    }
+
     .boat-picker {
-      margin: 0 0 12px;
+      margin: 0;
       text-align: center;
       -webkit-user-select: none;
       user-select: none;
@@ -947,14 +980,14 @@
       position: relative;
       background: var(--paper-item);
       border: 1px solid var(--rule);
-      border-radius: 4px;
+      border-radius: 8px;
       overflow: hidden;
     }
 
     .boat-picker canvas {
       display: block;
       width: 100%;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: 12 / 5;
       touch-action: pan-y;
       cursor: grab;
     }
@@ -981,8 +1014,8 @@
     .boat-picker .next { right: 0; border-right: 0; border-radius: 3px 0 0 3px; }
 
     .boat-picker .name {
-      margin: 8px 0 4px;
-      font-weight: bold;
+      margin: 6px 0 2px;
+      font-weight: 600;
     }
 
     .boat-picker .dots span {
@@ -1007,6 +1040,8 @@
       background: var(--paper);
       border-top: 1px solid var(--rule);
     }
+
+    #info:not(.plain) .foot { margin-top: 10px; }
 
     #info .close,
     #info .save {
@@ -1267,14 +1302,14 @@
         </select>
       </label>
     </p>
-    <p><span data-i18n="settings.hour">Hora del día:</span> <span class="hint" data-i18n="hour.hint">desliza para cambiarla</span></p>
+    <p><span data-i18n="settings.hour">Hora del día:</span></p>
     <div class="hours" role="group" aria-label="Hora del día" data-i18n-label="settings.hour">
-      <button type="button" data-hour="6.6" aria-pressed="false"><span class="sky"></span><span data-i18n="hour.dawn">Alba</span></button>
-      <button type="button" data-hour="10" aria-pressed="false"><span class="sky"></span><span data-i18n="hour.morning">Mañana</span></button>
-      <button type="button" data-hour="13" aria-pressed="false"><span class="sky"></span><span data-i18n="hour.noon">Mediodía</span></button>
-      <button type="button" data-hour="18" aria-pressed="false"><span class="sky"></span><span data-i18n="hour.afternoon">Tarde</span></button>
-      <button type="button" data-hour="20" aria-pressed="false"><span class="sky"></span><span data-i18n="hour.sunset">Ocaso</span></button>
-      <button type="button" data-hour="23.5" aria-pressed="false"><span class="sky"></span><span data-i18n="hour.night">Noche</span></button>
+      <button type="button" data-hour="6.6" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.dawn">Alba</span></button>
+      <button type="button" data-hour="10" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.morning">Mañana</span></button>
+      <button type="button" data-hour="13" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.noon">Mediodía</span></button>
+      <button type="button" data-hour="18" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.afternoon">Tarde</span></button>
+      <button type="button" data-hour="20" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.sunset">Ocaso</span></button>
+      <button type="button" data-hour="23.5" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.night">Noche</span></button>
     </div>
     <p hidden><label>
       <select id="hour">

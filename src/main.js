@@ -398,14 +398,20 @@ for (const opener of document.querySelectorAll('[data-open]')) {
     if (settings) openSettings();
   });
 }
-document.getElementById('close-info').addEventListener('click', () => infoDialog.close());
+document.getElementById('close-info').addEventListener('click', () => {
+  revertSettings();
+  infoDialog.close();
+});
 
 // The settings are tried out as they are changed, and kept only if the sheet
 // is saved: closing it any other way puts back what there was.
 const settingSelects = [languageSelect, document.getElementById('quality'), hourSelect];
 const hourCards = document.querySelector('#info .hours');
 let settingsBefore = null;
+// The old sheet was a sideways strip: the card left in the middle was the hour.
+// The six skies now sit in view, so that only applies if the row still overflows.
 function centreHour(smooth) {
+  if (hourCards.scrollWidth <= hourCards.clientWidth + 4) return;
   const card = hourCards.querySelector('[aria-pressed="true"]');
   if (!card) return;
   hourCards.scrollTo({ left: card.offsetLeft - (hourCards.clientWidth - card.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'instant' });
@@ -415,6 +421,19 @@ function openSettings() {
   boatPicker.reset();
   centreHour(false);
 }
+// Put back the hour, the language and the quality unless the sheet was saved.
+// Some Chromium builds close a dialog without firing `close`, so the button
+// and Escape revert on their own and this stays safe to call twice.
+function revertSettings() {
+  if (!settingsBefore) return;
+  const snapshot = settingsBefore;
+  settingsBefore = null;
+  settingSelects.forEach((select, i) => {
+    if (select.value === snapshot[i]) return;
+    select.value = snapshot[i];
+    select.dispatchEvent(new Event('change'));
+  });
+}
 document.getElementById('save-settings').addEventListener('click', () => {
   settingsBefore = null;
   if (boatSelect.value !== boatPicker.shown) {
@@ -423,18 +442,12 @@ document.getElementById('save-settings').addEventListener('click', () => {
   }
   infoDialog.close();
 });
-infoDialog.addEventListener('close', () => {
-  if (!settingsBefore) return;
-  settingSelects.forEach((select, i) => {
-    if (select.value === settingsBefore[i]) return;
-    select.value = settingsBefore[i];
-    select.dispatchEvent(new Event('change'));
-  });
-  settingsBefore = null;
-});
+infoDialog.addEventListener('close', revertSettings);
+infoDialog.addEventListener('cancel', () => revertSettings());
 // Sliding the cards changes the hour: the one left in the middle is it.
 let hourSettling = 0;
 hourCards.addEventListener('scroll', () => {
+  if (hourCards.scrollWidth <= hourCards.clientWidth + 4) return;
   clearTimeout(hourSettling);
   hourSettling = setTimeout(() => {
     const middle = hourCards.scrollLeft + hourCards.clientWidth / 2;

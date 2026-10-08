@@ -35,6 +35,10 @@ const SUBJECTS = {
   palace: { aim: 12, span: 150, standOff: 0.75, above: 14 },
   // The Grau church stands back from the mouth, on the beach.
   grau: { aim: 14, span: 90, fly: true, standOff: 0.65, above: 12 },
+  // Rings in the channel past the tour. The camera only turns; it does not fly off.
+  huerta: { aim: 3, span: 90 },
+  nazaret: { aim: 4, span: 55 },
+  playa: { aim: 2, span: 140 },
   // Convents stand back from the bank: the camera goes over to them.
   convent: { aim: 9, span: 90, fly: true, standOff: 0.8, above: 9 },
 };
@@ -149,6 +153,24 @@ export function createGuide(points, layout, path, camera, elements) {
       const place = layout.sea.grau[id];
       ({ x, z } = place);
       kind = 'grau';
+    } else if (type === 'along') {
+      // Metres past the end of the tour, down the middle of the channel.
+      // pointAt interpolates a position; the station is the distance asked for.
+      const station = path.end + offset;
+      const sample = path.pointAt(station);
+      const toward = id === 'nazaret' ? 1 : -1;
+      const ahead = id === 'playa' ? 90 : 0;
+      const out = id === 'playa' ? 50 : 80;
+      return {
+        s: station,
+        side: 0,
+        reach: 0,
+        subject: {
+          ...SUBJECTS[id],
+          x: sample.x + sample.rx * toward * out + sample.tx * ahead,
+          z: sample.z + sample.rz * toward * out + sample.tz * ahead,
+        },
+      };
     } else {
       const landmark = layout.landmarks.find((item) => item.id === id);
       ({ x, z } = landmark);
@@ -176,7 +198,8 @@ export function createGuide(points, layout, path, camera, elements) {
     const { s, side, subject, reach } = locate(point.at);
     // The night-only point is about the moon: that is what the camera turns to.
     if (point.bonus === 'night') subject.moon = true;
-    const ground = point.at.type === 'sea' ? 1.2 : point.at.type === 'bridge' || point.at.type === 'start' ? 0 : BANK.height;
+    const onWater = point.at.type === 'sea' || point.at.type === 'along';
+    const ground = onWater ? 1.2 : point.at.type === 'bridge' || point.at.type === 'start' ? 0 : BANK.height;
     subject.y = ground + subject.aim;
     const centre = path.pointAt(s);
     const x = centre.x + centre.rx * side * (reach ?? RING_OFFSET);

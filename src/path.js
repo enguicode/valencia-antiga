@@ -136,6 +136,7 @@ export function createRiverPath(layout) {
       tz: tz / norm,
       rx: -tz / norm,
       rz: tx / norm,
+      s: a.s + (b.s - a.s) * t,
     };
   }
 

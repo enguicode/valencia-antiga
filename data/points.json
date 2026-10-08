@@ -363,6 +363,56 @@
     "sourceName": "Billiken"
   },
   {
+    "id": "huerta",
+    "bonus": "sea",
+    "at": { "type": "along", "id": "huerta", "offset": 420 },
+    "title": {
+      "es": "La huerta",
+      "ca": "L'horta",
+      "en": "The market gardens"
+    },
+    "text": {
+      "es": "Pasada la muralla el río seguía entre huerta hasta el mar: acequias, cañas, alquerías y el camino del Grau, que salía del Portal de la Mar. La escena enseña ese paisaje, pero el sitio de cada pieza no sale de un plano. El molino es el tipo de edificio, no uno con nombre.",
+      "ca": "Passada la muralla el riu seguia entre horta fins a la mar: sèquies, canyes, alqueries i el camí del Grau, que eixia del Portal de la Mar. L'escena ensenya eixe paisatge, però el lloc de cada peça no ix d'un plànol. El molí és el tipus d'edifici, no un amb nom.",
+      "en": "Past the wall the river ran on through market gardens to the sea: ditches, reeds, farmhouses and the Grau road, which left by the Portal de la Mar. The scene shows that landscape, but the place of each part is not taken from a plan. The mill is the kind of building, not a named one."
+    },
+    "source": "https://turia.uv.es/index.php/CGUV/article/view/23657",
+    "sourceName": "Boira Maiques, 2022"
+  },
+  {
+    "id": "nazaret",
+    "bonus": "sea",
+    "at": { "type": "along", "id": "nazaret", "offset": 2940 },
+    "title": {
+      "es": "Natzaret",
+      "ca": "Natzaret",
+      "en": "Nazaret"
+    },
+    "text": {
+      "es": "Al sur de la desembocadura ya estaba Natzaret. La escena no dibuja el pueblo: solo unas barracas entre la huerta.",
+      "ca": "Al sud de la desembocadura ja hi era Natzaret. L'escena no dibuixa el poble: només unes barraques entre l'horta.",
+      "en": "Nazaret already stood south of the mouth. The scene does not draw the village: only a few huts among the gardens."
+    },
+    "source": "https://es.wikipedia.org/wiki/Nazaret_(Valencia)"
+  },
+  {
+    "id": "playa",
+    "bonus": "sea",
+    "at": { "type": "along", "id": "playa", "offset": 3210 },
+    "title": {
+      "es": "La playa",
+      "ca": "La platja",
+      "en": "The beach"
+    },
+    "text": {
+      "es": "El río acababa en playa abierta. No había muelle de piedra, y los barcos fondeaban al raso. La orilla del mar, en la escena, es una estimación: la playa de ahora queda mucho más afuera.",
+      "ca": "El riu acabava en platja oberta. No hi havia moll de pedra, i els vaixells fondejaven al ras. La vora de la mar, a l'escena, és una estimació: la platja d'ara queda molt més enfora.",
+      "en": "The river ended on an open beach. There was no stone quay, and ships anchored offshore. The shoreline in the scene is an estimate: today's beach lies much further out."
+    },
+    "source": "https://turia.uv.es/index.php/CGUV/article/view/23657",
+    "sourceName": "Boira Maiques, 2022"
+  },
+  {
     "id": "grau",
     "bonus": "sea",
     "at": { "type": "sea", "id": "church" },

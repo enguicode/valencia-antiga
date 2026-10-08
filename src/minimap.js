@@ -77,6 +77,8 @@ export function createMinimap(canvas, layout, path, guide) {
     context.drawImage(base, 0, 0);
     // Points of interest: pale while pending, green once found.
     for (const marker of guide.markers) {
+      // Rings past the tour stay off this sheet. The map is only the walled stretch.
+      if (path.project(marker.x, marker.z).s > path.end + 30) continue;
       context.beginPath();
       context.arc(px(marker.x), py(marker.z), 2.4 * detail * ratio, 0, Math.PI * 2);
       // The night-only point shows in moonlight yellow until it is found.

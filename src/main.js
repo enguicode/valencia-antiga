@@ -358,7 +358,7 @@ const resetDialog = document.getElementById('reset-confirm');
 function explainReset() {
   const count = guide.tally();
   const night = guide.found.has('lluna');
-  const sea = guide.found.has('grau');
+  const sea = guide.markers.some((marker) => marker.bonus === 'sea' && guide.found.has(marker.id));
   const nothing = count.found === 0 && !night && !sea;
   document.getElementById('reset-do').hidden = nothing;
   const cancel = document.getElementById('reset-cancel');

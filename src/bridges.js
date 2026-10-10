@@ -78,7 +78,7 @@ function createBridgeGeometry(spec) {
     outline.holes.push(hole);
   }
 
-  const geometry = new THREE.ExtrudeGeometry(outline, { depth: spec.width, bevelEnabled: false, curveSegments: 10 });
+  const geometry = new THREE.ExtrudeGeometry(outline, { depth: spec.width, bevelEnabled: false, curveSegments: 16 });
   geometry.translate(0, 0, -spec.width / 2);
   return geometry;
 }
@@ -101,6 +101,42 @@ function createCutwaterGeometry(width, top) {
   return geometry;
 }
 
+// A flat archivolt in unit space (half-span 1, rise 1, spring at y = 0).
+// The inner edge is the arch itself; the band sits on the face, outside the
+// opening, so the clear span and the free height do not change.
+function createArchRingGeometry(kind) {
+  const band = 0.07;
+  const crown = kind === 'pointed' ? 1.12 : kind === 'flatPointed' ? 0.9 : 1;
+  // `reverse` walks the same curve the other way. The hole has to wind
+  // opposite the outer band or earcut fills the opening solid.
+  const trace = (path, scale, reverse) => {
+    const s = reverse ? -1 : 1;
+    path.moveTo(-s * scale, -0.16);
+    path.lineTo(-s * scale, 0);
+    if (kind === 'pointed') {
+      path.quadraticCurveTo(-s * 0.9 * scale, 0.95 * scale, 0, crown * scale);
+      path.quadraticCurveTo(s * 0.9 * scale, 0.95 * scale, s * scale, 0);
+    } else if (kind === 'flatPointed') {
+      path.quadraticCurveTo(-s * 0.7 * scale, 0.8 * scale, 0, crown * scale);
+      path.quadraticCurveTo(s * 0.7 * scale, 0.8 * scale, s * scale, 0);
+    } else if (reverse) {
+      path.absarc(0, 0, scale, 0, Math.PI, false);
+    } else {
+      path.absarc(0, 0, scale, Math.PI, 0, true);
+    }
+    path.lineTo(s * scale, -0.16);
+  };
+  const shape = new THREE.Shape();
+  trace(shape, 1 + band, false);
+  shape.closePath();
+  const hole = new THREE.Path();
+  // Opposite winding to the band, or earcut fills the opening solid.
+  trace(hole, 1, true);
+  hole.closePath();
+  shape.holes.push(hole);
+  return new THREE.ShapeGeometry(shape, 8);
+}
+
 export function createBridges(layout, path) {
   // Double-sided, so a camera that strays into the stonework sees stone
   // rather than straight through it.
@@ -110,12 +146,19 @@ export function createBridges(layout, path) {
   const roof = createSurface('tiles', 1.6, { color: 0x6f8f7a }); // glazed tiles
   const group = new THREE.Group();
   const balls = [];
+  const treads = [];
+  const rings = { segmental: [], pointed: [], flatPointed: [] };
   const local = new THREE.Object3D();
 
   const shrineBase = new THREE.CylinderGeometry(1.25, 1.25, 0.5, 3);
   const shrineColumn = new THREE.CylinderGeometry(0.13, 0.13, 2.6, 6);
   const shrineRoof = new THREE.ConeGeometry(1.5, 1.7, 3);
-  const figure = new THREE.BoxGeometry(0.45, 1.5, 0.45);
+  const body = new THREE.BoxGeometry(0.38, 1.15, 0.28);
+  const head = new THREE.BoxGeometry(0.24, 0.26, 0.22);
+  const statueBody = new THREE.BoxGeometry(0.5, 1.85, 0.36);
+  const statueHead = new THREE.BoxGeometry(0.3, 0.32, 0.26);
+  const crossUpright = new THREE.BoxGeometry(0.12, 1.15, 0.12);
+  const crossArm = new THREE.BoxGeometry(0.56, 0.12, 0.12);
 
   for (const bridge of layout.bridges) {
     const spec = specOf(bridge);
@@ -125,6 +168,13 @@ export function createBridges(layout, path) {
     model.position.set(sample.x, 0, sample.z);
     model.rotation.y = yawTowards(sample.rx, sample.rz);
     model.updateMatrix();
+    const stamp = (list, x, y, z, scale = [1, 1, 1], yaw = 0) => {
+      local.position.set(x, y, z);
+      local.rotation.set(0, yaw, 0);
+      local.scale.set(scale[0], scale[1], scale[2]);
+      local.updateMatrix();
+      list.push({ matrix: model.matrix.clone().multiply(local.matrix) });
+    };
     const piece = (geometry, material, x, y, z) => {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(x, y, z);
@@ -157,9 +207,19 @@ export function createBridges(layout, path) {
       if (spec.balls) {
         for (let i = 0; i <= arches; i++) {
           const x = -SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER);
-          local.position.set(x, deckHeight(spec, x) + PARAPET.height + 0.3, side * edge);
-          local.updateMatrix();
-          balls.push({ matrix: model.matrix.clone().multiply(local.matrix) });
+          stamp(balls, x, deckHeight(spec, x) + PARAPET.height + 0.3, side * edge);
+        }
+      }
+    }
+
+    // Archivolt on each face. It is proud of the stone and follows the same
+    // curve as the opening, so the span, the crown and the passage stay put.
+    {
+      const a = openingOf(arches) / 2;
+      for (let i = 0; i < arches; i++) {
+        const centre = archCentre(arches, i);
+        for (const side of [-1, 1]) {
+          stamp(rings[spec.arch], centre, ARCH.spring, side * (width / 2 + 0.05), [a, ARCH.rise, 1], side < 0 ? Math.PI : 0);
         }
       }
     }
@@ -168,7 +228,28 @@ export function createBridges(layout, path) {
     // refuges; on the Trinitat they end in stepped caps.
     const cutwaterTop = spec.refuges ? DECK_TOP + PARAPET.height : CUTWATER.top;
     const cutwater = createCutwaterGeometry(width, cutwaterTop);
-    const stairs = new Set((spec.stairPiers ?? []).map((n) => arches - n));
+    const occupied = new Set([...(spec.stairPiers ?? []), spec.shrinePier, spec.statuePier].filter((n) => n != null));
+    let extraPier = null;
+    if (!(spec.stairPiers ?? []).length) {
+      extraPier = 4;
+      while (occupied.has(extraPier) && extraPier < arches) extraPier += 1;
+      if (extraPier >= arches) extraPier = null;
+    }
+    const flights = new Set((spec.stairPiers ?? []).map((n) => arches - n));
+    if (extraPier != null) flights.add(arches - extraPier);
+    const addFlight = (pierX) => {
+      const fromY = deckHeight(spec, pierX);
+      const toY = 0.55;
+      const run = 10.5;
+      const steps = 20;
+      for (let s = 0; s < steps; s++) {
+        const t = s / (steps - 1);
+        // Treads overlap a little so the flight reads as one stair, and they
+        // stay downstream of the face: the opening itself is not touched.
+        const zStep = run / (steps - 1);
+        stamp(treads, pierX, fromY - t * (fromY - toY), -(width / 2 + 0.8 + t * run), [PIER * 0.82, 0.46, zStep + 0.08]);
+      }
+    };
     for (let i = 0; i <= arches; i++) {
       const x = -SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER);
       piece(cutwater, stone, x, 0, 0);
@@ -180,13 +261,9 @@ export function createBridges(layout, path) {
           }
         }
       }
-      // A flight of steps down the downstream side (local -Z) of some piers
-      if (stairs.has(i)) {
-        for (let step = 0; step < 9; step++) {
-          const top = DECK_TOP - step * 1.05;
-          piece(new THREE.BoxGeometry(PIER + 0.6, top - FOOT, 1.3), stone, x, (top + FOOT) / 2, -(width / 2 + 0.65 + step * 1.3));
-        }
-      }
+      // Steps down the downstream side. Documented flights stay on their
+      // piers; a bridge with none gets one modest flight off the shrines.
+      if (flights.has(i)) addFlight(x);
     }
 
     // Shrines: a facing pair, one on each side of the same pier, each a
@@ -203,7 +280,16 @@ export function createBridges(layout, path) {
           piece(shrineColumn, pale, x + Math.sin(angle) * 0.95, base + 1.8, z + Math.cos(angle) * 0.95);
         }
         piece(shrineRoof, roof, x, base + 3.95, z);
-        piece(figure, marble, x, base + 1.25, z);
+        // Pont de la Mar, around 1700: the cross still stood in one shrine
+        // (the Virgin replaced it after the lightning of 1709) and Sant
+        // Pasqual Bailón in the other. Which bank is which is not recorded.
+        if (bridge.id === 'mar' && side > 0) {
+          piece(crossUpright, marble, x, base + 1.32, z);
+          piece(crossArm, marble, x, base + 1.52, z);
+        } else {
+          piece(body, marble, x, base + 1.12, z);
+          piece(head, marble, x, base + 1.82, z);
+        }
       }
     }
 
@@ -213,13 +299,18 @@ export function createBridges(layout, path) {
       for (const side of [-1, 1]) {
         const z = side * (width / 2 + 1.3);
         piece(new THREE.BoxGeometry(PIER, DECK_TOP + 1.4 - CUTWATER.top, 2.2), stone, x, (DECK_TOP + 1.4 + CUTWATER.top) / 2, z);
-        piece(new THREE.BoxGeometry(0.7, 2.8, 0.7), marble, x, DECK_TOP + 2.8, z);
+        piece(statueBody, marble, x, DECK_TOP + 2.4, z);
+        piece(statueHead, marble, x, DECK_TOP + 3.48, z);
       }
     }
     group.add(model);
   }
 
   group.add(createInstances(new THREE.SphereGeometry(0.42, 12, 9), stone, balls));
+  if (treads.length) group.add(createInstances(new THREE.BoxGeometry(1, 1, 1), stone, treads));
+  for (const kind of ['segmental', 'pointed', 'flatPointed']) {
+    if (rings[kind].length) group.add(createInstances(createArchRingGeometry(kind), stone, rings[kind]));
+  }
   return group;
 }
 

@@ -873,24 +873,26 @@
       border-radius: 3px;
     }
 
-    /* Four little skies, all in view. Tapping one is the hour. */
+    /* Four little skies, kept small in the middle of the sheet. */
     #info .hours {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      display: flex;
+      justify-content: center;
       gap: 8px;
       margin: 0 0 4px;
     }
 
     #info .hours button {
+      flex: 1 1 0;
+      max-width: 76px;
       min-width: 0;
-      padding: 0 0 5px;
+      padding: 0 0 4px;
       font: inherit;
-      font-size: 0.72rem;
+      font-size: 0.66rem;
       line-height: 1.15;
       color: var(--ink);
       background: var(--paper-item);
       border: 1px solid var(--rule);
-      border-radius: 8px;
+      border-radius: 7px;
       overflow: hidden;
       cursor: pointer;
       opacity: 0.72;
@@ -900,14 +902,14 @@
     #info .hours .sky {
       display: grid;
       place-items: center;
-      aspect-ratio: 5 / 4;
-      margin-bottom: 4px;
+      aspect-ratio: 1;
+      margin-bottom: 3px;
       background: linear-gradient(var(--top), var(--low));
     }
 
     #info .hours .sky::before {
       content: "";
-      width: 42%;
+      width: 46%;
       aspect-ratio: 1;
       background: #fff6de;
       -webkit-mask: var(--icon) center / contain no-repeat;
@@ -916,7 +918,7 @@
 
     #info .hours .name {
       display: block;
-      padding: 0 3px;
+      padding: 0 2px;
       text-align: center;
     }
 
@@ -924,10 +926,6 @@
       border-color: var(--ink);
       box-shadow: 0 0 0 1px var(--ink);
       opacity: 1;
-    }
-
-    @media (max-width: 600px) {
-      #info .hours { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     #info .hours button[data-hour="6.6"] { --top: #aab6dc; --low: #f4b08a; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.500 6.500L12 4l2.500 2.500'/%3E%3C/svg%3E"); }

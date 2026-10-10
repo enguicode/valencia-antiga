@@ -15,7 +15,7 @@ const KEYS = [
   [5, 0x1c2550, 0x3a3558, 0x9fb4e6, 0.6, 0.6, 480, 1],
   [6.6, 0x5b78b8, 0xf2b98a, 0xffc79a, 1.2, 0.8, 420, 0.1],
   [9, 0x5f97d2, 0xdfe6ea, 0xfff4e0, 1.9, 1.2, 760, 0],
-  [13, 0x4f8fd8, 0xe6eef2, 0xffffff, 2.1, 1.3, FOG.far, 0],
+  [13, 0x5f97d2, 0xf0e2c6, 0xfff1d6, 1.9, 1.2, FOG.far, 0], // same warm light as 18: a white sun and a cold horizon washed stone and ground to one grey
   [18, 0x5f97d2, 0xf0e2c6, 0xfff1d6, 1.9, 1.2, FOG.far, 0],
   [20, 0x4a5f9f, 0xf0a070, 0xff9d5c, 1.1, 0.7, 700, 0.1],
   [21.5, 0x1c2550, 0x4a3a5a, 0x9fb4e6, 0.6, 0.6, 600, 1],
@@ -160,7 +160,10 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
     // The sun rises in the east, crosses the south and sets in the west, a
     // little to the north at both ends as it does in summer. At night the
     // same light stands in for the moon.
-    const arc = ((state.hour - 6) / 14) * Math.PI;
+    // Midday borrows the six o'clock sun. Overhead, it left every front that
+    // faces the river in shade, and stone and ground went the same grey.
+    const sunHour = state.hour <= 13 ? lerp(6, 18, (state.hour - 6) / 7) : lerp(18, 20, (state.hour - 13) / 7);
+    const arc = ((sunHour - 6) / 14) * Math.PI;
     if (state.hour >= 6 && state.hour <= 20) {
       state.sunDirection.set(Math.cos(arc), Math.max(0.12, Math.sin(arc)), 0.5 * Math.sin(arc) - 0.35);
     } else {

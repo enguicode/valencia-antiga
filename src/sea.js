@@ -6,10 +6,14 @@ import { waveHeight } from './water.js';
 import { PRETIL } from './riverside.js';
 import { createCrownGeometry } from './environment.js';
 
-const SAND = 0xd2b48c;
 const BRICK = 0xa85a3a;
 const PALE = 0xe9dcc0;
 const DOME = 0x3f6f9f;
+const THATCH = 0xc4a86a;
+
+// Flat circles knocked out of the dunes so the church and the yards are not
+// buried. Filled in createSea once the mouth frame is known.
+let duneHoles = [];
 
 // Same widening as the water mesh. The banks and the beach stay outside it,
 // or the boat sails through the sand.
@@ -142,18 +146,43 @@ export function createSea(scene, path, layout, waterMaterial) {
     createMill(path, fieldHeight, shore),
   );
 
+  duneHoles = [];
+  const grau = layout.sea?.grau;
+  if (grau) {
+    // Wide enough to cover the five naves and the church plot. The radii are
+    // in metres along the shore and inland from it.
+    const yards = measure(mouth, grau.yards.x, grau.yards.z);
+    const church = measure(mouth, grau.church.x, grau.church.z);
+    duneHoles = [
+      { ...yards, ra: 70, rs: 46 },
+      { ...church, ra: 42, rs: 36 },
+    ];
+  }
+
   const beach = createBeach(mouth, path);
   const sea = createSeaPlane(mouth, waterMaterial);
-  group.add(beach.mesh, sea.mesh, createBars(path), createCityLimit(path));
-  if (layout.sea?.grau) group.add(createGrau(path, layout.sea.grau, mouth, yaw));
+  let villageLights = [];
+  if (grau) {
+    const built = createGrau(path, grau, mouth, yaw);
+    group.add(built.group);
+    villageLights = built.lights;
+  }
+  const coast = createShore(mouth, path, grau, villageLights);
+  group.add(beach.mesh, sea.mesh, coast.group, createBars(path), createCityLimit(path));
 
   scene.add(group);
 
   function update(time, centreRow) {
     if (ditchMaterial) ditchMaterial.color.copy(waterMaterial.color);
+    // atmosphere.js writes this each frame. The night value is not passed in,
+    // and lights.js is off limits for this shore.
+    const raw = Number(document.documentElement.style.getPropertyValue('--night'));
+    const night = Number.isFinite(raw) ? raw : 0;
+    coast.setNight(night);
     const here = path.samples[Math.min(centreRow, path.samples.length - 1)];
     if (!here || here.s < path.mouth - 900) return;
     sea.animate(time);
+    coast.animate(time);
   }
 
   return { update, facades };
@@ -526,15 +555,61 @@ function frame(mouth, along, seaward) {
   };
 }
 
+function measure(mouth, x, z) {
+  const dx = x - mouth.x;
+  const dz = z - mouth.z;
+  return {
+    along: dx * mouth.rx + dz * mouth.rz,
+    seaward: dx * mouth.tx + dz * mouth.tz,
+  };
+}
+
+function beachHeight(seaward) {
+  if (seaward <= 0) {
+    const t = THREE.MathUtils.clamp((seaward + 160) / 160, 0, 1);
+    return THREE.MathUtils.lerp(1.45, 0.25, t);
+  }
+  return THREE.MathUtils.lerp(0.25, -0.45, THREE.MathUtils.clamp(seaward / 30, 0, 1));
+}
+
+// Low ridges on the backshore. The forebeach, where the boats are hauled
+// up, stays a smooth slope down to the wash.
+function duneLift(along, seaward) {
+  const inland = THREE.MathUtils.smoothstep(-seaward, 34, 82);
+  const tail = 1 - THREE.MathUtils.smoothstep(-seaward, 118, 156);
+  const ridge =
+    0.4 + Math.sin(along * 0.017) * 0.3 + Math.sin(along * 0.046 + 1.2) * 0.15;
+  let keep = 1;
+  for (const hole of duneHoles) {
+    const d = Math.hypot((along - hole.along) / hole.ra, (seaward - hole.seaward) / hole.rs);
+    keep *= THREE.MathUtils.smoothstep(d, 0.55, 1.3);
+  }
+  return inland * tail * Math.max(0, ridge) * keep * 1.65;
+}
+
+function groundAt(along, seaward) {
+  return beachHeight(seaward) + duneLift(along, seaward);
+}
+
+function isDry(path, x, z, margin = 6) {
+  const onRiver = path.project(x, z);
+  return Math.abs(onRiver.lateral) >= waterHalf(path, onRiver.s) + margin;
+}
+
 function createBeach(mouth, path) {
   const alongFrom = -1500;
   const alongTo = 900;
   const seaFrom = -160;
   const seaTo = 30;
-  const columns = 14;
-  const rows = 70;
+  const columns = 18;
+  const rows = 96;
   const positions = new Float32Array(rows * columns * 3);
+  const colors = new Float32Array(rows * columns * 3);
   const indices = [];
+  const dry = new THREE.Color(0xdcc7a4);
+  const wet = new THREE.Color(0xa89068);
+  const pale = new THREE.Color(0xe7d6b4);
+  const tint = new THREE.Color();
   for (let row = 0; row < rows; row++) {
     const along = alongFrom + ((alongTo - alongFrom) * row) / (rows - 1);
     for (let column = 0; column < columns; column++) {
@@ -544,9 +619,16 @@ function createBeach(mouth, path) {
       const onRiver = path.project(at.x, at.z);
       // Sand under the channel would bury the boat. That part stays underwater.
       const drowned = Math.abs(onRiver.lateral) < waterHalf(path, onRiver.s) - 6;
+      const lift = drowned ? 0 : duneLift(along, seaward);
       positions[offset] = at.x;
-      positions[offset + 1] = drowned ? -4 : beachHeight(seaward);
+      positions[offset + 1] = drowned ? -4 : beachHeight(seaward) + lift;
       positions[offset + 2] = at.z;
+      const wetness = drowned ? 1 : THREE.MathUtils.smoothstep(seaward, -16, 12);
+      tint.copy(dry).lerp(wet, wetness);
+      if (lift > 0.25) tint.lerp(pale, Math.min(0.55, lift));
+      colors[offset] = tint.r;
+      colors[offset + 1] = tint.g;
+      colors[offset + 2] = tint.b;
     }
     if (row === rows - 1) continue;
     for (let column = 0; column < columns - 1; column++) {
@@ -561,19 +643,15 @@ function createBeach(mouth, path) {
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   const mesh = new THREE.Mesh(
     geometry,
-    new THREE.MeshStandardMaterial({ color: SAND, roughness: 1 }),
+    createSurface('mottle', 8, { color: 0xffffff, vertexColors: true, roughness: 1 }),
   );
   mesh.frustumCulled = false;
   return { mesh };
-}
-
-function beachHeight(seaward) {
-  if (seaward <= 0) return THREE.MathUtils.lerp(1.45, 0.25, (seaward + 160) / 160);
-  return THREE.MathUtils.lerp(0.25, -0.4, seaward / 30);
 }
 
 function createSeaPlane(mouth, waterMaterial) {
@@ -624,13 +702,13 @@ function createSeaPlane(mouth, waterMaterial) {
 
 function createBars(path) {
   const group = new THREE.Group();
-  const material = new THREE.MeshStandardMaterial({ color: 0xc6b48a, roughness: 1 });
-  const offsets = [-30, 40, -15];
+  const material = createSurface('mottle', 6, { color: 0xc6b48a, roughness: 1 });
+  const offsets = [-30, 40, -15, 18, -48];
   offsets.forEach((lateral, i) => {
-    const sample = path.pointAt(path.mouth - 140 + i * 70);
+    const sample = path.pointAt(path.mouth - 160 + i * 55);
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), material);
-    mesh.scale.set(18 + i * 6, 0.22, 7);
-    mesh.position.set(sample.x + sample.rx * lateral, 0.12, sample.z + sample.rz * lateral);
+    mesh.scale.set(16 + (i % 3) * 7, 0.18 + (i % 2) * 0.06, 6 + (i % 3) * 2);
+    mesh.position.set(sample.x + sample.rx * lateral, 0.08, sample.z + sample.rz * lateral);
     mesh.rotation.y = yawTowards(sample.tx, sample.tz);
     group.add(mesh);
   });
@@ -642,8 +720,6 @@ function createGrau(path, grau, mouth, yaw) {
   const walls = createSurface('mottle', 4, { color: 0xffffff });
   const roofs = createSurface('tiles', 3);
   const brick = createSurface('masonry', 3, { color: BRICK });
-  const stone = createSurface('masonry', 3, { color: COLORS.stone });
-  const wood = createSurface('planks', 2, { color: COLORS.wood });
   const domeMat = createSurface('tiles', 3, { color: DOME });
   const bodies = [];
   const roofItems = [];
@@ -660,28 +736,32 @@ function createGrau(path, grau, mouth, yaw) {
   };
 
   // Five naves, long axis toward the sea, centred on the present building.
+  // The floor sits on the sand rather than on a fixed plinth.
   const yards = grau.yards;
+  const yardSpot = measure(mouth, yards.x, yards.z);
+  const yardGround = groundAt(yardSpot.along, yardSpot.seaward);
   for (let i = -2; i <= 2; i++) {
     const x = yards.x + mouth.rx * i * 10.6;
     const z = yards.z + mouth.rz * i * 10.6;
-    const ground = 1.05;
-    putBox(bodies, x, ground + 4, z, 48, 8, 9.4, yaw);
-    putBox(roofItems, x, ground + 8 + 1.4, z, 50, 2.8, 11, yaw, COLORS.roofs[0]);
+    putBox(bodies, x, yardGround + 4, z, 48, 8, 9.4, yaw);
+    putBox(roofItems, x, yardGround + 8 + 1.4, z, 50, 2.8, 11, yaw, COLORS.roofs[i < 0 ? 0 : 1]);
   }
   group.add(createInstances(new THREE.BoxGeometry(1, 1, 1), brick, bodies));
 
   const church = grau.church;
+  const churchSpot = measure(mouth, church.x, church.z);
+  const churchGround = groundAt(churchSpot.along, churchSpot.seaward);
   const nave = [];
   const churchRoofs = [];
-  putBox(nave, church.x, 1.2 + 7, church.z, 26, 14, 16, yaw, PALE);
-  putBox(churchRoofs, church.x, 1.2 + 14 + 2, church.z, 28, 4, 18, yaw, COLORS.roofs[1]);
+  putBox(nave, church.x, churchGround + 7, church.z, 26, 14, 16, yaw, PALE);
+  putBox(churchRoofs, church.x, churchGround + 14 + 2, church.z, 28, 4, 18, yaw, COLORS.roofs[1]);
   const towerX = church.x - mouth.tx * 10 + mouth.rx * 10;
   const towerZ = church.z - mouth.tz * 10 + mouth.rz * 10;
-  putBox(nave, towerX, 1.2 + 13, towerZ, 6.2, 26, 6.2, yaw, COLORS.stone);
-  putBox(churchRoofs, towerX, 1.2 + 26 + 2.2, towerZ, 7.4, 4.4, 7.4, yaw, COLORS.roofs[0]);
+  putBox(nave, towerX, churchGround + 13, towerZ, 6.2, 26, 6.2, yaw, COLORS.stone);
+  putBox(churchRoofs, towerX, churchGround + 26 + 2.2, towerZ, 7.4, 4.4, 7.4, yaw, COLORS.roofs[0]);
   const dome = new THREE.Mesh(new THREE.SphereGeometry(5.2, 16, 12), domeMat);
   dome.scale.set(1, 0.7, 1);
-  dome.position.set(church.x + mouth.tx * 2, 1.2 + 14 + 3.2, church.z + mouth.tz * 2);
+  dome.position.set(church.x + mouth.tx * 2, churchGround + 14 + 3.2, church.z + mouth.tz * 2);
   group.add(dome);
   group.add(
     createInstances(new THREE.BoxGeometry(1, 1, 1), walls, nave),
@@ -689,55 +769,46 @@ function createGrau(path, grau, mouth, yaw) {
     createInstances(roofGeometry, roofs, roofItems),
   );
 
-  // Houses on the sand between the yards and the mouth, off the two monuments.
+  // The hamlet sits on dry sand just inland of the yards. Most of the strip
+  // between the yards and the mouth is still the channel, so an earlier
+  // scatter landed in the water and was thrown away.
   const random = createRandom(1703);
   const houses = [];
   const houseRoofs = [];
+  const lights = [];
   const clear = [
-    { x: church.x, z: church.z, r: 28 },
-    { x: yards.x, z: yards.z, r: 36 },
+    { x: church.x, z: church.z, r: 32 },
+    { x: yards.x, z: yards.z, r: 44 },
   ];
-  for (let placed = 0, tries = 0; placed < 14 && tries < 80; tries++) {
-    const along = -80 - random() * 420;
-    const seaward = -25 - random() * 100;
+  const hamlet = [
+    [yardSpot.along - 36, yardSpot.along - 210, yardSpot.seaward - 28, yardSpot.seaward - 95],
+    [churchSpot.along - 36, churchSpot.along + 36, churchSpot.seaward - 18, churchSpot.seaward - 70],
+  ];
+  for (let placed = 0, tries = 0; placed < 18 && tries < 160; tries++) {
+    const band = hamlet[tries % hamlet.length];
+    const along = band[0] + random() * (band[1] - band[0]);
+    const seaward = band[2] + random() * (band[3] - band[2]);
     const at = frame(mouth, along, seaward);
-    const onRiver = path.project(at.x, at.z);
-    if (Math.abs(onRiver.lateral) < waterHalf(path, onRiver.s) + 10) continue;
+    if (!isDry(path, at.x, at.z, 12)) continue;
     if (clear.some((spot) => Math.hypot(at.x - spot.x, at.z - spot.z) < spot.r)) continue;
-    const width = 6 + random() * 4;
+    const width = 7 + random() * 5;
     const depth = 6 + random() * 3;
-    const height = 6 + random() * 2.5;
-    const roof = 1.8 + random();
-    const ground = beachHeight(seaward);
-    const spin = yaw + (random() - 0.5) * 0.6;
+    const height = 5.5 + random() * 4;
+    const roof = 1.8 + random() * 0.8;
+    const ground = groundAt(along, seaward);
+    const spin = yaw + (random() - 0.5) * 0.5;
     putBox(houses, at.x, ground + height / 2, at.z, width, height, depth, spin, COLORS.houseWalls[placed % 4]);
     putBox(houseRoofs, at.x, ground + height + roof / 2, at.z, width * 1.08, roof, depth * 1.08, spin, COLORS.roofs[placed % 3]);
+    // A lamp at the eaves, not a window texture: these are not the city facades.
+    if (placed % 2 === 0) {
+      lights.push({
+        x: at.x + mouth.tx * depth * 0.45,
+        y: ground + height * 0.62,
+        z: at.z + mouth.tz * depth * 0.45,
+        size: 0.75,
+      });
+    }
     placed++;
-  }
-
-  // A low bastion on the shore, seaward of the yards. A sketch, not a plan.
-  const bastion = [];
-  for (let i = 0; i < 8; i++) {
-    const angle = (i / 8) * Math.PI * 2;
-    const ox = Math.cos(angle);
-    const oz = Math.sin(angle);
-    const x = yards.x + mouth.tx * 30 + ox * 11;
-    const z = yards.z + mouth.tz * 30 + oz * 11;
-    putBox(bastion, x, 2.2, z, 8, 4.2, 2.2, yawTowards(-oz, ox));
-  }
-
-  // Timber jetty, north of the mouth, and boats pulled up beside it.
-  const jetty = [];
-  const deck = frame(mouth, -180, 18);
-  putBox(jetty, deck.x, 0.7, deck.z, 55, 0.28, 6, yaw);
-  for (let step = -24; step <= 24; step += 6) {
-    const post = frame(mouth, -180, 18 + step);
-    putBox(jetty, post.x, 0.1, post.z, 0.35, 1.6, 0.35, yaw);
-  }
-  const boats = [];
-  for (let i = 0; i < 5; i++) {
-    const at = frame(mouth, -150 - i * 16, -8 - (i % 2) * 6);
-    putBox(boats, at.x, beachHeight(-12) + 0.5, at.z, 2.1, 0.7, 6.5, yaw + 0.15 * i);
   }
 
   // The south bank is only a hint that Nazaret was there.
@@ -755,10 +826,923 @@ function createGrau(path, grau, mouth, yaw) {
   group.add(
     createInstances(new THREE.BoxGeometry(1, 1, 1), walls, houses),
     createInstances(roofGeometry, roofs, houseRoofs),
-    createInstances(new THREE.BoxGeometry(1, 1, 1), stone, bastion),
-    createInstances(new THREE.BoxGeometry(1, 1, 1), wood, [...jetty, ...boats]),
     createInstances(new THREE.BoxGeometry(1, 1, 1), walls, huts),
     createInstances(roofGeometry, roofs, hutRoofs),
   );
-  return group;
+  return { group, lights };
+}
+
+// A box glued into a hand-built geometry. Winding is approximate; callers use
+// DoubleSide. `sy`/`sx`/`sz` are full sizes, and y is centred.
+function appendBox(positions, indices, cx, cy, cz, sx, sy, sz) {
+  const x0 = cx - sx / 2;
+  const x1 = cx + sx / 2;
+  const y0 = cy - sy / 2;
+  const y1 = cy + sy / 2;
+  const z0 = cz - sz / 2;
+  const z1 = cz + sz / 2;
+  const base = positions.length / 3;
+  positions.push(
+    x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0,
+    x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1,
+  );
+  const faces = [
+    0, 2, 1, 0, 3, 2,
+    4, 5, 6, 4, 6, 7,
+    0, 4, 7, 0, 7, 3,
+    1, 2, 6, 1, 6, 5,
+    3, 7, 6, 3, 6, 2,
+    0, 1, 5, 0, 5, 4,
+  ];
+  for (const index of faces) indices.push(base + index);
+}
+
+function geometryFrom(positions, indices) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Open hull, bow at local +X, keel at y = 0. yawTowards then points the bow.
+function openHullGeometry(length, beam, depth) {
+  const stations = 9;
+  const positions = [];
+  const indices = [];
+  const rings = [];
+  for (let i = 0; i < stations; i++) {
+    const t = i / (stations - 1);
+    const body = Math.sin(t * Math.PI) ** 0.62;
+    const half = (beam / 2) * body;
+    const x = (t - 0.5) * length;
+    const rocker = (1 - body) * depth * 0.42;
+    const chine = rocker + depth * 0.3;
+    const gunwale = rocker + depth * (0.76 + 0.24 * (1 - body));
+    rings.push(positions.length / 3);
+    positions.push(
+      x, rocker, 0,
+      x, chine, -half * 0.76,
+      x, chine, half * 0.76,
+      x, gunwale, -half,
+      x, gunwale, half,
+    );
+  }
+  const quad = (a, b, c, d) => indices.push(a, b, c, a, c, d);
+  for (let i = 0; i < stations - 1; i++) {
+    const a = rings[i];
+    const b = rings[i + 1];
+    quad(a, b, b + 1, a + 1);
+    quad(a, a + 2, b + 2, b);
+    quad(a + 1, b + 1, b + 3, a + 3);
+    quad(a + 2, a + 4, b + 4, b + 2);
+  }
+  return geometryFrom(positions, indices);
+}
+
+function oxGeometry() {
+  const positions = [];
+  const indices = [];
+  appendBox(positions, indices, 0, 0.92, 0, 1.7, 0.72, 0.58);
+  appendBox(positions, indices, 0.98, 1.02, 0, 0.5, 0.38, 0.36);
+  appendBox(positions, indices, 1.28, 0.96, 0, 0.24, 0.2, 0.24);
+  appendBox(positions, indices, 0.86, 1.28, -0.12, 0.28, 0.08, 0.08);
+  appendBox(positions, indices, 0.86, 1.28, 0.12, 0.28, 0.08, 0.08);
+  for (const [x, z] of [[-0.48, -0.2], [-0.48, 0.2], [0.42, -0.2], [0.42, 0.2]]) {
+    appendBox(positions, indices, x, 0.32, z, 0.16, 0.64, 0.16);
+  }
+  return geometryFrom(positions, indices);
+}
+
+function rackGeometry() {
+  const positions = [];
+  const indices = [];
+  appendBox(positions, indices, 0, 0.95, -3.05, 0.14, 1.9, 0.14);
+  appendBox(positions, indices, 0, 0.95, 3.05, 0.14, 1.9, 0.14);
+  appendBox(positions, indices, 0, 1.85, 0, 0.1, 0.1, 6.3);
+  return geometryFrom(positions, indices);
+}
+
+function gullGeometry() {
+  // Beak at +X, so yawTowards points the bird the way it is flying.
+  return geometryFrom(
+    [
+      0.7, 0.02, 0, -0.35, 0, 0.95, -0.05, 0, 0,
+      0.7, 0.02, 0, -0.05, 0, 0, -0.35, 0, -0.95,
+    ],
+    [0, 1, 2, 3, 4, 5],
+  );
+}
+
+// One instanced mesh whose items may bob. Each item is mutated with its index.
+function buildPosed(geometry, material, items) {
+  if (!items.length) return null;
+  const mesh = new THREE.InstancedMesh(geometry, material, items.length);
+  const dummy = new THREE.Object3D();
+  items.forEach((item, index) => {
+    item.index = index;
+    item.mesh = mesh;
+    pose(dummy, item, 0);
+    mesh.setMatrixAt(index, dummy.matrix);
+    if (item.color) mesh.setColorAt(index, item.color);
+  });
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  mesh.computeBoundingSphere();
+  return mesh;
+}
+
+function pose(dummy, item, time) {
+  const wave = item.bob ? Math.sin(time * 0.55 + item.phase) : 0;
+  dummy.rotation.set(item.pitch || 0, item.yaw, (item.heel || 0) + wave * 0.05);
+  dummy.position.set(item.x, item.y + wave * (item.bob || 0), item.z);
+  dummy.scale.set(item.sx, item.sy, item.sz);
+  dummy.updateMatrix();
+}
+
+function createSurf(mouth, path) {
+  const positions = [];
+  const uvs = [];
+  const indices = [];
+
+  const flush = (rows) => {
+    if (rows.length < 2) return;
+    const columns = rows[0].length;
+    const base = positions.length / 3;
+    rows.forEach((row) => {
+      for (const point of row) {
+        positions.push(point.x, 0.34, point.z);
+        uvs.push(point.u, point.v);
+      }
+    });
+    for (let row = 0; row < rows.length - 1; row++) {
+      for (let column = 0; column < columns - 1; column++) {
+        const a = base + row * columns + column;
+        const b = a + 1;
+        const c = a + columns;
+        const d = c + 1;
+        indices.push(a, c, b, c, d, b);
+      }
+    }
+  };
+
+  // The lip where the channel meets the sand, on both banks.
+  for (const side of [-1, 1]) {
+    const rows = [];
+    for (let s = path.mouth - 120; s <= path.mouth + 40; s += 8) {
+      const sample = path.pointAt(s);
+      const half = waterHalf(path, s);
+      const row = [];
+      let onBeach = true;
+      for (let column = 0; column < 3; column++) {
+        const lateral = side * (half - 2 + column * 5);
+        const x = sample.x + sample.rx * lateral;
+        const z = sample.z + sample.rz * lateral;
+        const seaward = (x - mouth.x) * mouth.tx + (z - mouth.z) * mouth.tz;
+        if (seaward < -46 || seaward > 26) onBeach = false;
+        row.push({ x, z, u: column / 2, v: s / 18 });
+      }
+      if (!onBeach) {
+        flush(rows);
+        rows.length = 0;
+        continue;
+      }
+      rows.push(row);
+    }
+    flush(rows);
+  }
+
+  // The open-sea wash, north of the Grau and on the far side of the mouth.
+  for (const [from, to] of [[-1480, -600], [540, 880]]) {
+    const rows = [];
+    for (let along = from; along <= to; along += 12) {
+      const at = frame(mouth, along, -4);
+      if (!isDry(path, at.x, at.z, 0)) {
+        flush(rows);
+        rows.length = 0;
+        continue;
+      }
+      const row = [];
+      for (let column = 0; column < 3; column++) {
+        const seaward = 2 + column * 4;
+        const point = frame(mouth, along, seaward);
+        row.push({ x: point.x, z: point.z, u: column / 2, v: along / 18 });
+      }
+      rows.push(row);
+    }
+    flush(rows);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  const material = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    fog: true,
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { time: { value: 0 } }]),
+    vertexShader: `
+      varying vec2 vUv;
+      #include <fog_pars_vertex>
+      void main() {
+        vUv = uv;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      varying vec2 vUv;
+      #include <fog_pars_fragment>
+      void main() {
+        float across = vUv.x;
+        float streak = 0.5 + 0.5 * sin(vUv.y * 18.0 - time * 1.3 + across * 4.0);
+        float wash = smoothstep(0.42, 0.92, streak);
+        float band = smoothstep(0.0, 0.35, across) * (1.0 - smoothstep(0.55, 1.0, across));
+        float alpha = band * (0.04 + 0.16 * wash);
+        vec3 color = mix(vec3(0.82, 0.9, 0.88), vec3(0.97, 0.98, 0.96), wash);
+        gl_FragColor = vec4(color, alpha);
+        #include <fog_fragment>
+      }
+    `,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 2;
+  const position = geometry.attributes.position;
+
+  function animate(time) {
+    material.uniforms.time.value = time;
+    for (let i = 0; i < position.count; i++) {
+      const crest = waveHeight(position.getX(i), position.getZ(i), time);
+      position.setY(i, Math.max(0.28, crest + 0.16));
+    }
+    position.needsUpdate = true;
+  }
+
+  return { mesh, animate };
+}
+
+function createLampPoints(spots) {
+  const positions = [];
+  const colors = [];
+  const sizes = [];
+  const phases = [];
+  const lamp = new THREE.Color(0xffb45a);
+  spots.forEach((spot, index) => {
+    positions.push(spot.x, spot.y, spot.z);
+    colors.push(lamp.r, lamp.g, lamp.b);
+    sizes.push(spot.size ?? 1);
+    phases.push((index * 0.37) % 1);
+  });
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+  geometry.setAttribute('phase', new THREE.Float32BufferAttribute(phases, 1));
+  const material = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    fog: true,
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { time: { value: 0 }, night: { value: 0 } }]),
+    vertexShader: `
+      attribute vec3 color;
+      attribute float size;
+      attribute float phase;
+      uniform float time;
+      uniform float night;
+      varying vec3 vColor;
+      varying float vStrength;
+      #include <fog_pars_vertex>
+      void main() {
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+        float flame = 0.82 + 0.18 * sin(time * 8.0 + phase * 40.0);
+        vStrength = night * flame;
+        vColor = color;
+        gl_PointSize = clamp(size * (1600.0 / -mvPosition.z), 2.0, 64.0);
+        #include <fog_vertex>
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      varying float vStrength;
+      #include <fog_pars_fragment>
+      void main() {
+        float d = length(gl_PointCoord - 0.5) * 2.0;
+        float glow = 0.65 * pow(max(0.0, 1.0 - d), 2.0) + 1.3 * smoothstep(0.28, 0.0, d);
+        float haze = 1.0 - smoothstep(fogNear, fogFar, vFogDepth);
+        gl_FragColor = vec4(vColor * glow * vStrength * haze, 1.0);
+      }
+    `,
+  });
+  const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false;
+  points.visible = false;
+  return points;
+}
+
+// Square fort with two round towers on the seaward corners. The real
+// Baluarte del Grau was that shape; the measures here are a sketch.
+function createFort(mouth, along, seaward, lights) {
+  const at = frame(mouth, along, seaward);
+  const ground = groundAt(along, seaward);
+  const pivot = new THREE.Group();
+  pivot.position.set(at.x, ground, at.z);
+  pivot.rotation.y = yawTowards(mouth.tx, mouth.tz);
+  const stone = createSurface('masonry', 3.2, { color: COLORS.stone });
+  const box = (x, y, z, sx, sy, sz) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), stone);
+    mesh.position.set(x, y, z);
+    pivot.add(mesh);
+  };
+  const height = 6.2;
+  const halfX = 12;
+  const halfZ = 10.5;
+  const thick = 1.65;
+  box(halfX, height / 2, 0, thick, height, halfZ * 2 + thick);
+  box(-halfX, height / 2, -6.4, thick, height, 8.4);
+  box(-halfX, height / 2, 6.4, thick, height, 8.4);
+  box(0, height / 2, halfZ, halfX * 2, height, thick);
+  box(0, height / 2, -halfZ, halfX * 2, height, thick);
+  const towerGeo = new THREE.CylinderGeometry(3.05, 3.35, 11, 8);
+  const capGeo = new THREE.CylinderGeometry(3.45, 3.45, 0.4, 8);
+  for (const z of [halfZ, -halfZ]) {
+    const tower = new THREE.Mesh(towerGeo, stone);
+    tower.position.set(halfX, 5.5, z);
+    const cap = new THREE.Mesh(capGeo, stone);
+    cap.position.set(halfX, 11.15, z);
+    pivot.add(tower, cap);
+    lights.push({
+      x: at.x + mouth.tx * halfX + mouth.rx * z,
+      y: ground + 11.5,
+      z: at.z + mouth.tz * halfX + mouth.rz * z,
+      size: 1.3,
+    });
+  }
+  const merlons = [];
+  const dummy = new THREE.Object3D();
+  const addMerlon = (x, z) => {
+    dummy.position.set(x, height + 0.42, z);
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.set(1, 1, 1);
+    dummy.updateMatrix();
+    merlons.push(dummy.matrix.clone());
+  };
+  for (let z = -halfZ + 1.2; z <= halfZ - 1.2; z += 2.5) {
+    addMerlon(halfX, z);
+    if (Math.abs(z) > 2.2) addMerlon(-halfX, z);
+  }
+  for (let x = -halfX + 2.4; x <= halfX - 2.4; x += 2.5) {
+    addMerlon(x, halfZ);
+    addMerlon(x, -halfZ);
+  }
+  const merlonMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.7, 0.85, 0.72), stone, merlons.length);
+  merlons.forEach((matrix, index) => merlonMesh.setMatrixAt(index, matrix));
+  pivot.add(merlonMesh);
+  lights.push({
+    x: at.x - mouth.tx * halfX,
+    y: ground + 4.4,
+    z: at.z - mouth.tz * halfX,
+    size: 0.95,
+  });
+  return pivot;
+}
+
+function createJetty(mouth, along, seaward, lights) {
+  const at = frame(mouth, along, seaward);
+  const pivot = new THREE.Group();
+  pivot.position.set(at.x, 0, at.z);
+  pivot.rotation.y = yawTowards(mouth.tx, mouth.tz);
+  const wood = createSurface('planks', 2, { color: COLORS.wood });
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(76, 0.32, 7), wood);
+  deck.position.set(0, 0.92, 0);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.32, 15.5), wood);
+  head.position.set(38, 0.92, 0);
+  pivot.add(deck, head);
+  const posts = [];
+  const dummy = new THREE.Object3D();
+  const put = (x, z, height) => {
+    dummy.position.set(x, height / 2 - 0.4, z);
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.set(0.36, height, 0.36);
+    dummy.updateMatrix();
+    posts.push(dummy.matrix.clone());
+  };
+  for (let x = -34; x <= 34; x += 6) {
+    put(x, -3, 1.75);
+    put(x, 3, 1.75);
+  }
+  for (let z = -6.5; z <= 6.5; z += 3.2) put(38, z, 1.9);
+  put(40.2, -6.2, 1.2);
+  put(40.2, 6.2, 1.2);
+  const postMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), wood, posts.length);
+  posts.forEach((matrix, index) => postMesh.setMatrixAt(index, matrix));
+  pivot.add(postMesh);
+  lights.push({
+    x: at.x + mouth.tx * 40,
+    y: 2.7,
+    z: at.z + mouth.tz * 40,
+    size: 1.4,
+  });
+  return pivot;
+}
+
+// Beach, fishing ground, roadstead and the Grau's timber landing.
+// Repeated pieces are instanced. Gulls, the wash and the anchored hulls
+// move only while the boat is near the mouth.
+function createShore(mouth, path, grau, villageLights) {
+  const group = new THREE.Group();
+  group.name = 'shore';
+  const random = createRandom(1721);
+  const lights = [...villageLights];
+  const anchor = grau ? measure(mouth, grau.yards.x, grau.yards.z) : { along: -530, seaward: -35 };
+  const alongShore = yawTowards(mouth.rx, mouth.rz);
+  const outToSea = yawTowards(mouth.tx, mouth.tz);
+  const inland = yawTowards(-mouth.tx, -mouth.tz);
+
+  const hullMat = createSurface('planks', 1.35, {
+    color: 0xffffff,
+    roughness: 0.82,
+    side: THREE.DoubleSide,
+  });
+  const sailMat = createSurface('cloth', 2.4, {
+    color: 0xffffff,
+    roughness: 0.95,
+    side: THREE.DoubleSide,
+  });
+  const wood = createSurface('planks', 1.6, { color: 0xffffff, roughness: 0.9, side: THREE.DoubleSide });
+  const cloth = createSurface('cloth', 1.8, {
+    color: 0xffffff,
+    roughness: 1,
+    side: THREE.DoubleSide,
+  });
+  const thatch = createSurface('mottle', 2.2, { color: 0xffffff, roughness: 1 });
+  const lime = createSurface('mottle', 3, { color: 0xffffff, roughness: 0.95 });
+  const tiles = createSurface('tiles', 3);
+  const oxMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, side: THREE.DoubleSide });
+  const scrubMat = createSurface('mottle', 2, { color: 0xffffff, roughness: 1 });
+
+  const hullGeo = openHullGeometry(8.4, 2.4, 0.8);
+  const mastGeo = new THREE.CylinderGeometry(0.1, 0.14, 1, 5);
+  const sailGeo = geometryFrom([0, 0.4, 0, 0.35, 7.6, 0, 6.4, 1.15, 0], [0, 1, 2]);
+  const hulls = [];
+  const masts = [];
+  const sails = [];
+  const bobbing = [];
+
+  const addHull = (along, seaward, yaw, scale, color, bob = 0) => {
+    const at = frame(mouth, along, seaward);
+    const y = bob ? -0.12 : groundAt(along, seaward) + 0.06;
+    const item = {
+      x: at.x,
+      y,
+      z: at.z,
+      yaw,
+      sx: scale,
+      sy: bob ? scale * 0.85 : scale,
+      sz: scale,
+      phase: random() * Math.PI * 2,
+      bob,
+      heel: bob ? 0 : (random() - 0.5) * 0.1,
+      color: new THREE.Color(color),
+    };
+    hulls.push(item);
+    bobbing.push(item);
+    return item;
+  };
+
+  const shoreYaw = () => alongShore + (random() - 0.5) * 0.35;
+  const boatColors = [0x4a3c32, 0xc2a67a, 0x8d4d38, 0x5c4636, 0xd4c4a4];
+  // Lighters by the landing, and the trajo of hauled boats further north,
+  // clear of the fort. A few on the south sand, so that bank is not bare.
+  const hauled = [
+    [anchor.along + 38, -2],
+    [anchor.along + 46, -14],
+    [anchor.along - 78, -4],
+  ];
+  for (let i = 0; i < 9; i++) hauled.push([anchor.along - 390 - i * 24, -6 - (i % 3) * 4]);
+  // Sand between the landing and the fort. Without these the wedge reads bare.
+  for (let i = 0; i < 3; i++) hauled.push([anchor.along - 96 - i * 16, -2 - (i % 2) * 5]);
+  for (const along of [620, 710, 800, 880]) hauled.push([along, -8 - (along % 3) * 3]);
+  const oxPairs = [];
+  hauled.forEach(([along, seaward], index) => {
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 4)) return;
+    const scale = 0.9 + random() * 0.28;
+    addHull(along, seaward, shoreYaw(), scale, boatColors[index % boatColors.length]);
+    if (index >= 3 && index < 12 && (index - 3) % 3 === 1) oxPairs.push([along, seaward - 7]);
+    if (index % 4 === 0) {
+      const stump = {
+        x: at.x,
+        y: groundAt(along, seaward) + 1.5,
+        z: at.z,
+        yaw: 0,
+        sx: 1,
+        sy: 3,
+        sz: 1,
+        phase: 0,
+        bob: 0,
+        heel: 0,
+        color: new THREE.Color(COLORS.wood),
+      };
+      masts.push(stump);
+    }
+  });
+
+  // Coasters in the roadstead. No enclosed harbour, so they lie off the beach.
+  const roadstead = [
+    [-260, 100, 0.15],
+    [-150, 180, -0.35],
+    [-380, 160, 0.45],
+    [160, 140, 0.2],
+    [60, 240, -0.15],
+  ];
+  for (const [along, seaward, turn] of roadstead) {
+    let sea = seaward;
+    let at = frame(mouth, along, sea);
+    for (let step = 0; step < 6 && isDry(path, at.x, at.z, 0); step++) {
+      sea += 30;
+      at = frame(mouth, along, sea);
+    }
+    const scale = 1.9 + random() * 0.35;
+    const hull = addHull(along, sea, outToSea + turn, scale, indexColor(random), 0.2);
+    const mast = {
+      x: hull.x,
+      y: hull.y + 7.2,
+      z: hull.z,
+      yaw: hull.yaw,
+      sx: 1,
+      sy: 12.5,
+      sz: 1,
+      phase: hull.phase,
+      bob: hull.bob,
+      heel: 0,
+      color: new THREE.Color(0x6b5344),
+    };
+    const sail = {
+      x: hull.x,
+      y: hull.y + 1.1,
+      z: hull.z,
+      yaw: hull.yaw + 0.4,
+      sx: 1.15,
+      sy: 1.15,
+      sz: 1,
+      phase: hull.phase,
+      bob: hull.bob,
+      heel: 0,
+      pitch: 0.15,
+      color: new THREE.Color(COLORS.sail),
+    };
+    masts.push(mast);
+    sails.push(sail);
+    bobbing.push(mast, sail);
+    lights.push({ x: hull.x, y: hull.y + 12.8, z: hull.z, size: 1.15 });
+  }
+
+  const oxen = [];
+  const yokes = [];
+  for (const [along, seaward] of oxPairs) {
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 4)) continue;
+    const ground = groundAt(along, seaward);
+    const side = mouth.rx * 1.15;
+    const sideZ = mouth.rz * 1.15;
+    for (const sign of [-1, 1]) {
+      oxen.push({
+        matrix: posedMatrix(at.x + side * sign, ground, at.z + sideZ * sign, inland, 1, 1, 1),
+        color: new THREE.Color(sign < 0 ? 0x6a4a32 : 0x8a6244),
+      });
+    }
+    yokes.push({
+      matrix: posedMatrix(
+        at.x + mouth.tx * 0.9,
+        ground + 1.22,
+        at.z + mouth.tz * 0.9,
+        alongShore,
+        0.12,
+        0.12,
+        2.5,
+      ),
+    });
+  }
+
+  const fortAlong = anchor.along - 155;
+  const fortSea = anchor.seaward + 24;
+  if (grau && isDry(path, frame(mouth, fortAlong, fortSea).x, frame(mouth, fortAlong, fortSea).z, 4)) {
+    group.add(createFort(mouth, fortAlong, fortSea, lights));
+  }
+  const jettyAlong = anchor.along - 44;
+  const jettySea = anchor.seaward + 48;
+  if (grau) group.add(createJetty(mouth, jettyAlong, jettySea, lights));
+
+  // Barracas north of the fort, the gap the 1673 ordinances asked for.
+  const barracaWalls = [];
+  const barracaRoofs = [];
+  const doors = [];
+  if (grau) {
+    for (let i = 0; i < 14; i++) {
+      const along = anchor.along - 380 - i * 26 + (random() - 0.5) * 4;
+      const seaward = anchor.seaward - 6 - (i % 2) * 8;
+      const at = frame(mouth, along, seaward);
+      if (!isDry(path, at.x, at.z, 8)) continue;
+      const ground = groundAt(along, seaward);
+      const length = 9 + random() * 2;
+      const width = 4.4 + random() * 0.5;
+      const wall = 2.05 + random() * 0.25;
+      const roof = 4 + random() * 0.7;
+      const yaw = alongShore + (random() - 0.5) * 0.2;
+      barracaWalls.push({
+        matrix: posedMatrix(at.x, ground + wall / 2, at.z, yaw, length, wall, width),
+        color: new THREE.Color(0xf3efe4),
+      });
+      barracaRoofs.push({
+        matrix: posedMatrix(at.x, ground + wall + roof / 2, at.z, yaw, length * 1.08, roof, width * 1.25),
+        color: new THREE.Color(i % 3 === 0 ? 0xa68448 : THATCH),
+      });
+      doors.push({
+        matrix: posedMatrix(
+          at.x + mouth.tx * (width / 2 + 0.05),
+          ground + 0.85,
+          at.z + mouth.tz * (width / 2 + 0.05),
+          yaw,
+          0.9,
+          1.6,
+          0.08,
+        ),
+        color: new THREE.Color(0x3a2e24),
+      });
+    }
+  }
+
+  const sheds = [];
+  const shedRoofs = [];
+  if (grau) {
+    // Inland of the naves. The row itself runs seaward from the yards.
+    const shedSpots = [
+      [anchor.along - 78, anchor.seaward - 58, 16, 4.2, 7],
+      [anchor.along - 102, anchor.seaward - 72, 12, 3.6, 6],
+      [anchor.along + 40, anchor.seaward - 56, 14, 4.2, 6.5],
+    ];
+    shedSpots.forEach(([along, seaward, length, height, depth], index) => {
+      const at = frame(mouth, along, seaward);
+      if (!isDry(path, at.x, at.z, 8)) return;
+      const ground = groundAt(along, seaward);
+      sheds.push({
+        matrix: posedMatrix(at.x, ground + height / 2, at.z, outToSea, length, height, depth),
+        color: new THREE.Color(COLORS.houseWalls[index]),
+      });
+      shedRoofs.push({
+        matrix: posedMatrix(at.x, ground + height + 0.9, at.z, outToSea, length * 1.06, 1.8, depth * 1.08),
+        color: new THREE.Color(COLORS.roofs[index % 3]),
+      });
+    });
+  }
+
+  const racks = [];
+  const nets = [];
+  const flatNets = [];
+  const netSpots = [];
+  for (let i = 0; i < 7; i++) netSpots.push([anchor.along - 400 - i * 30, anchor.seaward + 8]);
+  for (let i = 0; i < 4; i++) netSpots.push([anchor.along - 90 - i * 16, anchor.seaward + 8]);
+  for (const along of [650, 760]) netSpots.push([along, -2]);
+  const netYaw = yawTowards(mouth.rx, mouth.rz);
+  for (const [along, seaward] of netSpots) {
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 2)) continue;
+    const ground = groundAt(along, seaward);
+    racks.push({
+      matrix: posedMatrix(at.x, ground, at.z, netYaw, 1, 1, 1),
+      color: new THREE.Color(0x6e5340),
+    });
+    nets.push({
+      matrix: posedMatrix(at.x, ground + 1.05, at.z, netYaw, 0.05, 1.65, 5.8),
+      color: new THREE.Color(iTone(random)),
+    });
+  }
+  for (let i = 0; i < 6; i++) {
+    const along = anchor.along - 410 - i * 28;
+    const seaward = anchor.seaward + 16;
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 0)) continue;
+    flatNets.push({
+      matrix: flatMatrix(at.x, groundAt(along, seaward) + 0.08, at.z, netYaw + (random() - 0.5) * 0.4, 5.2, 2.6),
+      color: new THREE.Color(iTone(random)),
+    });
+  }
+
+  const rushes = [];
+  const canes = [];
+  const scrub = [];
+  // Roofs and hulls occupy these bands. A cone through a barraca reads as a mistake.
+  const crowded = (along, seaward) => {
+    for (const hole of duneHoles) {
+      const d = Math.hypot((along - hole.along) / hole.ra, (seaward - hole.seaward) / hole.rs);
+      if (d < 1.05) return true;
+    }
+    const inAlong = along > anchor.along - 240 && along < anchor.along + 70;
+    if (inAlong && seaward < anchor.seaward - 14 && seaward > anchor.seaward - 115) return true;
+    const inRow = along < anchor.along - 350 && along > anchor.along - 780;
+    return inRow && seaward < anchor.seaward + 6 && seaward > anchor.seaward - 30;
+  };
+  for (let i = 0; i < 100; i++) {
+    const north = random() < 0.68;
+    const along = north ? anchor.along - random() * 780 : 560 + random() * 320;
+    const seaward = -40 - random() * 90;
+    if (duneLift(along, seaward) < 0.22 || crowded(along, seaward)) continue;
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 10)) continue;
+    const height = 0.7 + random() * 0.9;
+    const ground = groundAt(along, seaward);
+    rushes.push({
+      matrix: posedMatrix(at.x, ground + height / 2, at.z, random() * 3, 0.7 + random() * 0.5, height, 0.7 + random() * 0.5),
+      color: new THREE.Color(random() < 0.5 ? 0xa39a62 : 0x7d8a48),
+    });
+  }
+  for (let i = 0; i < 36; i++) {
+    const along = anchor.along - 20 - random() * 500;
+    const seaward = anchor.seaward - 8 - random() * 28;
+    if (crowded(along, seaward)) continue;
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 6)) continue;
+    const height = 2.2 + random() * 1.3;
+    const ground = groundAt(along, seaward);
+    canes.push({
+      matrix: posedMatrix(at.x, ground + height / 2, at.z, random() * 3, 0.55, height, 0.55),
+      color: new THREE.Color(0x8b9350),
+    });
+  }
+  // A reedbed just inland of the barracas: the gear stores had rushes behind them.
+  for (let i = 0; i < 14; i++) {
+    const along = anchor.along - 386 - i * 26;
+    const seaward = anchor.seaward - 36;
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 8)) continue;
+    const ground = groundAt(along, seaward);
+    for (const side of [-4.5, 4.5]) {
+      const height = 2.6 + (i % 3) * 0.45;
+      canes.push({
+        matrix: posedMatrix(
+          at.x + mouth.rx * side,
+          ground + height / 2,
+          at.z + mouth.rz * side,
+          i * 0.7,
+          0.7,
+          height,
+          0.7,
+        ),
+        color: new THREE.Color(i % 2 ? 0x7f8b46 : 0x9aa15c),
+      });
+    }
+  }
+  for (let i = 0; i < 22; i++) {
+    const along = (random() < 0.7 ? anchor.along - 80 : 600) - random() * 600;
+    const seaward = -55 - random() * 70;
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 12) || duneLift(along, seaward) < 0.2 || crowded(along, seaward)) continue;
+    const ground = groundAt(along, seaward);
+    const scale = 0.8 + random() * 0.9;
+    scrub.push({
+      matrix: posedMatrix(at.x, ground + scale * 0.45, at.z, random() * 3, scale, scale * 0.45, scale),
+      color: new THREE.Color(random() < 0.5 ? 0x5f6b38 : 0x7a7048),
+    });
+  }
+
+  const surf = createSurf(mouth, path);
+  group.add(surf.mesh);
+
+  const hullMesh = buildPosed(hullGeo, hullMat, hulls);
+  const mastMesh = buildPosed(mastGeo, wood, masts);
+  const sailMesh = buildPosed(sailGeo, sailMat, sails);
+  for (const mesh of [hullMesh, mastMesh, sailMesh]) if (mesh) group.add(mesh);
+
+  const roofGeometry = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4);
+  roofGeometry.rotateY(Math.PI / 4);
+  const tuft = new THREE.ConeGeometry(0.4, 1, 4);
+  group.add(
+    createInstances(oxGeometry(), oxMat, oxen),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), wood, yokes),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), lime, barracaWalls),
+    createInstances(roofGeometry, thatch, barracaRoofs),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), wood, doors),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), lime, sheds),
+    createInstances(roofGeometry, tiles, shedRoofs),
+    createInstances(rackGeometry(), wood, racks),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), cloth, nets),
+    createInstances(flatNetGeometry(), cloth, flatNets),
+    createInstances(tuft, scrubMat, rushes),
+    createInstances(tuft, scrubMat, canes),
+    createInstances(new THREE.IcosahedronGeometry(1, 0), scrubMat, scrub),
+  );
+
+  const gullHomes = [];
+  for (let i = 0; i < 14; i++) {
+    const flock = i < 8 ? 0 : 1;
+    const along = flock === 0 ? anchor.along - 420 - (i % 8) * 16 : -180 + (i % 6) * 20;
+    const seaward = flock === 0 ? 12 : 90 + (i % 4) * 16;
+    const home = frame(mouth, along, seaward);
+    const roostAlong = flock === 0 ? along : anchor.along - 220;
+    const roostSea = flock === 0 ? -4 : -8;
+    const roostAt = frame(mouth, roostAlong, roostSea);
+    gullHomes.push({
+      phase: random() * Math.PI * 2,
+      radius: (flock === 0 ? 26 : 42) + random() * 20,
+      height: (flock === 0 ? 6.5 : 14) + random() * 5,
+      beat: 4.2 + random() * 2.4,
+      speed: flock === 0 ? 0.32 : -0.2,
+      cx: home.x,
+      cz: home.z,
+      roostX: roostAt.x,
+      roostZ: roostAt.z,
+      roostY: groundAt(roostAlong, roostSea) + 0.35,
+    });
+  }
+  const gullMesh = new THREE.InstancedMesh(
+    gullGeometry(),
+    new THREE.MeshBasicMaterial({ color: 0xc5bfb2, side: THREE.DoubleSide }),
+    gullHomes.length,
+  );
+  gullMesh.frustumCulled = false;
+  group.add(gullMesh);
+  const gullDummy = new THREE.Object3D();
+
+  const lamps = lights.length ? createLampPoints(lights) : null;
+  if (lamps) group.add(lamps);
+
+  let night = 0;
+  const poseDummy = new THREE.Object3D();
+
+  function animate(time) {
+    surf.animate(time);
+    for (const item of bobbing) {
+      if (!item.bob || !item.mesh) continue;
+      pose(poseDummy, item, time);
+      item.mesh.setMatrixAt(item.index, poseDummy.matrix);
+    }
+    if (hullMesh) hullMesh.instanceMatrix.needsUpdate = true;
+    if (mastMesh) mastMesh.instanceMatrix.needsUpdate = true;
+    if (sailMesh) sailMesh.instanceMatrix.needsUpdate = true;
+    if (lamps) lamps.material.uniforms.time.value = time;
+    const roost = night > 0.55;
+    gullHomes.forEach((gull, index) => {
+      const angle = time * gull.speed + gull.phase;
+      const x = roost ? gull.roostX : gull.cx + Math.cos(angle) * gull.radius;
+      const z = roost ? gull.roostZ : gull.cz + Math.sin(angle) * gull.radius;
+      const y = roost ? gull.roostY : gull.height + Math.sin(time * 0.4 + gull.phase) * 2.2;
+      const dirX = -Math.sin(angle) * gull.speed;
+      const dirZ = Math.cos(angle) * gull.speed;
+      gullDummy.position.set(x, y, z);
+      const pitch = roost ? 0 : Math.sin(time * gull.beat + gull.phase) * 0.35;
+      gullDummy.rotation.set(pitch, roost ? gull.phase : yawTowards(dirX, dirZ), 0);
+      const flap = roost ? 0.18 : 0.28 + Math.abs(Math.sin(time * gull.beat + gull.phase)) * 0.85;
+      gullDummy.scale.set(1.8, flap, 1.8);
+      gullDummy.updateMatrix();
+      gullMesh.setMatrixAt(index, gullDummy.matrix);
+    });
+    gullMesh.instanceMatrix.needsUpdate = true;
+  }
+
+  function setNight(value) {
+    night = value;
+    if (!lamps) return;
+    lamps.visible = value > 0.04;
+    lamps.material.uniforms.night.value = value;
+  }
+
+  return { group, animate, setNight };
+}
+
+function posedMatrix(x, y, z, yaw, sx, sy, sz) {
+  const dummy = new THREE.Object3D();
+  dummy.rotation.set(0, yaw, 0);
+  dummy.position.set(x, y, z);
+  dummy.scale.set(sx, sy, sz);
+  dummy.updateMatrix();
+  return dummy.matrix.clone();
+}
+
+function flatMatrix(x, y, z, yaw, width, depth) {
+  const dummy = new THREE.Object3D();
+  dummy.rotation.set(0, yaw, 0);
+  dummy.rotateX(-Math.PI / 2);
+  dummy.position.set(x, y, z);
+  dummy.scale.set(width, depth, 1);
+  dummy.updateMatrix();
+  return dummy.matrix.clone();
+}
+
+let flatNetGeo = null;
+function flatNetGeometry() {
+  if (!flatNetGeo) flatNetGeo = new THREE.PlaneGeometry(1, 1);
+  return flatNetGeo;
+}
+
+function indexColor(random) {
+  return [0x5c4638, 0x3e342c, 0x6e5844, 0x4a4038][Math.floor(random() * 4)];
+}
+
+function iTone(random) {
+  return [0xc2ad88, 0xb7a078, 0xd2c2a4, 0xa89070][Math.floor(random() * 4)];
 }

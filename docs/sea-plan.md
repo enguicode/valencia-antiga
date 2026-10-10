@@ -90,6 +90,4 @@ Al llegar, el arenal se veía vacío: la arena era una cuña lisa, el caserío c
 - Dunas bajas detrás del caserío, cañas, gaviotas y una rompiente suave. Es ambiente.
 - Faroles solo en el baluarte, el embarcadero, el caserío y los palos de los barcos. Van en `src/sea.js`.
 
-La barca se frenaba a 130–200 m de esa arena: el tope está en `src/boat.js` (`bankLimit`, 340 m en la boca), no en la malla de agua. En `src/sea.js` la orilla seca se ha quedado a unos 22 m por fuera de ese tope, así que frente al Grau, al embarcadero y a las barracas se puede llegar a 15–25 m de la arena sin varar. El embarcadero está en esa orilla y fuera del agua navegable. Desde el centro de la boca la misma orilla sigue lejos (unos 360 m): se lee de cerca al llegar al tope. Una barca pequeña faena al sur de la boca. La rada está más cerca y un casco lleva carroza. No hay lumbre en la playa.
-
 Lo que es fuente y lo que es esbozo está en `docs/sources.md`.

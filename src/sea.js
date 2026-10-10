@@ -15,37 +15,18 @@ const THATCH = 0xc4a86a;
 // buried. Filled in createSea once the mouth frame is known.
 let duneHoles = [];
 
-// Hull stop copied from boat.js bankLimit. That function is the real limit
-// and this file must not change it. 340 m at the mouth and 480 m offshore are
-// those stops; the water mesh in water.js is wider (480 m, then 700 m).
-function boatStop(path, s) {
-  const base = RIVER.width / 2 - RIVER.margin;
-  if (s <= path.mouth - 600) return base;
+// Same widening as the water mesh. The banks and the beach stay outside it,
+// or the boat sails through the sand.
+function waterHalf(path, s) {
+  const cityHalf = RIVER.width / 2 + BANK.slopeRun;
+  if (s < path.mouth - 600) return cityHalf;
   if (s < path.mouth) {
     const t = THREE.MathUtils.smoothstep(s, path.mouth - 600, path.mouth);
-    return base + (340 - base) * t;
+    return cityHalf + (480 - cityHalf) * t;
   }
   const span = Math.max(path.step, path.seaEnd - path.mouth);
   const t = Math.min(1, (s - path.mouth) / span);
-  return 340 + (480 - 340) * t;
-}
-
-// Dry sand begins 6 m inside this half. Cap the widening so that line stays
-// about 22 m outside the hull stop (6 m drowned + 22 m of water). Without
-// the cap the mouth is 480 m of water and the boat, held at 340 m, never
-// reaches the beach. The cap never opens the channel past the water mesh.
-function waterHalf(path, s) {
-  const cityHalf = RIVER.width / 2 + BANK.slopeRun;
-  let wide = cityHalf;
-  if (s >= path.mouth - 600 && s < path.mouth) {
-    const t = THREE.MathUtils.smoothstep(s, path.mouth - 600, path.mouth);
-    wide = cityHalf + (480 - cityHalf) * t;
-  } else if (s >= path.mouth) {
-    const span = Math.max(path.step, path.seaEnd - path.mouth);
-    const t = Math.min(1, (s - path.mouth) / span);
-    wide = 480 + (700 - 480) * t;
-  }
-  return Math.max(cityHalf, Math.min(wide, boatStop(path, s) + 28));
+  return 480 + (700 - 480) * t;
 }
 
 // A pale line across the water where the walled tour ends. Crossing it is
@@ -615,33 +596,13 @@ function isDry(path, x, z, margin = 6) {
   return Math.abs(onRiver.lateral) >= waterHalf(path, onRiver.s) + margin;
 }
 
-// A point on the sand, `inland` metres past the water half. Positive inland
-// is up the beach; the dry lip itself is near inland 0 (the mesh is drowned
-// inside waterHalf - 6). `side` is -1 on the north bank, +1 on the south.
-function bankPoint(path, mouth, s, side, inland) {
-  const sample = path.pointAt(s);
-  const lateral = side * (waterHalf(path, s) + inland);
-  const x = sample.x + sample.rx * lateral;
-  const z = sample.z + sample.rz * lateral;
-  return { ...measure(mouth, x, z), x, z, sample, lateral, side, inland };
-}
-
-// Matches the beach lip in createBeach, so props sit on the sand rather than
-// in it. `inland` is the argument bankPoint was given.
-function sandY(spot) {
-  const fromLip = spot.inland + 6;
-  const lip = fromLip < 22 ? (1 - Math.max(0, fromLip) / 22) * 0.42 : 0;
-  return groundAt(spot.along, spot.seaward) + lip;
-}
-
 function createBeach(mouth, path) {
   const alongFrom = -1500;
   const alongTo = 900;
   const seaFrom = -160;
   const seaTo = 30;
-  // Fine enough that the lip, seen from 20 m off, is not a 25 m staircase.
-  const columns = 24;
-  const rows = 220;
+  const columns = 18;
+  const rows = 96;
   const positions = new Float32Array(rows * columns * 3);
   const colors = new Float32Array(rows * columns * 3);
   const indices = [];
@@ -656,22 +617,13 @@ function createBeach(mouth, path) {
       const at = frame(mouth, along, seaward);
       const offset = (row * columns + column) * 3;
       const onRiver = path.project(at.x, at.z);
-      const half = waterHalf(path, onRiver.s);
-      // Sand under the channel would bury the boat. Deep water stays down;
-      // the last 16 m slope up to the lip instead of a cliff.
-      const inland = Math.abs(onRiver.lateral) - (half - 6);
-      const drowned = inland < 0;
-      const lip = !drowned && inland < 22 ? (1 - inland / 22) * 0.42 : 0;
+      // Sand under the channel would bury the boat. That part stays underwater.
+      const drowned = Math.abs(onRiver.lateral) < waterHalf(path, onRiver.s) - 6;
       const lift = drowned ? 0 : duneLift(along, seaward);
-      let height = -4;
-      if (!drowned) height = beachHeight(seaward) + lift + lip;
-      else if (inland > -16) height = -0.2 + ((16 + inland) / 16) * 0.35;
       positions[offset] = at.x;
-      positions[offset + 1] = height;
+      positions[offset + 1] = drowned ? -4 : beachHeight(seaward) + lift;
       positions[offset + 2] = at.z;
-      const wetness = drowned
-        ? 1
-        : Math.max(THREE.MathUtils.smoothstep(seaward, -16, 12), inland < 14 ? 0.85 * (1 - inland / 14) : 0);
+      const wetness = drowned ? 1 : THREE.MathUtils.smoothstep(seaward, -16, 12);
       tint.copy(dry).lerp(wet, wetness);
       if (lift > 0.25) tint.lerp(pale, Math.min(0.55, lift));
       colors[offset] = tint.r;
@@ -751,15 +703,12 @@ function createSeaPlane(mouth, waterMaterial) {
 function createBars(path) {
   const group = new THREE.Group();
   const material = createSurface('mottle', 6, { color: 0xc6b48a, roughness: 1 });
-  const offsets = [-88, 72, -36, 40, -58];
+  const offsets = [-30, 40, -15, 18, -48];
   offsets.forEach((lateral, i) => {
-    // Downstream of the mouth, so the shoals sit in the forward view and not
-    // across the run north to the Grau.
-    const sample = path.pointAt(path.mouth + 96 + i * 20);
+    const sample = path.pointAt(path.mouth - 160 + i * 55);
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), material);
-    const outer = Math.abs(lateral) >= 50;
-    mesh.scale.set(14 + (i % 3) * 4, outer ? 0.42 : 0.3, 5.5 + (i % 3) * 1.6);
-    mesh.position.set(sample.x + sample.rx * lateral, outer ? 0.18 : 0.1, sample.z + sample.rz * lateral);
+    mesh.scale.set(16 + (i % 3) * 7, 0.18 + (i % 2) * 0.06, 6 + (i % 3) * 2);
+    mesh.position.set(sample.x + sample.rx * lateral, 0.08, sample.z + sample.rz * lateral);
     mesh.rotation.y = yawTowards(sample.tx, sample.tz);
     group.add(mesh);
   });
@@ -1036,49 +985,26 @@ function createSurf(mouth, path) {
     }
   };
 
-  // The lip where the channel meets the sand, on both banks, for the first
-  // 200 m of coast either side of the mouth and a short way upstream.
+  // The lip where the channel meets the sand, on both banks.
   for (const side of [-1, 1]) {
     const rows = [];
-    for (let s = path.mouth - 200; s <= path.mouth + 200; s += 8) {
+    for (let s = path.mouth - 120; s <= path.mouth + 40; s += 8) {
       const sample = path.pointAt(s);
       const half = waterHalf(path, s);
       const row = [];
       let onBeach = true;
       for (let column = 0; column < 3; column++) {
-        // On the water side of the sand lip, so the wash is not buried in it.
-        const lateral = side * (half - 14 + column * 5);
+        const lateral = side * (half - 2 + column * 5);
         const x = sample.x + sample.rx * lateral;
         const z = sample.z + sample.rz * lateral;
         const seaward = (x - mouth.x) * mouth.tx + (z - mouth.z) * mouth.tz;
-        if (seaward < -150 || seaward > 40) onBeach = false;
+        if (seaward < -46 || seaward > 26) onBeach = false;
         row.push({ x, z, u: column / 2, v: s / 18 });
       }
       if (!onBeach) {
         flush(rows);
         rows.length = 0;
         continue;
-      }
-      rows.push(row);
-    }
-    flush(rows);
-  }
-
-  // Break over the bar, just downstream of the mouth. The centre 30 m of
-  // the fairway stays clear; this sheet is foam, not a solid shoal.
-  for (const side of [-1, 1]) {
-    const rows = [];
-    for (let s = path.mouth + 48; s <= path.mouth + 150; s += 8) {
-      const sample = path.pointAt(s);
-      const row = [];
-      for (let column = 0; column < 3; column++) {
-        const lateral = side * (34 + column * 18);
-        row.push({
-          x: sample.x + sample.rx * lateral,
-          z: sample.z + sample.rz * lateral,
-          u: column / 2,
-          v: s / 18,
-        });
       }
       rows.push(row);
     }
@@ -1134,7 +1060,7 @@ function createSurf(mouth, path) {
         float streak = 0.5 + 0.5 * sin(vUv.y * 18.0 - time * 1.3 + across * 4.0);
         float wash = smoothstep(0.42, 0.92, streak);
         float band = smoothstep(0.0, 0.35, across) * (1.0 - smoothstep(0.55, 1.0, across));
-        float alpha = band * (0.08 + 0.28 * wash);
+        float alpha = band * (0.04 + 0.16 * wash);
         vec3 color = mix(vec3(0.82, 0.9, 0.88), vec3(0.97, 0.98, 0.96), wash);
         gl_FragColor = vec4(color, alpha);
         #include <fog_fragment>
@@ -1426,49 +1352,43 @@ function createShore(mouth, path, grau, villageLights) {
     }
   });
 
-  // Coasters in the roadstead, close enough to read from the mouth. They sit
-  // off the fairway (the outbound line is along ≈ 0). No enclosed harbour.
-  const cabins = [];
-  // Along is metres off the outbound line (positive = south). The two
-  // nearest sit inside the forward view from the mouth; the rest recede.
+  // Coasters in the roadstead. No enclosed harbour, so they lie off the beach.
   const roadstead = [
-    [-46, 86, 0.35, true],
-    [42, 102, -0.25, false],
-    [-130, 128, 0.5, false],
-    [118, 138, -0.4, false],
-    [24, 170, 0.12, false],
+    [-260, 100, 0.15],
+    [-150, 180, -0.35],
+    [-380, 160, 0.45],
+    [160, 140, 0.2],
+    [60, 240, -0.15],
   ];
-  for (const [along, seaward, turn, detailed] of roadstead) {
+  for (const [along, seaward, turn] of roadstead) {
     let sea = seaward;
     let at = frame(mouth, along, sea);
     for (let step = 0; step < 6 && isDry(path, at.x, at.z, 0); step++) {
-      sea += 24;
+      sea += 30;
       at = frame(mouth, along, sea);
     }
-    const scale = detailed ? 3.35 : 2.55 + random() * 0.45;
-    const hull = addHull(along, sea, outToSea + turn, scale, detailed ? 0x3a3028 : indexColor(random), 0.22);
-    const mastHeight = detailed ? 16 : 9 + scale * 1.6;
+    const scale = 1.9 + random() * 0.35;
+    const hull = addHull(along, sea, outToSea + turn, scale, indexColor(random), 0.2);
     const mast = {
       x: hull.x,
-      y: hull.y + mastHeight * 0.55,
+      y: hull.y + 7.2,
       z: hull.z,
       yaw: hull.yaw,
-      sx: detailed ? 1.15 : 1,
-      sy: mastHeight,
-      sz: detailed ? 1.15 : 1,
+      sx: 1,
+      sy: 12.5,
+      sz: 1,
       phase: hull.phase,
       bob: hull.bob,
       heel: 0,
       color: new THREE.Color(0x6b5344),
     };
-    const sailScale = detailed ? 1.85 : 1.05 + scale * 0.12;
     const sail = {
       x: hull.x,
-      y: hull.y + 1.2,
+      y: hull.y + 1.1,
       z: hull.z,
       yaw: hull.yaw + 0.4,
-      sx: sailScale,
-      sy: sailScale,
+      sx: 1.15,
+      sy: 1.15,
       sz: 1,
       phase: hull.phase,
       bob: hull.bob,
@@ -1479,42 +1399,7 @@ function createShore(mouth, path, grau, villageLights) {
     masts.push(mast);
     sails.push(sail);
     bobbing.push(mast, sail);
-    if (detailed) {
-      // A second mast and a cabin, so one hull is more than a scaled box.
-      const bowX = Math.cos(hull.yaw);
-      const bowZ = -Math.sin(hull.yaw);
-      const aft = {
-        x: hull.x - bowX * 4.4,
-        y: hull.y + 6.4,
-        z: hull.z - bowZ * 4.4,
-        yaw: hull.yaw,
-        sx: 0.85,
-        sy: 11,
-        sz: 0.85,
-        phase: hull.phase,
-        bob: hull.bob,
-        heel: 0,
-        color: new THREE.Color(0x5c4636),
-      };
-      masts.push(aft);
-      bobbing.push(aft);
-      const cabin = {
-        x: hull.x - bowX * 1.6,
-        y: hull.y + 2.4,
-        z: hull.z - bowZ * 1.6,
-        yaw: hull.yaw,
-        sx: 5.4,
-        sy: 2.5,
-        sz: 3.6,
-        phase: hull.phase,
-        bob: hull.bob,
-        heel: 0,
-        color: new THREE.Color(0xc4b49a),
-      };
-      cabins.push(cabin);
-      bobbing.push(cabin);
-    }
-    lights.push({ x: hull.x, y: hull.y + mastHeight + 0.6, z: hull.z, size: detailed ? 1.45 : 1.15 });
+    lights.push({ x: hull.x, y: hull.y + 12.8, z: hull.z, size: 1.15 });
   }
 
   const oxen = [];
@@ -1549,15 +1434,47 @@ function createShore(mouth, path, grau, villageLights) {
   if (grau && isDry(path, frame(mouth, fortAlong, fortSea).x, frame(mouth, fortAlong, fortSea).z, 4)) {
     group.add(createFort(mouth, fortAlong, fortSea, lights));
   }
-  // The timber landing, on the foreshore in front of the yards. The head
-  // stays up the beach from the hull stop, so the boat cannot sail through it.
+  const jettyAlong = anchor.along - 44;
+  const jettySea = anchor.seaward + 48;
+  if (grau) group.add(createJetty(mouth, jettyAlong, jettySea, lights));
+
+  // Barracas north of the fort, the gap the 1673 ordinances asked for.
   const barracaWalls = [];
   const barracaRoofs = [];
   const doors = [];
   if (grau) {
-    const yardS = path.project(grau.yards.x, grau.yards.z).s;
-    const landing = bankPoint(path, mouth, Math.min(path.mouth + 10, Math.max(path.mouth - 70, yardS)), -1, 18);
-    group.add(createJetty(mouth, landing.along, landing.seaward, lights));
+    for (let i = 0; i < 14; i++) {
+      const along = anchor.along - 380 - i * 26 + (random() - 0.5) * 4;
+      const seaward = anchor.seaward - 6 - (i % 2) * 8;
+      const at = frame(mouth, along, seaward);
+      if (!isDry(path, at.x, at.z, 8)) continue;
+      const ground = groundAt(along, seaward);
+      const length = 9 + random() * 2;
+      const width = 4.4 + random() * 0.5;
+      const wall = 2.05 + random() * 0.25;
+      const roof = 4 + random() * 0.7;
+      const yaw = alongShore + (random() - 0.5) * 0.2;
+      barracaWalls.push({
+        matrix: posedMatrix(at.x, ground + wall / 2, at.z, yaw, length, wall, width),
+        color: new THREE.Color(0xf3efe4),
+      });
+      barracaRoofs.push({
+        matrix: posedMatrix(at.x, ground + wall + roof / 2, at.z, yaw, length * 1.08, roof, width * 1.25),
+        color: new THREE.Color(i % 3 === 0 ? 0xa68448 : THATCH),
+      });
+      doors.push({
+        matrix: posedMatrix(
+          at.x + mouth.tx * (width / 2 + 0.05),
+          ground + 0.85,
+          at.z + mouth.tz * (width / 2 + 0.05),
+          yaw,
+          0.9,
+          1.6,
+          0.08,
+        ),
+        color: new THREE.Color(0x3a2e24),
+      });
+    }
   }
 
   const sheds = [];
@@ -1588,7 +1505,7 @@ function createShore(mouth, path, grau, villageLights) {
   const nets = [];
   const flatNets = [];
   const netSpots = [];
-  // A few racks still beside the yards. The mouth banks are filled below.
+  for (let i = 0; i < 7; i++) netSpots.push([anchor.along - 400 - i * 30, anchor.seaward + 8]);
   for (let i = 0; i < 4; i++) netSpots.push([anchor.along - 90 - i * 16, anchor.seaward + 8]);
   for (const along of [650, 760]) netSpots.push([along, -2]);
   const netYaw = yawTowards(mouth.rx, mouth.rz);
@@ -1693,184 +1610,13 @@ function createShore(mouth, path, grau, villageLights) {
     });
   }
 
-  // Mouth banks, just uphill of the hull stop: 200 m of coast upstream and
-  // downstream, both sides. Solids stay outside boatStop. The run north to
-  // the Grau crosses every lateral short of that stop, and boat.js does not
-  // collide with these meshes.
-  const folk = [];
-  const heads = [];
-  const dunes = [];
-  const shirts = [0xe7e1d4, 0x6d7f8c, 0x8a5a44, 0x4f5d48, 0xd9c7a2];
-  // The beach grid covers seaward -160..30. Keep props on that sand, which
-  // is about 200 m of bank upstream of the mouth and a short way past it.
-  const onLip = (spot, margin = 2) =>
-    spot.seaward >= -150 && spot.seaward <= 26 && isDry(path, spot.x, spot.z, margin);
-  const placeBarraca = (spot, yaw) => {
-    if (!onLip(spot, 4)) return;
-    const ground = sandY(spot);
-    const length = 8.6 + random() * 1.8;
-    const width = 4.3 + random() * 0.4;
-    const wall = 2.15;
-    const roof = 3.6 + random() * 0.6;
-    barracaWalls.push({
-      matrix: posedMatrix(spot.x, ground + wall / 2, spot.z, yaw, length, wall, width),
-      color: new THREE.Color(0xf3efe4),
-    });
-    barracaRoofs.push({
-      matrix: posedMatrix(spot.x, ground + wall + roof / 2, spot.z, yaw, length * 1.08, roof, width * 1.22),
-      color: new THREE.Color(random() < 0.3 ? 0xa68448 : THATCH),
-    });
-    doors.push({
-      matrix: posedMatrix(
-        spot.x - spot.side * spot.sample.rx * (width / 2 + 0.06),
-        ground + 0.85,
-        spot.z - spot.side * spot.sample.rz * (width / 2 + 0.06),
-        yaw,
-        0.9,
-        1.6,
-        0.08,
-      ),
-      color: new THREE.Color(0x3a2e24),
-    });
-  };
-  const placeFigure = (spot) => {
-    if (!onLip(spot, 2)) return;
-    const ground = sandY(spot);
-    const yaw = yawTowards(-spot.side * spot.sample.rx, -spot.side * spot.sample.rz);
-    folk.push({
-      matrix: posedMatrix(spot.x, ground + 0.72, spot.z, yaw, 0.46, 1.15, 0.28),
-      color: new THREE.Color(shirts[folk.length % shirts.length]),
-    });
-    heads.push({
-      matrix: posedMatrix(spot.x, ground + 1.48, spot.z, yaw, 0.22, 0.22, 0.22),
-      color: new THREE.Color(0xd9a98a),
-    });
-  };
-  for (const side of [-1, 1]) {
-    let index = 0;
-    for (let s = path.mouth - 190; s <= path.mouth + 80; s += 26) {
-      const alongYaw = (spot) => yawTowards(spot.sample.tx, spot.sample.tz) + (random() - 0.5) * 0.35;
-      const boat = bankPoint(path, mouth, s, side, 5 + (index % 2) * 3);
-      if (onLip(boat, 2)) {
-        addHull(boat.along, boat.seaward, alongYaw(boat), 0.88 + random() * 0.22, boatColors[index % boatColors.length]);
-        hulls[hulls.length - 1].y += sandY(boat) - groundAt(boat.along, boat.seaward);
-        if (index % 2 === 0) {
-          masts.push({
-            x: boat.x,
-            y: sandY(boat) + 1.7,
-            z: boat.z,
-            yaw: 0,
-            sx: 1,
-            sy: 3.4,
-            sz: 1,
-            phase: 0,
-            bob: 0,
-            heel: 0,
-            color: new THREE.Color(COLORS.wood),
-          });
-        }
-      }
-      if (index % 2 === 0) {
-        const net = bankPoint(path, mouth, s + 8, side, 16);
-        if (onLip(net, 2)) {
-          const ground = sandY(net);
-          const yaw = yawTowards(net.sample.tx, net.sample.tz);
-          racks.push({ matrix: posedMatrix(net.x, ground, net.z, yaw, 1, 1, 1), color: new THREE.Color(0x6e5340) });
-          nets.push({
-            matrix: posedMatrix(net.x, ground + 1.05, net.z, yaw, 0.05, 1.65, 5.8),
-            color: new THREE.Color(iTone(random)),
-          });
-          flatNets.push({
-            matrix: flatMatrix(net.x + net.sample.rx * side * 3, ground + 0.08, net.z + net.sample.rz * side * 3, yaw, 4.6, 2.4),
-            color: new THREE.Color(iTone(random)),
-          });
-        }
-      }
-      const hutHere = side < 0 || index % 2 === 0;
-      if (hutHere) {
-        const hut = bankPoint(path, mouth, s + 4, side, 30);
-        placeBarraca(hut, alongYaw(hut));
-        const cane = bankPoint(path, mouth, s + 4, side, 42);
-        if (onLip(cane, 4)) {
-          const ground = sandY(cane);
-          const height = 2.7 + random() * 0.9;
-          canes.push({
-            matrix: posedMatrix(cane.x, ground + height / 2, cane.z, random() * 3, 0.75, height, 0.75),
-            color: new THREE.Color(0x8b9350),
-          });
-        }
-        placeFigure(bankPoint(path, mouth, s + 2, side, 12));
-      }
-      if (index % 3 === 0) {
-        const dune = bankPoint(path, mouth, s + 12, side, 38);
-        if (onLip(dune, 4)) {
-          const ground = sandY(dune);
-          dunes.push({
-            matrix: posedMatrix(dune.x, ground + 0.4, dune.z, random() * 2, 8 + random() * 3, 0.85, 4.5 + random() * 2),
-            color: new THREE.Color(0xe6d4b2),
-          });
-        }
-      }
-      index += 1;
-    }
-  }
-  // One yoke on the north foreshore, hauling a boat up off the fairway.
-  {
-    const spot = bankPoint(path, mouth, path.mouth - 48, -1, 11);
-    if (onLip(spot, 2)) {
-      const ground = sandY(spot);
-      const facing = yawTowards(-spot.sample.rx, -spot.sample.rz);
-      for (const sign of [-1, 1]) {
-        oxen.push({
-          matrix: posedMatrix(
-            spot.x + spot.sample.tx * 1.15 * sign,
-            ground,
-            spot.z + spot.sample.tz * 1.15 * sign,
-            facing,
-            1,
-            1,
-            1,
-          ),
-          color: new THREE.Color(sign < 0 ? 0x6a4a32 : 0x8a6244),
-        });
-      }
-      yokes.push({
-        matrix: posedMatrix(spot.x, ground + 1.22, spot.z, yawTowards(spot.sample.tx, spot.sample.tz), 0.12, 0.12, 2.5),
-      });
-    }
-  }
-  // Skiff on the south side of the mouth, 60 m off the centre and clear of
-  // the run north to the Grau. boat.js will not stop the hull for it.
-  {
-    const skiffS = path.mouth + 52;
-    const skiff = bankPoint(path, mouth, skiffS, 1, 62 - waterHalf(path, skiffS));
-    const hull = addHull(skiff.along, skiff.seaward, outToSea + 0.65, 1.08, 0x4a3c32, 0.18);
-    const mast = {
-      x: hull.x,
-      y: hull.y + 2.3,
-      z: hull.z,
-      yaw: hull.yaw,
-      sx: 0.7,
-      sy: 4.4,
-      sz: 0.7,
-      phase: hull.phase,
-      bob: hull.bob,
-      heel: 0,
-      color: new THREE.Color(COLORS.wood),
-    };
-    masts.push(mast);
-    bobbing.push(mast);
-    lights.push({ x: hull.x, y: hull.y + 3.8, z: hull.z, size: 0.7 });
-  }
-
   const surf = createSurf(mouth, path);
   group.add(surf.mesh);
 
   const hullMesh = buildPosed(hullGeo, hullMat, hulls);
   const mastMesh = buildPosed(mastGeo, wood, masts);
   const sailMesh = buildPosed(sailGeo, sailMat, sails);
-  const cabinMesh = buildPosed(new THREE.BoxGeometry(1, 1, 1), lime, cabins);
-  for (const mesh of [hullMesh, mastMesh, sailMesh, cabinMesh]) if (mesh) group.add(mesh);
+  for (const mesh of [hullMesh, mastMesh, sailMesh]) if (mesh) group.add(mesh);
 
   const roofGeometry = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4);
   roofGeometry.rotateY(Math.PI / 4);
@@ -1889,9 +1635,6 @@ function createShore(mouth, path, grau, villageLights) {
     createInstances(tuft, scrubMat, rushes),
     createInstances(tuft, scrubMat, canes),
     createInstances(new THREE.IcosahedronGeometry(1, 0), scrubMat, scrub),
-    createInstances(new THREE.SphereGeometry(1, 8, 5), scrubMat, dunes),
-    createInstances(new THREE.BoxGeometry(1, 1, 1), lime, folk),
-    createInstances(new THREE.BoxGeometry(1, 1, 1), lime, heads),
   );
 
   const gullHomes = [];
@@ -1941,7 +1684,6 @@ function createShore(mouth, path, grau, villageLights) {
     if (hullMesh) hullMesh.instanceMatrix.needsUpdate = true;
     if (mastMesh) mastMesh.instanceMatrix.needsUpdate = true;
     if (sailMesh) sailMesh.instanceMatrix.needsUpdate = true;
-    if (cabinMesh) cabinMesh.instanceMatrix.needsUpdate = true;
     if (lamps) lamps.material.uniforms.time.value = time;
     const roost = night > 0.55;
     gullHomes.forEach((gull, index) => {

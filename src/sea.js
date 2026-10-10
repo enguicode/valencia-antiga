@@ -179,6 +179,7 @@ export function createSea(scene, path, layout, waterMaterial) {
   }
 
   const beach = createBeach(mouth, path);
+  group.add(createHinterland(mouth, path, fieldReach, grass));
   const sea = createSeaPlane(mouth, waterMaterial);
   let villageLights = [];
   if (grau) {
@@ -700,6 +701,52 @@ function createBeach(mouth, path) {
   );
   mesh.frustumCulled = false;
   return { mesh };
+}
+
+// The land behind the fields and behind the beach. Without it the huerta
+// was a ribbon beside the river and the sand a strip with nothing at its
+// back: from the water the Grau stood on an island. Flat and unsurveyed.
+function createHinterland(mouth, path, fieldReach, material) {
+  const alongFrom = -1500; // the same reach as the beach it backs
+  const alongTo = 900;
+  const seaFrom = -1400;
+  const seaTo = -150; // ten metres under the back of the sand
+  const step = 20;
+  const rows = Math.ceil((alongTo - alongFrom) / step) + 1;
+  const columns = Math.ceil((seaTo - seaFrom) / step) + 1;
+  const positions = new Float32Array(rows * columns * 3);
+  const indices = [];
+  for (let row = 0; row < rows; row++) {
+    const along = alongFrom + ((alongTo - alongFrom) * row) / (rows - 1);
+    for (let column = 0; column < columns; column++) {
+      const seaward = seaFrom + ((seaTo - seaFrom) * column) / (columns - 1);
+      const at = frame(mouth, along, seaward);
+      const onRiver = path.project(at.x, at.z);
+      const lateral = Math.abs(onRiver.lateral);
+      // Sunk under the channel, with room for the fields' own bank; a
+      // little under the fields, so they are what shows; and level with
+      // the back of the beach everywhere else.
+      const fields = onRiver.s < path.mouth - 150 && lateral < fieldReach(onRiver.s) + 12;
+      let height = 1.42;
+      if (lateral < waterHalf(path, onRiver.s) + 8) height = -3;
+      else if (fields) height = 0.95;
+      const offset = (row * columns + column) * 3;
+      positions[offset] = at.x;
+      positions[offset + 1] = height;
+      positions[offset + 2] = at.z;
+    }
+    if (row === rows - 1) continue;
+    for (let column = 0; column < columns - 1; column++) {
+      const a = row * columns + column;
+      const c = a + columns;
+      indices.push(a, c, a + 1, c, c + 1, a + 1);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return new THREE.Mesh(geometry, material);
 }
 
 function createSeaPlane(mouth, waterMaterial) {
@@ -1706,7 +1753,8 @@ function createShore(mouth, path, grau, villageLights) {
   const onLip = (spot, margin = 2) =>
     spot.seaward >= -150 && spot.seaward <= 26 && isDry(path, spot.x, spot.z, margin);
   const placeBarraca = (spot, yaw) => {
-    if (!onLip(spot, 4)) return;
+    // A house wants dry sand all round it: clear of the channel and above the wash.
+    if (!onLip(spot, 14) || spot.seaward > -14) return;
     const ground = sandY(spot);
     const length = 8.6 + random() * 1.8;
     const width = 4.3 + random() * 0.4;

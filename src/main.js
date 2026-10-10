@@ -556,10 +556,6 @@ function shiftBelowCard() {
   const middle = (card.bottom + floor) / 2;
   return Math.max(0, (2 * middle) / window.innerHeight - 1);
 }
-// On a phone the card shows its first lines; a tap opens and closes it.
-cardElement.addEventListener('click', (event) => {
-  if (!event.target.closest('a')) cardElement.classList.toggle('open');
-});
 
 function updateCamera(dt, snap = false) {
   let wantedFov = baseFov;

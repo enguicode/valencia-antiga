@@ -501,7 +501,9 @@ const FOCUS = { seconds: 7, back: 13, aside: 8, up: 9, narrowest: 12, speed: 2.2
 const UNDER_BRIDGE = { back: 8.5, up: 2.9 };
 // A place too far to zoom in on is visited instead: the camera flies out to
 // a spot in front of it, hovers, and flies back to the boat.
-const FLIGHT = { beyond: 200, out: 3.5, hold: 3.5, back: 3, standOff: 1.25, above: 20 };
+// It does not park there: it comes in on an arc of `swing` radians, closing
+// and sinking a little through a longer lens, as a crane shot would.
+const FLIGHT = { beyond: 200, out: 3.5, hold: 4.5, back: 3, standOff: 1.25, above: 20, swing: 0.45, lens: 0.8 };
 // A long flight takes longer, so it does not rush, and swings wide so that
 // it reaches the place from the front instead of sliding in sideways.
 const LONG_FLIGHT = { speed: 75, slowest: 2, bendFrom: 150, bend: 0.4, widest: 140 };
@@ -541,6 +543,24 @@ function dropMoonBelowCard(fovDeg) {
   lookGoal.copy(cameraGoal).addScaledVector(viewDirection, 400);
 }
 
+// How far down the picture has to slide, as a share of half its height, for
+// the middle of the view to land in the middle of what the card leaves
+// free. Nothing when the card is off to one side, as on a wide screen.
+let viewShift = 0;
+let viewShifted = false;
+const cardElement = document.getElementById('card');
+function shiftBelowCard() {
+  const card = cardElement.getBoundingClientRect();
+  if (card.height < 2 || card.width < window.innerWidth * 0.5) return 0;
+  const floor = window.innerHeight - (document.body.classList.contains('touch') ? 210 : 100);
+  const middle = (card.bottom + floor) / 2;
+  return Math.max(0, (2 * middle) / window.innerHeight - 1);
+}
+// On a phone the card shows its first lines; a tap opens and closes it.
+cardElement.addEventListener('click', (event) => {
+  if (!event.target.closest('a')) cardElement.classList.toggle('open');
+});
+
 function updateCamera(dt, snap = false) {
   let wantedFov = baseFov;
   focus.left -= dt;
@@ -565,10 +585,20 @@ function updateCamera(dt, snap = false) {
     // Hover in front of the place if it has a front, otherwise on the boat's side of it.
     let [dx, dz] = subject.facing ?? [boat.mesh.position.x - subject.x, boat.mesh.position.z - subject.z];
     const distance = Math.hypot(dx, dz) || 1;
-    dx /= distance;
-    dz /= distance;
-    const standOff = subject.span * (subject.standOff ?? FLIGHT.standOff);
-    flightSpot.set(subject.x + dx * standOff, subject.y + (subject.above ?? FLIGHT.above), subject.z + dz * standOff);
+    // The arc, from just before arriving until it has started back.
+    const drift = THREE.MathUtils.smoothstep(elapsed, focus.out * 0.5, focus.out + focus.hold + focus.back * 0.3);
+    const swing = (drift - 0.5) * FLIGHT.swing;
+    [dx, dz] = [
+      (dx * Math.cos(swing) - dz * Math.sin(swing)) / distance,
+      (dx * Math.sin(swing) + dz * Math.cos(swing)) / distance,
+    ];
+    // Upright, a phone's lens is narrow across: stand further back, or the
+    // place does not fit. The longer lens asks for a little more as well.
+    const fit = Math.max(1, 0.8 / camera.aspect) / Math.sqrt(FLIGHT.lens);
+    const standOff = subject.span * (subject.standOff ?? FLIGHT.standOff) * fit * (1.12 - 0.2 * drift);
+    const above = (subject.above ?? FLIGHT.above) * Math.sqrt(fit) * (1.15 - 0.3 * drift);
+    flightSpot.set(subject.x + dx * standOff, subject.y + above, subject.z + dz * standOff);
+    wantedFov = THREE.MathUtils.lerp(baseFov, baseFov * FLIGHT.lens, away);
     // A curve from the boat to the spot, pulled out in front of the place.
     flightBend.set(flightSpot.x + dx * focus.bend, flightSpot.y, flightSpot.z + dz * focus.bend);
     cameraGoal.lerpVectors(flightBend, flightSpot, away);
@@ -622,6 +652,19 @@ function updateCamera(dt, snap = false) {
   if (Math.abs(camera.fov - wantedFov) > 0.05) {
     camera.fov += (wantedFov - camera.fov) * (snap ? 1 : 1 - Math.exp(-dt * 2.5));
     camera.updateProjectionMatrix();
+  }
+  // Where the card lies across the top of the screen, the picture slides
+  // down, so that what the camera is looking at sits in the clear part and
+  // not behind the text. The moon is aimed for the card already.
+  const wantedShift = focus.left > 0 && !focus.subject.moon ? shiftBelowCard() : 0;
+  viewShift += (wantedShift - viewShift) * (snap ? 1 : 1 - Math.exp(-dt * 3));
+  if (Math.abs(viewShift) > 0.002 || viewShifted) {
+    viewShifted = Math.abs(viewShift) > 0.002;
+    camera.updateProjectionMatrix();
+    if (viewShifted) {
+      camera.projectionMatrix.elements[9] = viewShift;
+      camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+    }
   }
   sky.position.copy(camera.position);
 }

@@ -281,7 +281,11 @@ export function createGuide(points, layout, path, camera, elements) {
 
   function write(marker) {
     card.querySelector('h2').textContent = localized(marker.title);
-    card.querySelector('.text').textContent = localized(marker.text);
+    const text = card.querySelector('.text');
+    text.textContent = localized(marker.text);
+    // Closed again for each place; `long` is what brings up "read more".
+    card.classList.remove('open');
+    card.classList.toggle('long', text.scrollHeight > text.clientHeight + 2);
     card.querySelector('a').href = marker.source;
     card.querySelector('a').textContent = sourceLabel(marker);
     const count = tally();

@@ -400,6 +400,28 @@
       font-style: italic;
     }
 
+    #card .more { display: none; }
+
+    /* On a phone held upright the card is as wide as the screen, and a long
+       text would cover the very place it is about. It shows its first lines
+       and opens and closes on a tap. */
+    @media (max-width: 640px) and (orientation: portrait) {
+      #card.visible { pointer-events: auto; }
+      #card:not(.open) .text {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+      }
+      #card.long:not(.open) .more {
+        display: inline;
+        margin-right: 0.7em;
+        font-size: 0.74rem;
+        font-weight: 600;
+        text-decoration: underline;
+      }
+    }
+
     /* Arrow at the edge of the screen towards the nearest point still to find. */
     #pointer {
       position: fixed;
@@ -1196,6 +1218,7 @@
   <article id="card" class="panel">
     <h2></h2>
     <p class="text"></p>
+    <span class="more" data-i18n="card.more">Leer más</span>
     <a target="_blank" rel="noopener" data-i18n="card.source">Fuente: Wikipedia</a>
     <span class="tally"></span>
   </article>

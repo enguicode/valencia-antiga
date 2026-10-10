@@ -887,6 +887,105 @@ function transomCap(type) {
   return geometry;
 }
 
+// A skin through closed cross-sections, stern to bow. Every ring has the same
+// number of [x, y] points, anticlockwise seen from the bow. `hard` keeps a
+// crease along each edge of the ring, for slab sides and chines; without it
+// the skin is round, for pods and cowls.
+function loft(rings, hard = false) {
+  const count = rings[0].points.length;
+  const columns = hard ? count * 2 : count;
+  const positions = [];
+  const indices = [];
+  for (const ring of rings) {
+    for (let j = 0; j < count; j++) {
+      positions.push(ring.points[j][0], ring.points[j][1], ring.z);
+      if (hard) {
+        const next = ring.points[(j + 1) % count];
+        positions.push(next[0], next[1], ring.z);
+      }
+    }
+  }
+  for (let i = 0; i < rings.length - 1; i++) {
+    for (let j = 0; j < count; j++) {
+      const a = i * columns + (hard ? j * 2 : j);
+      const b = i * columns + (hard ? j * 2 + 1 : (j + 1) % count);
+      indices.push(a, b, b + columns, a, b + columns, a + columns);
+    }
+  }
+  // Flat caps on vertices of their own, so the ends stay crisp.
+  for (const [ring, astern] of [[rings[0], true], [rings.at(-1), false]]) {
+    const base = positions.length / 3;
+    let cx = 0;
+    let cy = 0;
+    for (const [x, y] of ring.points) {
+      positions.push(x, y, ring.z);
+      cx += x;
+      cy += y;
+    }
+    positions.push(cx / count, cy / count, ring.z);
+    for (let j = 0; j < count; j++) {
+      const a = base + j;
+      const b = base + ((j + 1) % count);
+      indices.push(base + count, astern ? b : a, astern ? a : b);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Rings for a loft: `ring(t)` is called from the stern (t = 0) to the bow.
+const stations = (z0, z1, count, ring) =>
+  Array.from({ length: count + 1 }, (_, i) => ({ z: z0 + ((z1 - z0) * i) / count, points: ring(i / count) }));
+
+const boxRing = (cx, y0, y1, half, bevel) => {
+  const b = Math.min(bevel, half * 0.4, (y1 - y0) * 0.4);
+  return [
+    [cx - half + b, y0],
+    [cx + half - b, y0],
+    [cx + half, y0 + b],
+    [cx + half, y1 - b],
+    [cx + half - b, y1],
+    [cx - half + b, y1],
+    [cx - half, y1 - b],
+    [cx - half, y0 + b],
+  ];
+};
+
+const ovalRing = (cx, cy, rx, ry, count = 12) =>
+  Array.from({ length: count }, (_, j) => {
+    const a = (j / count) * Math.PI * 2;
+    return [cx + Math.cos(a) * rx, cy + Math.sin(a) * ry];
+  });
+
+// A plate cut to an outline: upright, drawn as [z, y] and as thick as given
+// across the boat, or lying flat, drawn as [x, z].
+function plate(outline, thick, flat = false) {
+  const shape = new THREE.Shape(outline.map(([a, b]) => new THREE.Vector2(a, b)));
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: thick, bevelEnabled: false });
+  geometry.translate(0, 0, -thick / 2);
+  return flat ? geometry.rotateX(Math.PI / 2) : geometry.rotateY(-Math.PI / 2);
+}
+
+// The bubble over a racing cockpit, and the driver under it: these boats
+// are driven from inside, strapped in, not from a thwart in a straw hat.
+const CANOPY = new THREE.MeshStandardMaterial({
+  color: 0x1d2b36,
+  roughness: 0.06,
+  metalness: 0.35,
+  transparent: true,
+  opacity: 0.66,
+});
+const canopy = (rx, ry, rz) =>
+  new THREE.SphereGeometry(1, 18, 9, 0, Math.PI * 2, 0, Math.PI / 2).scale(rx, ry, rz);
+function addPilot(add, x, seat, z) {
+  add('shirt', new THREE.CapsuleGeometry(0.15, 0.12, 4, 8), x, seat + 0.2, z);
+  add('helmet', new THREE.SphereGeometry(0.125, 12, 10), x, seat + 0.5, z);
+  add('saddle', new THREE.BoxGeometry(0.19, 0.06, 0.06), x, seat + 0.5, z + 0.1); // visor
+}
+
 // A roundel with a racing number, painted once and shared by both sponsons.
 function createNumberTexture() {
   const canvas = document.createElement('canvas');
@@ -1132,67 +1231,91 @@ function createSpeedboat() {
   };
 }
 
-// The racing hydroplane: a flat hull on two sponsons, an open cockpit, the
-// engine under a cowl and a wing on two fins. The propeller and rudder hang
-// off the transom, which is what the chase view looks at.
+// The racing hydroplane, as the unlimited class builds them: a wing of a hull
+// on two long sponsons with open water between their tips, the driver under
+// a canopy in a pod on the centreline, the turbine's scoop behind him and a
+// wing on twin fins at the stern. Proportions from photographs of Miss
+// Budweiser; not measured.
 function createHydroplane() {
   const v = (x, y, z) => new THREE.Vector3(x, y, z);
   const { add, geometries } = pieceBin();
-  // Centre hull, tapering to the bow, and the deck that ties in the sponsons.
-  add('shell', new THREE.BoxGeometry(1.5, 0.36, 4.6), 0, 0.34, -0.7);
-  add('shell', new THREE.CylinderGeometry(0.04, 0.72, 1.8, 8, 1).rotateY(Math.PI / 8).rotateX(Math.PI / 2).scale(1, 0.38, 1), 0, 0.36, 2.5);
-  add('accent', new THREE.BoxGeometry(3.3, 0.12, 1.7), 0, 0.5, 1);
-  add('saddle', new THREE.BoxGeometry(0.07, 0.025, 3.4), 0, 0.575, 0.15); // deck stripe
+  const ease = THREE.MathUtils.smoothstep;
+  // The hull: full width amidships, drawing in to the transom.
+  add(
+    'shell',
+    loft(
+      stations(-3.4, 1.9, 8, (t) =>
+        boxRing(0, 0.16 + 0.1 * t, 0.5 + 0.05 * Math.sin(t * Math.PI), 1.3 + 0.42 * ease(t, 0, 0.55), 0.05),
+      ),
+      true,
+    ),
+  );
   for (const side of [-1, 1]) {
-    add('shell', new THREE.BoxGeometry(0.72, 0.34, 2.9), side * 1.3, 0.2, 1.5);
-    add('accent', new THREE.BoxGeometry(0.5, 0.05, 2.15), side * 1.3, 0.4, 1.45);
-    add('accent', new THREE.CylinderGeometry(0.03, 0.34, 1.25, 8, 1).rotateY(Math.PI / 8).rotateX(Math.PI / 2).scale(1, 0.5, 1), side * 1.3, 0.22, 3.55);
-    // Riding pad and the non-trip along the outer chine.
-    add('saddle', new THREE.BoxGeometry(0.42, 0.045, 2.35), side * 1.3, 0.005, 1.35);
-    add('accent', new THREE.BoxGeometry(0.035, 0.14, 2.05), side * 1.67, 0.08, 1.4);
-    const badge = new THREE.PlaneGeometry(0.5, 0.5);
-    badge.rotateY(side * Math.PI / 2);
-    add('number', badge, side * 1.7, 0.26, 1.65);
-    // Fins and the winglets past them.
-    add('accent', new THREE.BoxGeometry(0.07, 0.95, 0.7), side * 0.62, 1.02, -2.55);
-    add('accent', new THREE.BoxGeometry(0.2, 0.05, 0.48), side * 1.12, 1.58, -2.55);
+    // Sponsons, running out past the hull to the two prongs of the bow.
+    add(
+      'shell',
+      loft(
+        stations(-0.1, 3.7, 10, (t) =>
+          boxRing(side * 1.3, -0.04 + 0.42 * t * t, 0.52 - 0.06 * t, 0.46 * (1 - ease(t, 0.45, 1) * 0.8), 0.04),
+        ),
+        true,
+      ),
+    );
+    add('accent', new THREE.BoxGeometry(0.62, 0.03, 2.0).rotateX(0.016), side * 1.3, 0.51, 1.1);
+    add('saddle', new THREE.BoxGeometry(0.5, 0.04, 1.4), side * 1.3, -0.03, 0.6); // riding pad
+    add('accent', new THREE.BoxGeometry(0.5, 0.03, 3), side * 0.98, 0.55, -1.2);
+    // Fins, with the number on the outside of each.
+    add(
+      'accent',
+      plate(
+        [
+          [-3.35, 0.5],
+          [-2.3, 0.5],
+          [-2.75, 1.8],
+          [-3.45, 1.8],
+        ],
+        0.07,
+      ),
+      side * 1.0,
+      0,
+      0,
+    );
+    const badge = new THREE.PlaneGeometry(0.62, 0.62);
+    badge.rotateY((side * Math.PI) / 2);
+    add('number', badge, side * 1.045, 1.18, -2.95);
   }
-  add('shell', new THREE.BoxGeometry(2.3, 0.07, 0.55), 0, 1.52, -2.55);
-  add('shell', new THREE.BoxGeometry(1.7, 0.04, 0.26), 0, 1.34, -2.4); // flap
-  // Cockpit: a tub and a coaming, rather than one solid block.
-  add('saddle', new THREE.BoxGeometry(0.66, 0.08, 0.85), 0, 0.48, 0.18);
-  add('accent', new THREE.BoxGeometry(0.84, 0.16, 0.07), 0, 0.64, 0.72);
-  add('accent', new THREE.BoxGeometry(0.84, 0.14, 0.07), 0, 0.6, -0.32);
-  for (const side of [-1, 1]) add('accent', new THREE.BoxGeometry(0.07, 0.16, 1.0), side * 0.4, 0.64, 0.2);
-  add('glass', new THREE.BoxGeometry(0.62, 0.2, 0.02).rotateX(-0.9), 0, 0.78, 0.7);
-  add('saddle', new THREE.TorusGeometry(0.13, 0.016, 6, 12).rotateX(-0.85), 0, 0.74, 0.5);
-  add('saddle', new THREE.BoxGeometry(0.46, 0.06, 0.1), 0, 0.7, 0.58);
-  for (const side of [-1, 1]) {
-    add('shell', new THREE.CylinderGeometry(0.032, 0.032, 0.016, 8).rotateX(Math.PI / 2), side * 0.1, 0.74, 0.63);
-  }
-  // Engine cowl, scoop, headers and the stacks.
-  add('accent', new THREE.BoxGeometry(0.95, 0.4, 1.65), 0, 0.7, -1.5);
-  add('accent', new THREE.SphereGeometry(1, 12, 8).scale(0.46, 0.18, 0.78), 0, 0.9, -1.55);
-  add('saddle', new THREE.BoxGeometry(0.42, 0.2, 0.42), 0, 1.05, -1.02);
-  add('saddle', new THREE.BoxGeometry(0.26, 0.1, 0.06), 0, 1.16, -0.82);
-  for (const side of [-1, 1]) {
-    add('metal', spar(v(side * 0.4, 0.72, -0.85), v(side * 0.26, 0.98, -1.75), 0.032));
-    add('metal', new THREE.CylinderGeometry(0.045, 0.055, 0.26, 8).rotateX(0.45), side * 0.26, 1.08, -1.88);
-    for (let i = 0; i < 4; i++) add('saddle', new THREE.BoxGeometry(0.018, 0.045, 0.2), side * 0.49, 0.78, -1.1 - i * 0.2);
-  }
-  add('saddle', spar(v(0.32, 0.88, -0.5), v(0.32, 1.32, -0.62), 0.012)); // aerial
+  add('shell', new THREE.BoxGeometry(2.07, 0.07, 0.68), 0, 1.8, -3.1); // the wing
+  add('shell', new THREE.BoxGeometry(2.12, 0.045, 0.36), 0, 0.44, 2.75); // and the one between the prongs
+  // The pod: nose, cockpit and the engine cowl in one body.
+  const swell = (t) => (4 * t * (1 - t)) ** 0.45;
+  add(
+    'shell',
+    loft(
+      stations(-2.9, 2.5, 14, (t) => {
+        const top = 0.5 + 0.55 * swell(t);
+        return ovalRing(0, (0.4 + top) / 2, 0.08 + 0.42 * swell(t), (top - 0.4) / 2);
+      }),
+    ),
+  );
+  add('canopy', canopy(0.3, 0.3, 0.72), 0, 0.9, 1.0);
+  addPilot(add, 0, 0.55, 0.95);
+  // The scoop that feeds the turbine, and where it lets go.
+  add(
+    'accent',
+    loft(
+      stations(-1.5, 0.25, 5, (t) => boxRing(0, 0.9 + 0.08 * t, 1.0 + 0.38 * ease(t, 0, 0.8), 0.2 + 0.1 * t, 0.04)),
+      true,
+    ),
+  );
+  add('saddle', new THREE.BoxGeometry(0.5, 0.28, 0.02), 0, 1.19, 0.256);
+  add('metal', new THREE.CylinderGeometry(0.15, 0.17, 0.5, 12).rotateX(Math.PI / 2 - 0.3), 0, 0.82, -2.7);
+  add('saddle', new THREE.CircleGeometry(0.13, 12).rotateY(Math.PI).rotateX(-0.3), 0, 0.9, -2.945);
   // Surface drive: a strut, a propeller big enough to read from astern, and the rudder.
-  add('metal', spar(v(0.3, 0.24, -2.35), v(0.3, -0.04, -3.2), 0.04));
-  add('metal', propeller(0.34), 0.3, -0.06, -3.4);
-  add('saddle', new THREE.BoxGeometry(0.05, 0.62, 0.32), -0.24, -0.02, -3.18);
-  add('metal', new THREE.BoxGeometry(0.08, 0.08, 0.2), -0.24, 0.3, -2.95);
-  add('saddle', new THREE.BoxGeometry(0.02, 0.26, 0.3), 1.55, -0.02, 0.4); // skid fin
-  // The boatman, low in the cockpit, hat and all.
-  add('shirt', new THREE.CapsuleGeometry(0.19, 0.22, 4, 10), 0, 0.86, 0.1);
-  for (const side of [-1, 1]) add('shirt', spar(v(side * 0.2, 1, 0.12), v(side * 0.1, 0.8, 0.48), 0.05));
-  add('skin', new THREE.SphereGeometry(0.14, 12, 10), 0, 1.24, 0.12);
-  add('straw', new THREE.CylinderGeometry(0.3, 0.3, 0.025, 14), 0, 1.35, 0.12);
-  add('straw', new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12), 0, 1.42, 0.12);
+  add('metal', spar(v(0.3, 0.22, -3.3), v(0.3, -0.04, -3.75), 0.04));
+  add('metal', propeller(0.34), 0.3, -0.06, -3.92);
+  add('saddle', new THREE.BoxGeometry(0.05, 0.62, 0.32), -0.3, -0.02, -3.6);
+  add('metal', new THREE.BoxGeometry(0.08, 0.08, 0.26), -0.3, 0.26, -3.45);
+  add('saddle', new THREE.BoxGeometry(0.02, 0.3, 0.34), -0.88, -0.1, 0.4); // skid fin
 
   const number = new THREE.MeshStandardMaterial({
     map: NUMBER,
@@ -1209,12 +1332,13 @@ function createHydroplane() {
       shell: paint(0xf3f0e6, 0.3),
       accent: paint(0xd2a316, 0.35),
       saddle: paint(0x24211e, 0.8),
+      helmet: paint(0xd2a316, 0.3),
       metal: METAL,
-      glass: GLASS,
+      canopy: CANOPY,
       number,
     },
-    spray: { at: [0.15, 0.12, -3.45], width: 2.1 },
-    lantern: [0, 0.62, 3.25],
+    spray: { at: [0.15, 0.12, -3.95], width: 2.1 },
+    lantern: [0, 0.72, 2.4],
   };
 }
 
@@ -1484,86 +1608,86 @@ function createMarkTexture() {
   return texture;
 }
 
-// Eight times a sailing boat: a cabin cruiser's length with a racer's drives,
-// not another hydroplane. The 8 on the cabin is the only number it carries.
-const OFFSHORE_HULL = {
-  length: 8.8,
-  halfBeam: (t) => {
-    const entry = t > 0.05 ? (1 - ((t - 0.05) / 0.95) ** 1.65) ** 0.62 : 1;
-    const run = t < -0.75 ? 1 - 0.18 * ((-t - 0.75) / 0.25) ** 2 : 1;
-    return 1.15 * entry * run;
-  },
-  sheer: (t) => 0.7 + 0.35 * Math.max(t, 0) ** 1.6,
-  keel: (t) => -0.38 + 0.7 * Math.max(t, 0) ** 2.2,
-  flare: 0.48,
-  turn: 3.1,
-};
-
+// Eight times a sailing boat: an offshore racing catamaran. Two deep hulls
+// with a tunnel between them, a low deck, the crew of two side by side under
+// their own canopies and a scoop behind them. Proportions from photographs of
+// the Class 1 boats; not measured. The 8 on the hulls is the only number.
 function createOffshore() {
   const v = (x, y, z) => new THREE.Vector3(x, y, z);
   const { add, geometries } = pieceBin();
-  const hull = OFFSHORE_HULL;
-  const z = (t) => stationZ(hull, t);
-  const stern = z(-1);
-  add('shell', createHullGeometry(hull));
-  add('shell', transomCap(hull));
-  const deck = createLidGeometry(hull);
-  deck.computeVertexNormals();
-  add('deck', deck);
-  for (const tube of sideTubes(
-    (t) => v(hull.halfBeam(t) + 0.02, hull.keel(t) + (hull.sheer(t) - hull.keel(t)) * 0.55, z(t)),
-    0.04,
-    -0.9,
-    0.7,
-  )) {
-    add('accent', tube);
-  }
-  // Cabin forward, cockpit aft, and a hoop so it is not the hydroplane's wing.
-  add('deck', new THREE.BoxGeometry(1.2, 0.62, 2.2), 0, 1.06, 1.55);
-  add('glass', new THREE.BoxGeometry(1.1, 0.36, 1.7).rotateX(-0.12), 0, 1.38, 1.5);
-  add('glass', new THREE.BoxGeometry(1.05, 0.32, 0.04).rotateX(-0.65), 0, 1.22, 2.7);
-  add('metal', spar(v(-0.55, 1.05, -0.55), v(-0.55, 2.15, -0.85), 0.03));
-  add('metal', spar(v(0.55, 1.05, -0.55), v(0.55, 2.15, -0.85), 0.03));
-  add('metal', spar(v(-0.55, 2.15, -0.85), v(0.55, 2.15, -0.85), 0.03));
-  add('accent', new THREE.BoxGeometry(1.35, 0.05, 0.85), 0, 2.2, -0.85);
-  add('metal', new THREE.TorusGeometry(0.16, 0.02, 6, 14), 0, 1.15, -0.55);
+  const ease = THREE.MathUtils.smoothstep;
+  const stern = -4.4;
   for (const side of [-1, 1]) {
-    const mark = new THREE.PlaneGeometry(0.7, 0.35);
-    mark.rotateY(side * Math.PI / 2);
-    add('mark', mark, side * 0.63, 1.08, 1.55);
+    // A hull: steep on the tunnel side, a chine outboard, and a bow that
+    // lifts and fines away to a point.
+    const rings = stations(stern, 4.4, 12, (t) => {
+      const bow = ease(t, 0.6, 1);
+      const out = 0.44 * (1 - bow * 0.9);
+      const inn = 0.36 * (1 - bow * 0.9);
+      const keel = -0.3 + 0.85 * bow ** 1.5;
+      const deck = 0.72 + 0.05 * bow;
+      const cx = 0.86 + 0.05 * bow;
+      const ring = [
+        [cx - inn, keel + (deck - keel) * 0.6],
+        [cx, keel],
+        [cx + out, keel + (deck - keel) * 0.45],
+        [cx + out, deck],
+        [cx - inn, deck],
+      ];
+      return side > 0 ? ring : ring.map(([x, y]) => [-x, y]).reverse();
+    });
+    add('shell', loft(rings, true));
+    add('accent', new THREE.BoxGeometry(0.02, 0.07, 5.2), side * 1.305, 0.675, -1.7);
+    const mark = new THREE.PlaneGeometry(0.9, 0.38);
+    mark.rotateY((side * Math.PI) / 2);
+    add('mark', mark, side * 1.305, 0.4, -0.6);
+    // Surface drive astern of each hull.
+    const x = side * 0.86;
+    add('saddle', new THREE.BoxGeometry(0.22, 0.28, 0.4), x, 0.42, stern);
+    add('metal', spar(v(x, 0.3, stern - 0.1), v(x, -0.05, stern - 0.55), 0.035));
+    add('metal', propeller(0.22), x, -0.05, stern - 0.7);
+    add('metal', new THREE.CylinderGeometry(0.07, 0.07, 0.3, 10).rotateX(Math.PI / 2), side * 0.3, 0.62, stern - 0.08);
   }
-  // Twin surface drives.
+  // The deck over the tunnel, thinning to a lip at the front.
+  add(
+    'deck',
+    loft(
+      stations(stern, 3.3, 8, (t) => boxRing(0, 0.42 + 0.28 * ease(t, 0.7, 1), 0.74, 0.9, 0.03)),
+      true,
+    ),
+  );
+  // The fairing that carries the cockpits and covers the engines.
+  const swell = (t) => (4 * t * (1 - t)) ** 0.5;
+  add('deck', loft(stations(-3.9, 2.4, 12, (t) => ovalRing(0, 0.78, 0.02 + 0.76 * swell(t), 0.34 * swell(t)))));
   for (const side of [-1, 1]) {
-    const x = side * 0.42;
-    add('saddle', new THREE.BoxGeometry(0.22, 0.28, 0.4), x, 0.55, stern + 0.05);
-    add('metal', spar(v(x, 0.4, stern - 0.05), v(x, -0.02, stern - 0.55), 0.035));
-    add('metal', propeller(0.22), x, -0.02, stern - 0.7);
+    add('canopy', canopy(0.27, 0.36, 0.8), side * 0.36, 1.0, -0.3);
+    addPilot(add, side * 0.36, 0.68, -0.4);
   }
-  add('saddle', new THREE.BoxGeometry(0.06, 0.4, 0.28), 0, 0.15, stern - 0.45);
-  addCrew(add, 0, 0.72, -1.35);
-  add('shirt', spar(v(-0.16, 1.42, -1.3), v(-0.1, 1.18, -0.6), 0.04));
-  add('shirt', spar(v(0.16, 1.42, -1.3), v(0.1, 1.18, -0.6), 0.04));
+  add(
+    'accent',
+    loft(
+      stations(-2.5, -1.1, 5, (t) => boxRing(0, 0.9, 1.0 + 0.42 * ease(t, 0, 0.8), 0.2 + 0.12 * t, 0.04)),
+      true,
+    ),
+  );
+  add('saddle', new THREE.BoxGeometry(0.56, 0.3, 0.02), 0, 1.24, -1.094);
 
-  const shell = paint(0x143a8c, 0.32);
-  shell.side = THREE.DoubleSide;
-  const deckMat = paint(0xf4f1ea, 0.55);
-  deckMat.side = THREE.DoubleSide;
   const mark = new THREE.MeshStandardMaterial({ map: createMarkTexture(), roughness: 0.5 });
   return {
     geometries: geometries(),
     materials: {
       ...MATERIALS,
-      shell,
+      shell: paint(0x143a8c, 0.32),
       accent: paint(0xe25b1a, 0.4),
-      deck: deckMat,
+      deck: paint(0xf4f1ea, 0.45),
       saddle: paint(0x1c2430, 0.6),
-      glass: GLASS,
+      helmet: paint(0xe25b1a, 0.3),
+      canopy: CANOPY,
       metal: METAL,
       mark,
     },
     spray: { at: [0, 0.05, stern - 0.85], width: 2.3 },
-    lantern: [0, hull.sheer(0.96) + 0.08, z(0.96)],
-    lid: createLidGeometry(hull),
+    lantern: [0, 0.82, 3.15],
   };
 }
 
@@ -1633,48 +1757,125 @@ function createPontoon() {
   };
 }
 
+function createSpiritTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 64;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#f4f1ea';
+  context.fillRect(0, 0, 512, 64);
+  context.fillStyle = '#c81e1e';
+  context.font = '700 30px sans-serif';
+  context.textBaseline = 'middle';
+  context.fillText('317·60', 8, 34);
+  context.fillStyle = '#16233f';
+  context.font = '700 33px sans-serif';
+  context.fillText('SPIRIT OF AUSTRALIA', 136, 34);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
 // Sixteen times a sailing boat: Ken Warby's Spirit of Australia, the wooden
-// jet hydroplane that still holds the water record. A dart, not the winged
-// racer — two forward shoes, an intake behind the cockpit and a nozzle
-// instead of a propeller. Drawn from memory of the 8.2 m boat, not measured.
+// jet hydroplane that still holds the water record. A slab-sided dart with
+// its name along the flanks, a delta of sponsons at the bow, the cockpit
+// faired into the nose of the engine cowl, a tall fin with the tailplane on
+// top, and a nozzle instead of a propeller. Proportions from photographs of
+// the 8.2 m boat as it hangs in the Australian National Maritime Museum; not
+// measured.
 function createSpirit() {
-  const v = (x, y, z) => new THREE.Vector3(x, y, z);
   const { add, geometries } = pieceBin();
-  add('shell', new THREE.BoxGeometry(0.86, 0.3, 5.5), 0, 0.28, -0.15);
-  add('shell', new THREE.CylinderGeometry(0.03, 0.46, 2.2, 8, 1).rotateX(Math.PI / 2).scale(1.05, 0.4, 1), 0, 0.32, 3.35);
-  add('saddle', new THREE.BoxGeometry(0.5, 0.05, 1.35), 0, 0.04, -2.15); // the rear shoe
-  // A deck ties the two forward shoes into the hull, or from astern they read as loose blocks.
-  add('shell', new THREE.BoxGeometry(2.15, 0.07, 1.7), 0, 0.36, 1.45);
+  const ease = THREE.MathUtils.smoothstep;
+  // The hull: straight sides, then a long wedge of a bow.
+  add(
+    'shell',
+    loft(
+      stations(-3.6, 4.3, 12, (t) => {
+        const bow = ease(t, 0.62, 1);
+        return boxRing(0, 0.08 + 0.3 * bow, 0.62 - 0.12 * bow, 0.46 * (1 - bow) + 0.02, 0.03);
+      }),
+      true,
+    ),
+  );
   for (const side of [-1, 1]) {
-    add('shell', new THREE.BoxGeometry(0.42, 0.2, 1.9), side * 0.86, 0.14, 1.4);
-    add('shell', new THREE.CylinderGeometry(0.02, 0.22, 0.7, 6, 1).rotateX(Math.PI / 2).scale(1, 0.5, 1), side * 0.86, 0.14, 2.55);
-    add('accent', new THREE.BoxGeometry(0.05, 0.07, 4.6), side * 0.46, 0.4, -0.2);
+    // The delta, and the shoe it planes on.
+    add(
+      'shell',
+      plate(
+        [
+          [side * 0.12, 3.25],
+          [side * 1.2, 1.0],
+          [side * 1.2, 0.55],
+          [side * 0.12, 0.55],
+        ],
+        0.2,
+        true,
+      ),
+      0,
+      0.2,
+      0,
+    );
+    add('saddle', new THREE.BoxGeometry(0.3, 0.06, 1.1), side * 1.02, 0.07, 1.15);
+    add('accent', new THREE.BoxGeometry(0.02, 0.04, 4.6), side * 0.485, 0.585, -1.25);
+    const name = new THREE.PlaneGeometry(3.0, 0.375);
+    name.rotateY((side * Math.PI) / 2);
+    add('mark', name, side * 0.487, 0.34, -1.3);
+    add('saddle', new THREE.SphereGeometry(1, 10, 8).scale(0.13, 0.2, 0.32), side * 0.3, 0.92, 0.22); // intakes
   }
-  // Cockpit just ahead of the intake, with the same straw-hatted boatman.
-  add('saddle', new THREE.BoxGeometry(0.58, 0.08, 0.78), 0, 0.42, 0.72);
-  add('accent', new THREE.BoxGeometry(0.72, 0.12, 0.06), 0, 0.52, 1.12);
-  add('saddle', new THREE.BoxGeometry(0.72, 0.1, 0.06), 0, 0.5, 0.32);
-  for (const side of [-1, 1]) add('saddle', new THREE.BoxGeometry(0.06, 0.12, 0.78), side * 0.33, 0.52, 0.72);
-  add('glass', new THREE.BoxGeometry(0.56, 0.16, 0.02).rotateX(-0.7), 0, 0.66, 1.08);
-  add('shirt', new THREE.CapsuleGeometry(0.17, 0.18, 4, 8), 0, 0.78, 0.68);
-  for (const side of [-1, 1]) add('shirt', spar(v(side * 0.16, 0.9, 0.7), v(side * 0.08, 0.7, 0.98), 0.045));
-  add('skin', new THREE.SphereGeometry(0.13, 12, 10), 0, 1.08, 0.66);
-  add('straw', new THREE.CylinderGeometry(0.28, 0.28, 0.022, 14), 0, 1.18, 0.66);
-  add('straw', new THREE.CylinderGeometry(0.11, 0.14, 0.12, 12), 0, 1.25, 0.66);
-  // Intake, then the engine fairing back to the nozzle.
-  add('saddle', new THREE.BoxGeometry(0.62, 0.34, 0.72), 0, 0.68, -0.05);
-  add('shell', new THREE.BoxGeometry(0.78, 0.08, 0.16), 0, 0.86, 0.28);
-  add('metal', new THREE.BoxGeometry(0.7, 0.36, 2.15), 0, 0.58, -1.55);
-  add('metal', new THREE.SphereGeometry(1, 10, 8).scale(0.36, 0.16, 1.05), 0, 0.78, -1.55);
-  add('shell', new THREE.BoxGeometry(1.15, 0.04, 0.3), 0, 0.78, -2.7);
-  for (const side of [-1, 1]) add('metal', spar(v(side * 0.14, 0.62, -2.55), v(side * 0.38, 0.78, -2.7), 0.025));
-  add('metal', new THREE.BoxGeometry(0.04, 0.26, 0.24), 0, 0.68, -2.78);
-  const nozzleZ = -3.05;
-  add('metal', new THREE.TorusGeometry(0.24, 0.045, 8, 16), 0, 0.36, nozzleZ);
-  const glow = new THREE.CircleGeometry(0.19, 16);
+  // The engine, in a cowl the length of the afterbody, and the cockpit
+  // faired into its nose.
+  add('shell', new THREE.CylinderGeometry(0.33, 0.33, 3.6, 18).rotateX(Math.PI / 2), 0, 0.86, -1.5);
+  add(
+    'shell',
+    loft(
+      stations(0.2, 2.35, 9, (t) => {
+        const q = 1 - t;
+        const top = 0.6 + 0.58 * q ** 0.7;
+        return ovalRing(0, (0.5 + top) / 2, 0.02 + 0.33 * q ** 0.6, (top - 0.5) / 2);
+      }),
+    ),
+  );
+  add('canopy', canopy(0.22, 0.26, 0.55), 0, 0.9, 1.0);
+  addPilot(add, 0, 0.52, 0.95);
+  // Fin and tailplane.
+  add(
+    'shell',
+    plate(
+      [
+        [-3.5, 1.1],
+        [-2.2, 1.1],
+        [-3.0, 2.3],
+        [-3.65, 2.3],
+      ],
+      0.07,
+    ),
+  );
+  add(
+    'shell',
+    plate(
+      [
+        [-0.8, -3.75],
+        [0.8, -3.75],
+        [0.8, -3.35],
+        [0, -2.95],
+        [-0.8, -3.35],
+      ],
+      0.05,
+      true,
+    ),
+    0,
+    2.3,
+    0,
+  );
+  add('accent', new THREE.BoxGeometry(0.075, 0.22, 0.5), 0, 1.95, -3.22);
+  const nozzleZ = -3.32;
+  add('metal', new THREE.TorusGeometry(0.24, 0.045, 8, 16), 0, 0.86, nozzleZ);
+  const glow = new THREE.CircleGeometry(0.2, 16);
   glow.rotateY(Math.PI);
-  add('jet', glow, 0, 0.36, nozzleZ - 0.04);
-  add('saddle', new THREE.BoxGeometry(0.045, 0.42, 0.22), 0.2, 0.02, nozzleZ + 0.15);
+  add('jet', glow, 0, 0.86, nozzleZ - 0.02);
+  add('saddle', new THREE.BoxGeometry(0.5, 0.05, 1.2), 0, 0.06, -2.6); // the rear shoe
+  add('saddle', new THREE.BoxGeometry(0.045, 0.42, 0.22), 0.2, 0, -3.3);
 
   return {
     geometries: geometries(),
@@ -1683,8 +1884,10 @@ function createSpirit() {
       shell: paint(0xf4f1ea, 0.38),
       accent: paint(0xc81e1e, 0.45),
       saddle: paint(0x1a1714, 0.8),
+      helmet: paint(0xc81e1e, 0.3),
       metal: METAL,
-      glass: GLASS,
+      canopy: CANOPY,
+      mark: new THREE.MeshStandardMaterial({ map: createSpiritTexture(), roughness: 0.38 }),
       jet: new THREE.MeshStandardMaterial({
         color: 0x3a1408,
         emissive: 0xff5a12,
@@ -1692,8 +1895,8 @@ function createSpirit() {
         roughness: 0.4,
       }),
     },
-    spray: { at: [0, 0.08, nozzleZ - 0.45], width: 1.5 },
-    lantern: [0, 0.55, 4.35],
+    spray: { at: [0, 0.1, nozzleZ - 0.6], width: 1.5 },
+    lantern: [0, 0.5, 4.2],
   };
 }
 

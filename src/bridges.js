@@ -104,11 +104,10 @@ function createCutwaterGeometry(width, top) {
 export function createBridges(layout, path) {
   // Double-sided, so a camera that strays into the stonework sees stone
   // rather than straight through it.
-  const stone = createSurface('masonry', 4, { color: COLORS.stone, roughness: 0.9, side: THREE.DoubleSide });
-  const pale = createSurface('masonry', 3, { color: COLORS.stonePale, roughness: 0.88 });
-  const marble = new THREE.MeshStandardMaterial({ color: 0xf7f1e6, roughness: 0.55 });
-  // Shrine roofs: a green glaze, invented. The grey-green they had read as dust.
-  const roof = createSurface('tiles', 1.6, { color: 0x2f8f78, roughness: 0.36, metalness: 0.05 });
+  const stone = createSurface('masonry', 4, { color: COLORS.stone, side: THREE.DoubleSide });
+  const pale = createSurface('masonry', 3, { color: 0xe8dcc0 });
+  const marble = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 });
+  const roof = createSurface('tiles', 1.6, { color: 0x6f8f7a }); // glazed tiles
   const group = new THREE.Group();
   const balls = [];
   const local = new THREE.Object3D();

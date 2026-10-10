@@ -9,24 +9,13 @@ import { createSurface } from './materials.js';
 // models are schematic: positions come from the layout, shapes are a sketch.
 
 const STONE = new THREE.Color(COLORS.stone);
-const PALE = new THREE.Color(COLORS.stonePale);
+const PALE = new THREE.Color(0xe2d3b0);
 const ROOF = new THREE.Color(COLORS.roofs[0]);
-const TILE_BLUE = new THREE.Color(COLORS.glaze);
+const TILE_BLUE = new THREE.Color(0x3f6f9f);
 const DARK = new THREE.Color(0x2f2720); // openings: windows, doors, belfries
-const ALABASTER = new THREE.Color(0xfff3dc); // the cathedral lantern's translucent windows
-const RENDER = new THREE.Color(COLORS.limewash);
-const BRICK = new THREE.Color(COLORS.brick);
-
-// Ashlar, brick, plaster and glaze must not share one map: a light masonry
-// texture times a brick or a limewash colour comes out the same grey-beige.
-function surfaceOf(color) {
-  if (color === TILE_BLUE) return 'glaze';
-  if (color === ROOF) return 'tiles';
-  if (color === BRICK) return 'brick';
-  if (color === RENDER) return 'plaster';
-  if (color === ALABASTER) return 'alabaster';
-  return 'masonry';
-}
+const ALABASTER = new THREE.Color(0xf6ecd2); // the cathedral lantern's translucent windows
+const RENDER = new THREE.Color(0xe9dcbc); // limewashed walls
+const BRICK = new THREE.Color(0xb98562);
 
 // Openings set into a wall are thin dark slabs standing just proud of it.
 // These helpers lay them out; `yaw` turns a slab to face out of a side wall.
@@ -408,26 +397,13 @@ export function createLandmarks(layout, path) {
       local.rotation.set(0, yaw, 0);
       local.scale.set(...scale);
       local.updateMatrix();
-      const surface = surfaceOf(color);
+      const surface = color === ROOF || color === TILE_BLUE ? 'tiles' : 'masonry';
       (parts[`${solid}|${surface}`] ??= []).push({ matrix: frame.clone().multiply(local.matrix), color });
     }, landmark);
   }
 
   const solids = createSolids();
-  const surfaces = {
-    masonry: createSurface('masonry', 4, { roughness: 0.9 }),
-    tiles: createSurface('tiles', 3, { roughness: 0.92 }),
-    // Low roughness so the dome catches the sky and reads as glaze, not paint.
-    glaze: createSurface('tiles', 2.6, { roughness: 0.32, metalness: 0.05 }),
-    brick: createSurface('brick', 3.2, { roughness: 0.94 }),
-    plaster: createSurface('plaster', 4.5, { roughness: 0.96 }),
-    alabaster: new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      roughness: 0.28,
-      emissive: 0xffc98a,
-      emissiveIntensity: 0.14,
-    }),
-  };
+  const surfaces = { masonry: createSurface('masonry', 4), tiles: createSurface('tiles', 3) };
   const group = new THREE.Group();
   for (const [key, items] of Object.entries(parts)) {
     const [solid, surface] = key.split('|');

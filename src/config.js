@@ -29,14 +29,8 @@ export const COLORS = {
   skyTop: 0x5f97d2,
   horizon: 0xf0e2c6,
   water: 0x3f746e,
-  grass: 0x86a052, // huerta only; the city floor and the banks use earth
-  earth: 0xc49878, // beaten-earth tint; the earth map is darker than the masonry
-  stone: 0xf6c05a, // honey limestone tint; the masonry map brings it to a mid gold
-  stonePale: 0xffd9a0, // lighter honey for mouldings and dressings
-  tapial: 0xee9a40, // ochre rammed earth, redder and darker than the ashlar
-  brick: 0xe07048,
-  limewash: 0xe8d2a6, // warm plaster, duller than the house fronts
-  glaze: 0x4a96e8, // cobalt of the glazed tile domes
+  grass: 0x86a052,
+  stone: 0xcdb78d,
   stoneDark: 0x3a2f24,
   foliage: 0x4f7a3a,
   trunk: 0x6b4f33,

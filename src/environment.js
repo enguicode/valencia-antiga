@@ -226,9 +226,7 @@ function createBank(path, side) {
     [side * (PRETIL.offset + PRETIL.thickness), BANK.height],
     [side * (half + BANK.extent), BANK.height],
   ]);
-  // Shore and street are beaten earth, like the city floor. COLORS.grass
-  // stays on the huerta, which is drawn with the sea.
-  const material = createSurface('earth', 14, { color: COLORS.earth, roughness: 1, side: THREE.DoubleSide });
+  const material = createSurface('mottle', 9, { color: COLORS.grass, side: THREE.DoubleSide });
   const group = new THREE.Group();
   for (const geometry of [shore, street]) {
     const mesh = new THREE.Mesh(geometry, material);
@@ -318,11 +316,9 @@ export function createEnvironment(scene, path, clearings) {
   scene.add(sky);
 
   // Colours, strengths and the sun's position are driven by the atmosphere.
-  // Sky fill and ground bounce are retinted by the hour. A cool blue sky
-  // light plus an olive ground was painting the honey stone grey.
-  const hemisphere = new THREE.HemisphereLight(0xfff6e8, 0xc48a4a, 1.05);
+  const hemisphere = new THREE.HemisphereLight(0xd6e6f5, 0x8a7a55, 1.2);
   scene.add(hemisphere);
-  const sun = new THREE.DirectionalLight(0xfff3d4, 1.9);
+  const sun = new THREE.DirectionalLight(0xfff1d6, 1.9);
   scene.add(sun, sun.target);
 
   scene.add(createBank(path, 1), createBank(path, -1), createTrees(path, clearings));

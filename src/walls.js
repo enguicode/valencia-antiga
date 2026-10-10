@@ -67,10 +67,10 @@ export function createWalls(layout, path) {
   const dark = new THREE.MeshBasicMaterial({ color: COLORS.stoneDark });
   // Away from the river the curtain was rammed earth. Four lifts cover 3.4 m,
   // so each pour is about 85 cm. The river front stays dressed stone.
-  const earth = createSurface('tapial', 3.4, { color: COLORS.tapial, roughness: 0.98 });
+  const earth = createSurface('tapial', 3.4, { color: 0xc4956a });
   // Quart and the Portal Nou were rough rendered masonry, not dressed stone.
-  const render = createSurface('plaster', 3.5, { color: 0xe4c898, roughness: 0.96 });
-  const pale = createSurface('masonry', 2.5, { color: COLORS.stonePale, roughness: 0.88 });
+  const render = createSurface('mottle', 3.5, { color: 0xa8987a });
+  const pale = createSurface('masonry', 2.5, { color: 0xe6d9b8 });
 
   const vertices = layout.wall.map(([x, z]) => ({ x, z }));
   const count = vertices.length;

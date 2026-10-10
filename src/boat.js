@@ -56,7 +56,8 @@ export const BOAT_TYPES = {
 export const DEFAULT_BOAT = 'albufera';
 // Gondola and junk are of the period, just not of this river. The rest are
 // not pretending to be: the jet ski three times, the launch five, the
-// offshore eight and the hydroplane ten.
+// offshore eight, the hydroplane ten and the record jet sixteen. The pontoon
+// sits between the launch and the offshore, at six.
 const CRAFT = {
   gondola: { pace: 1, build: createGondola },
   junk: { pace: 1, build: createJunk },
@@ -64,6 +65,8 @@ const CRAFT = {
   speedboat: { pace: 5, build: createSpeedboat },
   hydroplane: { pace: 10, build: createHydroplane },
   offshore: { pace: 8, build: createOffshore },
+  pontoon: { pace: 6, build: createPontoon },
+  spirit: { pace: 16, build: createSpirit },
 };
 
 const stationZ = (type, t) => (t * type.length) / 2;
@@ -1257,6 +1260,136 @@ function createOffshore() {
   };
 }
 
+// Six times a sailing boat: a party pontoon, two tubes and a deck, which is
+// about the pace of the fastest recreational pontoon on record. Not that one
+// in particular, and not measured.
+function createPontoon() {
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const { add, geometries } = pieceBin();
+  const tube = new THREE.CylinderGeometry(0.28, 0.28, 7.1, 12).rotateX(Math.PI / 2);
+  const nose = new THREE.SphereGeometry(0.28, 10, 8).scale(1, 1, 0.85);
+  for (const side of [-1, 1]) {
+    add('tube', tube, side * 0.95, 0.06, -0.05);
+    add('tube', nose, side * 0.95, 0.06, 3.55);
+    add('tube', nose, side * 0.95, 0.06, -3.65);
+  }
+  add('deck', new THREE.BoxGeometry(2.2, 0.08, 5.9), 0, 0.4, 0.05);
+  const rail = 1.02;
+  const posts = [-2.6, -1.15, 0.35, 1.7, 2.75];
+  for (const side of [-1, 1]) {
+    for (const z of posts) add('metal', new THREE.CylinderGeometry(0.022, 0.022, 0.58, 6), side * 1.02, 0.74, z);
+    add('metal', spar(v(side * 1.02, rail, posts[0]), v(side * 1.02, rail, posts.at(-1)), 0.018));
+    add('metal', spar(v(side * 1.02, 0.68, posts[0]), v(side * 1.02, 0.68, posts.at(-1)), 0.014));
+  }
+  add('metal', spar(v(-1.02, rail, 2.75), v(1.02, rail, 2.75), 0.018));
+  add('metal', spar(v(-1.02, rail, -2.6), v(1.02, rail, -2.6), 0.018));
+  for (const z of [-1.35, 1.45]) {
+    add('seat', new THREE.BoxGeometry(1.55, 0.1, 0.46), 0, 0.56, z);
+    add('seat', new THREE.BoxGeometry(1.55, 0.32, 0.08), 0, 0.74, z - 0.19);
+  }
+  add('deck', new THREE.BoxGeometry(0.62, 0.55, 0.4), 0.42, 0.72, 0.2);
+  add('saddle', new THREE.BoxGeometry(0.46, 0.26, 0.05).rotateX(-0.45), 0.42, 1.02, 0.38);
+  add('metal', new THREE.TorusGeometry(0.13, 0.018, 6, 12).rotateX(-0.55), 0.42, 0.88, 0.32);
+  add('shirt', new THREE.CapsuleGeometry(0.18, 0.28, 4, 8), 0.28, 1.02, -0.05);
+  for (const side of [-1, 1]) add('shirt', spar(v(0.28 + side * 0.16, 1.12, -0.02), v(0.42 + side * 0.06, 0.9, 0.22), 0.05));
+  add('skin', new THREE.SphereGeometry(0.13, 12, 10), 0.28, 1.38, -0.02);
+  add('straw', new THREE.CylinderGeometry(0.28, 0.28, 0.022, 14), 0.28, 1.48, -0.02);
+  add('straw', new THREE.CylinderGeometry(0.11, 0.14, 0.12, 12), 0.28, 1.55, -0.02);
+  const roof = 1.78;
+  for (const x of [-0.72, 0.72]) {
+    for (const z of [-0.45, 0.85]) add('metal', spar(v(x, 0.5, z), v(x, roof, z), 0.018));
+  }
+  add('canvas', new THREE.BoxGeometry(1.62, 0.04, 1.5), 0, roof, 0.2);
+  const oz = -3.25;
+  for (const side of [-1, 1]) {
+    add('saddle', new THREE.BoxGeometry(0.26, 0.3, 0.34), side * 0.42, 0.62, oz);
+    add('shell', new THREE.BoxGeometry(0.24, 0.06, 0.3), side * 0.42, 0.78, oz);
+    add('saddle', new THREE.BoxGeometry(0.1, 0.5, 0.12), side * 0.42, 0.22, oz);
+    add('saddle', new THREE.BoxGeometry(0.12, 0.16, 0.3), side * 0.42, -0.06, oz - 0.02);
+    add('metal', propeller(0.18), side * 0.42, -0.04, oz - 0.24);
+  }
+
+  return {
+    geometries: geometries(),
+    materials: {
+      ...MATERIALS,
+      tube: paint(0xd5d8dc, 0.32),
+      deck: paint(0xf4f0e6, 0.55),
+      seat: paint(0xf7f4ee, 0.7),
+      saddle: paint(0x2c2a28, 0.55),
+      shell: paint(0xf2f2f0, 0.4),
+      canvas: paint(0xe6d3a8, 0.85),
+      metal: METAL,
+    },
+    spray: { at: [0, 0.02, oz - 0.45], width: 2.1 },
+    lantern: [0, 1.15, 2.85],
+  };
+}
+
+// Sixteen times a sailing boat: Ken Warby's Spirit of Australia, the wooden
+// jet hydroplane that still holds the water record. A dart, not the winged
+// racer — two forward shoes, an intake behind the cockpit and a nozzle
+// instead of a propeller. Drawn from memory of the 8.2 m boat, not measured.
+function createSpirit() {
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const { add, geometries } = pieceBin();
+  add('shell', new THREE.BoxGeometry(0.86, 0.3, 5.5), 0, 0.28, -0.15);
+  add('shell', new THREE.CylinderGeometry(0.03, 0.46, 2.2, 8, 1).rotateX(Math.PI / 2).scale(1.05, 0.4, 1), 0, 0.32, 3.35);
+  add('saddle', new THREE.BoxGeometry(0.5, 0.05, 1.35), 0, 0.04, -2.15); // the rear shoe
+  // A deck ties the two forward shoes into the hull, or from astern they read as loose blocks.
+  add('shell', new THREE.BoxGeometry(2.15, 0.07, 1.7), 0, 0.36, 1.45);
+  for (const side of [-1, 1]) {
+    add('shell', new THREE.BoxGeometry(0.42, 0.2, 1.9), side * 0.86, 0.14, 1.4);
+    add('shell', new THREE.CylinderGeometry(0.02, 0.22, 0.7, 6, 1).rotateX(Math.PI / 2).scale(1, 0.5, 1), side * 0.86, 0.14, 2.55);
+    add('accent', new THREE.BoxGeometry(0.05, 0.07, 4.6), side * 0.46, 0.4, -0.2);
+  }
+  // Cockpit just ahead of the intake, with the same straw-hatted boatman.
+  add('saddle', new THREE.BoxGeometry(0.58, 0.08, 0.78), 0, 0.42, 0.72);
+  add('accent', new THREE.BoxGeometry(0.72, 0.12, 0.06), 0, 0.52, 1.12);
+  add('saddle', new THREE.BoxGeometry(0.72, 0.1, 0.06), 0, 0.5, 0.32);
+  for (const side of [-1, 1]) add('saddle', new THREE.BoxGeometry(0.06, 0.12, 0.78), side * 0.33, 0.52, 0.72);
+  add('glass', new THREE.BoxGeometry(0.56, 0.16, 0.02).rotateX(-0.7), 0, 0.66, 1.08);
+  add('shirt', new THREE.CapsuleGeometry(0.17, 0.18, 4, 8), 0, 0.78, 0.68);
+  for (const side of [-1, 1]) add('shirt', spar(v(side * 0.16, 0.9, 0.7), v(side * 0.08, 0.7, 0.98), 0.045));
+  add('skin', new THREE.SphereGeometry(0.13, 12, 10), 0, 1.08, 0.66);
+  add('straw', new THREE.CylinderGeometry(0.28, 0.28, 0.022, 14), 0, 1.18, 0.66);
+  add('straw', new THREE.CylinderGeometry(0.11, 0.14, 0.12, 12), 0, 1.25, 0.66);
+  // Intake, then the engine fairing back to the nozzle.
+  add('saddle', new THREE.BoxGeometry(0.62, 0.34, 0.72), 0, 0.68, -0.05);
+  add('shell', new THREE.BoxGeometry(0.78, 0.08, 0.16), 0, 0.86, 0.28);
+  add('metal', new THREE.BoxGeometry(0.7, 0.36, 2.15), 0, 0.58, -1.55);
+  add('metal', new THREE.SphereGeometry(1, 10, 8).scale(0.36, 0.16, 1.05), 0, 0.78, -1.55);
+  add('shell', new THREE.BoxGeometry(1.15, 0.04, 0.3), 0, 0.78, -2.7);
+  for (const side of [-1, 1]) add('metal', spar(v(side * 0.14, 0.62, -2.55), v(side * 0.38, 0.78, -2.7), 0.025));
+  add('metal', new THREE.BoxGeometry(0.04, 0.26, 0.24), 0, 0.68, -2.78);
+  const nozzleZ = -3.05;
+  add('metal', new THREE.TorusGeometry(0.24, 0.045, 8, 16), 0, 0.36, nozzleZ);
+  const glow = new THREE.CircleGeometry(0.19, 16);
+  glow.rotateY(Math.PI);
+  add('jet', glow, 0, 0.36, nozzleZ - 0.04);
+  add('saddle', new THREE.BoxGeometry(0.045, 0.42, 0.22), 0.2, 0.02, nozzleZ + 0.15);
+
+  return {
+    geometries: geometries(),
+    materials: {
+      ...MATERIALS,
+      shell: paint(0xf4f1ea, 0.38),
+      accent: paint(0xc81e1e, 0.45),
+      saddle: paint(0x1a1714, 0.8),
+      metal: METAL,
+      glass: GLASS,
+      jet: new THREE.MeshStandardMaterial({
+        color: 0x3a1408,
+        emissive: 0xff5a12,
+        emissiveIntensity: 0.35,
+        roughness: 0.4,
+      }),
+    },
+    spray: { at: [0, 0.08, nozzleZ - 0.45], width: 1.5 },
+    lantern: [0, 0.55, 4.35],
+  };
+}
+
 const paint = (color, roughness) => new THREE.MeshStandardMaterial({ color, roughness });
 const SPRAY = {
   // A cone lying astern, its point at the jet
@@ -1279,6 +1412,7 @@ function createCraftModel(typeName) {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     model.add(mesh);
+    if (name === 'jet') model.userData.jet = mesh;
   }
   if (parts.rig) {
     const rig = new THREE.Group();
@@ -1406,6 +1540,7 @@ export function animateBoat(model, dt, time, { closeness, speed, underSail = fal
       0.4 + thrust * 0.9,
       0.25 + thrust * (1 + 0.08 * Math.sin(time * 31)),
     );
+    if (data.jet) data.jet.material.emissiveIntensity = 0.35 + thrust * 1.8;
     return;
   }
   if (!data.rig) return;
@@ -1472,13 +1607,24 @@ export function createBoat(path, bridgeGuide) {
     state.speed = THREE.MathUtils.clamp(state.speed, MAX_REVERSE, MAX_SPEED * pace);
     // A limit is eased into rather than snapped to. The fast craft brake
     // harder, or they would be at the next ring before the card was read.
-    if (state.speed > speedLimit) state.speed = Math.max(speedLimit, state.speed - 9 * pace * dt);
+    // Past the hydroplane that shared rate is no longer enough: the spare
+    // speed has to come off inside the card, whatever the pace.
+    if (state.speed > speedLimit) {
+      const extra = state.speed - speedLimit;
+      // Nine times the pace still beats a held throttle, as it does for the
+      // hydroplane. The record boat also dumps the surplus over a short run.
+      const bleed = Math.max(9 * pace, pace > 10 ? (extra * extra) / (2 * 14) : 0);
+      state.speed = Math.max(speedLimit, state.speed - bleed * dt);
+    }
 
     // The rudder needs way on to bite; keep a little authority at rest so the
     // boat can still be pointed somewhere.
     let rudder = THREE.MathUtils.clamp(state.speed / 3, -1, 1);
     if (Math.abs(rudder) < 0.25) rudder = 0.25;
-    state.heading -= input.steer * TURN_RATE * rudder * dt;
+    // The record boat would need a wider river than this one. It yaws harder
+    // so it can still hold the line the hydroplane holds.
+    const yaw = TURN_RATE * (pace > 10 ? pace / 10 : 1);
+    state.heading -= input.steer * yaw * rudder * dt;
 
     const dirX = Math.sin(state.heading);
     const dirZ = Math.cos(state.heading);

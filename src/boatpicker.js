@@ -17,8 +17,10 @@ const STAGING = {
   junk: { scale: 1.15, lift: 0.15 },
   jetski: { scale: 3.1, lift: 1.2 },
   speedboat: { scale: 2, lift: 1.3 },
+  pontoon: { scale: 1.35, lift: 0.7 },
   hydroplane: { scale: 1.75, lift: 1.3 },
   offshore: { scale: 1.35, lift: 1.05 },
+  spirit: { scale: 1.55, lift: 1.15 },
 };
 const SLIDE_PIXELS = 46; // a drag longer than this moves on to the next boat
 

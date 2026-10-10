@@ -25,6 +25,53 @@ function waterHalf(path, s) {
   return 480 + (700 - 480) * t;
 }
 
+// A pale line across the water where the walled tour ends. Crossing it is
+// what swaps the map and the points over to the run down to the beach.
+function createCityLimit(path) {
+  const at = path.pointAt(path.end);
+  const half = RIVER.width / 2 + BANK.slopeRun + 14;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 64;
+  const pen = canvas.getContext('2d');
+  const fade = pen.createLinearGradient(0, 0, 0, 64);
+  fade.addColorStop(0, 'rgba(244, 233, 210, 0)');
+  fade.addColorStop(0.42, 'rgba(244, 233, 210, 0)');
+  fade.addColorStop(0.5, 'rgba(244, 233, 210, 0.95)');
+  fade.addColorStop(0.58, 'rgba(244, 233, 210, 0)');
+  fade.addColorStop(1, 'rgba(244, 233, 210, 0)');
+  pen.fillStyle = fade;
+  pen.fillRect(0, 0, 128, 64);
+  // The ends die out on the banks instead of stopping in a hard edge.
+  const ends = pen.createLinearGradient(0, 0, 128, 0);
+  ends.addColorStop(0, 'rgba(0, 0, 0, 1)');
+  ends.addColorStop(0.1, 'rgba(0, 0, 0, 0)');
+  ends.addColorStop(0.9, 'rgba(0, 0, 0, 0)');
+  ends.addColorStop(1, 'rgba(0, 0, 0, 1)');
+  pen.globalCompositeOperation = 'destination-out';
+  pen.fillStyle = ends;
+  pen.fillRect(0, 0, 128, 64);
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  const sheet = new THREE.Mesh(
+    new THREE.PlaneGeometry(half * 2, 9),
+    new THREE.MeshBasicMaterial({
+      map,
+      transparent: true,
+      opacity: 0.62,
+      depthWrite: false,
+      fog: true,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    }),
+  );
+  // PlaneGeometry faces +Z. Turn that normal downstream (tx, tz) so the
+  // sheet lies across the channel: local +X then runs bank to bank.
+  sheet.rotation.y = Math.atan2(at.tx, at.tz);
+  sheet.position.set(at.x, 3.1, at.z);
+  return sheet;
+}
+
 // Ground past the city banks: low fields, then the beach and the sea.
 // The city parapet and its street stop at path.garden; this meets them there.
 export function createSea(scene, path, layout, waterMaterial) {
@@ -97,7 +144,7 @@ export function createSea(scene, path, layout, waterMaterial) {
 
   const beach = createBeach(mouth, path);
   const sea = createSeaPlane(mouth, waterMaterial);
-  group.add(beach.mesh, sea.mesh, createBars(path));
+  group.add(beach.mesh, sea.mesh, createBars(path), createCityLimit(path));
   if (layout.sea?.grau) group.add(createGrau(path, layout.sea.grau, mouth, yaw));
 
   scene.add(group);

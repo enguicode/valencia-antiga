@@ -8,8 +8,8 @@ Que quien llegue al final del paseo pueda seguir navegando: el río entre la hue
 
 Dos condiciones puestas por el autor:
 
-- **No entra en el mapa.** El mapa de arriba a la derecha sigue enseñando el tramo de ahora, de las Torres de Quart al Pont de la Mar, y nada más.
-- **Es para quien quiera seguir.** El paseo, sus dieciocho puntos, la cuenta de metros y el recorrido guiado se quedan como están. El tramo del mar es un añadido al final, no una parte del recorrido.
+- **No entra en el mapa.** Era la primera decisión: el mapa se quedaba en la ciudad. El 8 de octubre de 2026 se cambió. Al cruzar una línea clara en el agua, donde acaba el paseo, el mapa y los puntos pasan al río hasta la playa, y vuelven si se regresa. Los dieciocho y el recorrido guiado siguen siendo los de la ciudad.
+- **Es para quien quiera seguir.** El paseo, sus dieciocho puntos y el recorrido guiado se quedan como están. El tramo del mar es una continuación al final, no una parte del recorrido. La cuenta de metros, pasada la línea, empieza otra vez desde ahí hasta la niebla.
 
 ## Lo que hay ahora
 
@@ -49,8 +49,8 @@ Dónde mirar: la web de jdiezarnal.com (tiene páginas del Grau y de las ataraza
 
 ### 3. Lo que no cambia
 
-- El mapa: se queda en el tramo de ahora. Falta decidir qué hace la marca de la barca cuando sale de él (ver abajo).
-- La cuenta «X m de 3014», los puntos de interés y su total.
+- El mapa: en la ciudad sigue el tramo de ahora, con la marca de la barca parada en el borde si se sale un momento. Pasada la línea, cambia a la hoja del río y la playa, y la marca se mueve. (La decisión de dejarlo siempre en la ciudad se cambió el 8 de octubre de 2026.)
+- La cuenta «X m de 3014» y los dieciocho puntos, mientras se está en la ciudad. Pasada la línea, la cuenta y el cuaderno son los de ese tramo.
 - El recorrido guiado, que sigue acabando donde acaba hoy.
 
 ### 4. Comprobaciones

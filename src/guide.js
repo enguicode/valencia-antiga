@@ -222,15 +222,25 @@ export function createGuide(points, layout, path, camera, elements) {
   });
 
   // The tally counts the ordinary points; the night-only one is an extra.
+  // Past the line at the end of the tour the counter counts the sea points instead.
   const regular = markers.filter((marker) => !marker.bonus);
+  const seaMarkers = markers.filter((marker) => marker.bonus === 'sea');
   [...regular]
     .sort((a, b) => path.project(a.x, a.z).s - path.project(b.x, b.z).s)
     .forEach((marker, i) => (marker.number = i + 1));
   const tally = () => ({ found: regular.filter((marker) => found.has(marker.id)).length, total: regular.length });
+  const seaTally = () => ({ found: seaMarkers.filter((marker) => found.has(marker.id)).length, total: seaMarkers.length });
+  let beyond = false;
+  const shownTally = () => (beyond ? seaTally() : tally());
   const showCount = () => {
-    counter.textContent = t('count', tally());
+    counter.textContent = t('count', shownTally());
   };
   showCount();
+  function setBeyond(value) {
+    if (beyond === value) return;
+    beyond = value;
+    showCount();
+  }
 
   const paint = (marker) => {
     const state = found.has(marker.id) ? 'found' : 'pending';
@@ -318,8 +328,10 @@ export function createGuide(points, layout, path, camera, elements) {
       marker.ring.scale.setScalar(1 + Math.sin(time * 2 + marker.phase) * 0.035);
       marker.pin.position.set(marker.x, 5 + Math.sin(time * 1.6 + marker.phase) * 0.6, marker.z);
       if (distance < RING_RADIUS) entered = marker;
-      // The Grau is not part of the errand: the arrow keeps pointing at the tour.
-      if (!found.has(marker.id) && marker.bonus !== 'sea' && distance < nearestDistance) {
+      // In the city the arrow stays on the tour. Past the line it follows the
+      // run to the beach, and the city's points are no longer the errand.
+      const onThisSheet = beyond ? marker.bonus === 'sea' : marker.bonus !== 'sea';
+      if (!found.has(marker.id) && onThisSheet && distance < nearestDistance) {
         nearest = marker;
         nearestDistance = distance;
       }
@@ -367,10 +379,12 @@ export function createGuide(points, layout, path, camera, elements) {
   }
 
   // The points in the order the river reaches them, for the logbook.
+  // Past the line the book is only the run to the beach, including the ones
+  // not yet found. In the city those stay hidden until they are found.
   const entries = () =>
-    [...markers]
-      .filter((marker) => marker.bonus !== 'sea' || found.has(marker.id))
-      .sort((a, b) => Boolean(a.bonus) - Boolean(b.bonus) || path.project(a.x, a.z).s - path.project(b.x, b.z).s)
+    [...(beyond ? seaMarkers : markers)]
+      .filter((marker) => beyond || marker.bonus !== 'sea' || found.has(marker.id))
+      .sort((a, b) => (beyond ? 0 : Boolean(a.bonus) - Boolean(b.bonus)) || path.project(a.x, a.z).s - path.project(b.x, b.z).s)
       .map((marker) => ({ ...marker, found: found.has(marker.id) }));
 
   // Shows a place that has already been found, from wherever the boat is.
@@ -379,7 +393,7 @@ export function createGuide(points, layout, path, camera, elements) {
     if (marker && found.has(id)) show(marker, true);
   };
 
-  return { group, markers, found, update, reset, entries, visit, tally };
+  return { group, markers, found, update, reset, entries, visit, tally, shownTally, setBeyond, isBeyond: () => beyond };
 }
 
 // Autopilot for the guided tour: holds a steady speed down the middle of the

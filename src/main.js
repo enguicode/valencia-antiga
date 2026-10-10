@@ -92,7 +92,10 @@ if (matchMedia('(pointer: coarse)').matches || new URLSearchParams(location.sear
   document.body.classList.add('touch');
 }
 const distanceLabel = document.getElementById('distance');
-document.getElementById('total').textContent = Math.round(path.end - path.start);
+const totalLabel = document.getElementById('total');
+const tourMetres = Math.round(path.end - path.start);
+const seaMetres = Math.round(path.seaEnd - path.end);
+totalLabel.textContent = tourMetres;
 const helpPanel = document.getElementById('help');
 const debugPanel = document.getElementById('debug');
 const guide = createGuide(points, layout, path, camera, {
@@ -142,8 +145,13 @@ scene.add(guide.group);
 const journal = document.getElementById('journal');
 document.getElementById('status').addEventListener('click', () => {
   const entries = guide.entries();
-  const count = guide.tally();
-  journal.querySelector('.tally').textContent = t(count.found === count.total ? 'journal.all' : 'journal.some', count);
+  const count = guide.shownTally();
+  const seaSheet = guide.isBeyond();
+  journal.querySelector('h2').textContent = t(seaSheet ? 'journal.sea' : 'journal.title');
+  journal.querySelector('.tally').textContent = t(
+    count.found === count.total ? (seaSheet ? 'journal.sea.all' : 'journal.all') : (seaSheet ? 'journal.sea.some' : 'journal.some'),
+    count,
+  );
   journal.querySelector('ol').replaceChildren(
     ...entries.map((entry) => {
       const item = document.createElement('li');
@@ -686,6 +694,8 @@ const mistBank = (() => {
 
 const clock = new THREE.Clock();
 let shownDistance = -1;
+let shownTotal = tourMetres;
+let onSea = false;
 let frames = 0;
 let fpsWindowStart = performance.now();
 
@@ -758,14 +768,26 @@ function frame() {
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
   renderer.render(scene, camera);
+  // The pale line is the join. A few metres of slack, the same as the notice,
+  // so the sheet does not flicker while the boat sits on it.
+  if (onSea) {
+    if (boat.state.s < path.end - 40) onSea = false;
+  } else if (boat.state.s > path.end + 8) onSea = true;
+  guide.setBeyond(onSea);
   if (started) guide.update(time, boat.state);
-  minimap.update(boat.state);
+  minimap.update(boat.state, onSea);
 
-  // The count stays the length of the tour, even while the boat sails on.
-  const distance = Math.round(Math.min(boat.state.s, path.end) - path.start);
-  if (distance !== shownDistance) {
+  // In the city the metres are the tour. Past the line they start again,
+  // from there to the mist at the end of the river.
+  const distance = onSea
+    ? Math.round(Math.min(Math.max(boat.state.s, path.end), path.seaEnd) - path.end)
+    : Math.round(Math.min(boat.state.s, path.end) - path.start);
+  const total = onSea ? seaMetres : tourMetres;
+  if (distance !== shownDistance || total !== shownTotal) {
     shownDistance = distance;
+    shownTotal = total;
     distanceLabel.textContent = distance;
+    totalLabel.textContent = total;
   }
   if (axes.used || tour.active) helpPanel.classList.add('dismissed');
 

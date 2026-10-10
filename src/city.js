@@ -83,7 +83,7 @@ export function createCity(layout) {
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
-    createSurface('mottle', 9, { color: 0xb8a67e, side: THREE.DoubleSide }),
+    createSurface('earth', 14, { color: COLORS.earth, roughness: 1, side: THREE.DoubleSide }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = BANK.height + 0.04; // just over the river bank's ground, which it overlaps

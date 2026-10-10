@@ -180,6 +180,7 @@ export function createSea(scene, path, layout, waterMaterial) {
 
   const beach = createBeach(mouth, path);
   group.add(createHinterland(mouth, path, fieldReach, grass));
+  group.add(createCountry(mouth, path, fieldReach, facades));
   const sea = createSeaPlane(mouth, waterMaterial);
   let villageLights = [];
   if (grau) {
@@ -646,9 +647,9 @@ function createBeach(mouth, path) {
   const positions = new Float32Array(rows * columns * 3);
   const colors = new Float32Array(rows * columns * 3);
   const indices = [];
-  const dry = new THREE.Color(0xdcc7a4);
-  const wet = new THREE.Color(0xa89068);
-  const pale = new THREE.Color(0xe7d6b4);
+  const dry = new THREE.Color(0xf2dfb6);
+  const wet = new THREE.Color(0xb99f74);
+  const pale = new THREE.Color(0xfaecc8);
   const tint = new THREE.Color();
   for (let row = 0; row < rows; row++) {
     const along = alongFrom + ((alongTo - alongFrom) * row) / (rows - 1);
@@ -747,6 +748,121 @@ function createHinterland(mouth, path, fieldReach, material) {
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return new THREE.Mesh(geometry, material);
+}
+
+// What stands on that land: a line of trees along the back of the sand,
+// clumps and farmhouses beyond it, and the road to the Grau between two rows
+// of trees. From a boat flat ground is a hairline on the horizon; it is the
+// trees that show the Grau standing on the shore of the huerta and not out
+// at sea. All of it placed by eye. The Camí del Grau did run from the city
+// to the Grau on the north side of the river; its line here is not surveyed.
+function createCountry(mouth, path, fieldReach, facades) {
+  const random = createRandom(1720);
+  const land = 1.42;
+  const trunks = [];
+  const crowns = [];
+  const bodies = [];
+  const roofs = [];
+  const dummy = new THREE.Object3D();
+  // The Grau and its houses, which trees and farms keep clear of.
+  const village = (along, seaward) => along > -800 && along < -390 && seaward > -235;
+  // Ground that is neither sand, nor channel, nor one of the fields.
+  const free = (along, seaward, clear = 14) => {
+    if (seaward > -166 || village(along, seaward)) return null;
+    const at = frame(mouth, along, seaward);
+    const onRiver = path.project(at.x, at.z);
+    const lateral = Math.abs(onRiver.lateral);
+    if (lateral < waterHalf(path, onRiver.s) + clear) return null;
+    if (onRiver.s < path.mouth - 150 && lateral < fieldReach(onRiver.s) + 16) return null;
+    return at;
+  };
+  const plant = (at, scale) => {
+    if (!at) return;
+    dummy.rotation.set(0, random() * Math.PI, 0);
+    dummy.scale.setScalar(scale);
+    dummy.position.set(at.x, land + scale, at.z);
+    dummy.updateMatrix();
+    trunks.push({ matrix: dummy.matrix.clone() });
+    dummy.scale.set(scale * (0.9 + random() * 0.3), scale * (0.85 + random() * 0.4), scale * (0.9 + random() * 0.3));
+    dummy.position.set(at.x, land + scale * 3.7, at.z);
+    dummy.updateMatrix();
+    crowns.push({ matrix: dummy.matrix.clone() });
+  };
+
+  // Tall enough to stand over the roofs: seen from the water, this row is
+  // the land. Behind the Grau it steps back to clear the houses.
+  for (let along = -1490; along < 890; along += 6.5) {
+    const back = village(along, -200) ? -244 : -172;
+    plant(free(along + random() * 4, back - random() * 34), 1.5 + random() * 1.2);
+  }
+  for (let clump = 0; clump < 70; clump++) {
+    const along = -1450 + random() * 2300;
+    const seaward = -1380 + random() * 1150;
+    const trees = 3 + Math.floor(random() * 6);
+    for (let i = 0; i < trees; i++) {
+      plant(free(along + (random() - 0.5) * 60, seaward + (random() - 0.5) * 60), 1.1 + random() * 1.1);
+    }
+  }
+
+  // The road: from behind the church, inland towards the city.
+  const from = { along: -470, seaward: -236 };
+  const to = { along: -350, seaward: -1390 };
+  const length = Math.hypot(to.along - from.along, to.seaward - from.seaward);
+  const ux = (to.along - from.along) / length;
+  const uy = (to.seaward - from.seaward) / length;
+  const road = [];
+  for (let d = 0; d <= length; d += 15) {
+    const along = from.along + ux * d;
+    const seaward = from.seaward + uy * d;
+    if (d > 0 && !free(along, seaward, 6)) break;
+    road.push(frame(mouth, along - uy * 3, seaward + ux * 3), frame(mouth, along + uy * 3, seaward - ux * 3));
+    for (const side of [-1, 1]) {
+      plant(free(along - uy * side * 7.5, seaward + ux * side * 7.5, 6), 1.5 + random() * 0.4);
+    }
+  }
+  const positions = [];
+  const indices = [];
+  road.forEach((point) => positions.push(point.x, land + 0.05, point.z));
+  for (let i = 0; i + 3 < road.length; i += 2) indices.push(i, i + 2, i + 1, i + 1, i + 2, i + 3);
+  const strip = new THREE.BufferGeometry();
+  strip.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  strip.setIndex(indices);
+  strip.computeVertexNormals();
+
+  const roofGeometry = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4);
+  roofGeometry.rotateY(Math.PI / 4);
+  for (let placed = 0, tries = 0; placed < 10 && tries < 80; tries++) {
+    const at = free(-1400 + random() * 2200, -1300 + random() * 1050, 40);
+    if (!at) continue;
+    const width = 11 + random() * 5;
+    const depth = 8 + random() * 4;
+    const height = 6 + random() * 2.5;
+    const roof = 2.2 + random();
+    dummy.rotation.set(0, random() * Math.PI, 0);
+    dummy.position.set(at.x, land + height / 2, at.z);
+    dummy.scale.set(width, height, depth);
+    dummy.updateMatrix();
+    bodies.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(COLORS.houseWalls[placed % COLORS.houseWalls.length]) });
+    dummy.position.set(at.x, land + height + roof / 2, at.z);
+    dummy.scale.set(width * 1.08, roof, depth * 1.08);
+    dummy.updateMatrix();
+    roofs.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(COLORS.roofs[placed % COLORS.roofs.length]) });
+    placed++;
+  }
+
+  const group = new THREE.Group();
+  group.add(
+    createInstances(
+      new THREE.CylinderGeometry(0.3, 0.42, 2, 5),
+      new THREE.MeshStandardMaterial({ color: COLORS.trunk, roughness: 1 }),
+      trunks,
+    ),
+    createInstances(createCrownGeometry(), createSurface('mottle', 2.2, { color: COLORS.foliage }), crowns),
+    createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
+    createInstances(roofGeometry, createSurface('tiles', 3), roofs),
+    new THREE.Mesh(strip, createSurface('mottle', 6, { color: 0xb9a070, roughness: 1, side: THREE.DoubleSide })),
+  );
+  return group;
 }
 
 function createSeaPlane(mouth, waterMaterial) {

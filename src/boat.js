@@ -1009,17 +1009,18 @@ function createNumberTexture() {
 }
 const NUMBER = createNumberTexture();
 
-// The jet ski: a flat chined hull, footwells and a saddle, and the same
-// boatman astride it in his straw hat. The plume astern grows with the speed.
+// The jet ski: a flat chined hull under a top deck that rises in a hood to
+// the bars and runs aft as a long saddle, and the same boatman astride it in
+// his straw hat. The plume astern grows with the speed.
 const JETSKI_HULL = {
   length: 3.35,
   halfBeam: (t) => {
     // Full beam under the rider, a fine entry, a broad stern.
     const entry = t > 0 ? (1 - t ** 1.55) ** 0.55 : 1;
     const stern = t < -0.55 ? 1 - 0.08 * ((-t - 0.55) / 0.45) ** 2 : 1;
-    return 0.58 * entry * stern;
+    return 0.52 * entry * stern;
   },
-  sheer: (t) => 0.34 + 0.46 * Math.max(t - 0.12, 0) ** 1.45,
+  sheer: (t) => 0.3 + 0.42 * Math.max(t - 0.12, 0) ** 1.45,
   keel: (t) => -0.22 + 0.4 * Math.max(t, 0) ** 2,
   flare: 0.36,
   turn: 3.4,
@@ -1047,24 +1048,32 @@ function createJetSki() {
   }
   // Footwells either side of the saddle, floored below the side decks.
   for (const side of [-1, 1]) {
-    add('shell', new THREE.BoxGeometry(0.16, 0.07, 1.05), side * 0.46, 0.4, -0.05);
-    add('saddle', new THREE.BoxGeometry(0.26, 0.035, 0.78), side * 0.3, 0.355, 0.02);
+    add('shell', new THREE.BoxGeometry(0.14, 0.07, 1.05), side * 0.42, 0.36, -0.05);
+    add('saddle', new THREE.BoxGeometry(0.22, 0.035, 0.78), side * 0.29, 0.318, 0.02);
   }
-  add('saddle', new THREE.BoxGeometry(0.3, 0.1, 0.78), 0, 0.48, -0.28);
-  add('saddle', new THREE.SphereGeometry(0.15, 10, 8).scale(1, 0.7, 1.15), 0, 0.5, 0.12);
-  add('saddle', new THREE.SphereGeometry(0.16, 10, 8).scale(1.05, 0.85, 0.7), 0, 0.52, -0.62);
-  add('saddle', new THREE.BoxGeometry(0.72, 0.045, 0.4), 0, 0.37, z(-0.72)); // boarding pad
-  for (let i = 0; i < 3; i++) add('shell', new THREE.BoxGeometry(0.5, 0.012, 0.025), 0, 0.4, z(-0.72) + 0.1 - i * 0.08);
-  // A low foredeck blister, sunk so only the dome shows, then the bars.
-  add('accent', new THREE.SphereGeometry(1, 12, 8).scale(0.34, 0.08, 0.4), 0, 0.36, 0.86);
-  add('saddle', spar(v(0, 0.48, 0.28), v(0, 0.84, 0.16), 0.038));
+  // The top deck in one line from stern to bow: saddle, then the hood.
+  const ease = THREE.MathUtils.smoothstep;
+  const top = (t) => 0.5 + 0.12 * ease(t, 0, 0.45) + 0.2 * ease(t, 0.45, 0.62) - 0.44 * ease(t, 0.66, 1);
+  const wide = (t) => 0.2 + 0.1 * ease(t, 0.4, 0.62) - 0.26 * ease(t, 0.72, 1);
+  const body = (from, to, count) =>
+    loft(
+      stations(z(-0.8) + (z(0.93) - z(-0.8)) * from, z(-0.8) + (z(0.93) - z(-0.8)) * to, count, (u) => {
+        const t = from + (to - from) * u;
+        return ovalRing(0, (0.3 + top(t)) / 2, wide(t), (top(t) - 0.3) / 2);
+      }),
+    );
+  add('saddle', body(0, 0.5, 6));
+  add('shell', body(0.5, 1, 9));
+  add('accent', new THREE.SphereGeometry(1, 12, 8).scale(0.2, 0.05, 0.34), 0, 0.72, 0.95); // hood flash
+  add('saddle', new THREE.BoxGeometry(0.66, 0.045, 0.4), 0, 0.33, z(-0.72)); // boarding pad
+  for (let i = 0; i < 3; i++) add('shell', new THREE.BoxGeometry(0.46, 0.012, 0.025), 0, 0.36, z(-0.72) + 0.1 - i * 0.08);
+  // The bars, on a column out of the back of the hood.
+  add('saddle', spar(v(0, 0.6, 0.3), v(0, 0.86, 0.16), 0.045));
   add('metal', new THREE.CylinderGeometry(0.026, 0.026, 0.62, 8).rotateZ(Math.PI / 2), 0, 0.86, 0.16);
   for (const side of [-1, 1]) {
     add('saddle', new THREE.CylinderGeometry(0.034, 0.034, 0.14, 8).rotateZ(Math.PI / 2), side * 0.34, 0.86, 0.16);
   }
-  add('saddle', new THREE.CylinderGeometry(0.055, 0.055, 0.02, 10).rotateX(1.15), 0, 0.66, 0.26);
-  add('shell', new THREE.CylinderGeometry(0.04, 0.04, 0.012, 10).rotateX(1.15), 0, 0.67, 0.28);
-  add('glass', new THREE.BoxGeometry(0.32, 0.12, 0.016).rotateX(-0.7), 0, 0.72, 0.36);
+  add('glass', new THREE.BoxGeometry(0.36, 0.14, 0.016).rotateX(-0.75), 0, 0.88, 0.44);
   // Grab rail, jet nozzle and the intake grate under the flat bottom.
   add('metal', spar(v(-0.16, 0.52, -0.62), v(-0.16, 0.74, -0.74), 0.016));
   add('metal', spar(v(0.16, 0.52, -0.62), v(0.16, 0.74, -0.74), 0.016));
@@ -1511,11 +1520,13 @@ function junkRig() {
   };
 }
 
-// Flat-bottomed, high in the stern, one battened sail and an eye on each bow.
+// Flat-bottomed and high in the stern, with an eye on each bow. Three masts:
+// the mainsail is the rig that comes down for the bridges; the fore and the
+// mizzen are short enough to stay up under them.
 const JUNK_HULL = {
   length: 9.4,
   halfBeam: (t) => 1.4 * (1 - Math.abs(t) ** (t > 0 ? 2.2 : 3.4)) ** 0.72,
-  sheer: (t) => 0.5 + 0.12 * t * t + (t < 0 ? 0.7 * (-t) ** 2.2 : 0.22 * t ** 2),
+  sheer: (t) => 0.5 + 0.12 * t * t + (t < 0 ? 1.2 * (-t) ** 2.2 : 0.45 * t ** 2),
   keel: (t) => -0.28 + 0.34 * Math.abs(t) ** 2.6,
   flare: 0.42,
   turn: 4.5,
@@ -1549,6 +1560,20 @@ function createJunk() {
   add('trim', new THREE.BoxGeometry(0.09, sternH + 0.12, 0.08), 0, sternMid, sternZ);
   add('accent', new THREE.BoxGeometry(hull.halfBeam(-1) * 1.5, sternH, 0.05), 0, sternMid, sternZ - 0.05);
   add('trim', rudderBlade(sternH * 0.95, 0.5), 0, hull.sheer(-1) - 0.08, sternZ - 0.1);
+  // Fore and mizzen: a pole and a small flat lugsail each, set a little
+  // across the boat so they are not seen edge-on from astern.
+  const lug = (t, top, width, foot) => {
+    const deck = hull.sheer(t);
+    add('trim', spar(v(0, deck - 0.1, z(t)), v(0, top, z(t) + 0.12), 0.05));
+    const height = top - 0.15 - foot;
+    const panel = (geometry, y) => add('cloth', geometry.rotateY(0.28), 0.05, y, z(t) - width * 0.3);
+    panel(new THREE.BoxGeometry(0.02, height, width), foot + height / 2);
+    for (let i = 0; i <= 4; i++) {
+      add('trim', new THREE.BoxGeometry(0.045, 0.04, width + 0.08).rotateY(0.28), 0.05, foot + (height * i) / 4, z(t) - width * 0.3);
+    }
+  };
+  lug(0.64, 3.55, 1.5, 1.25);
+  lug(-0.88, 3.6, 1.1, 2.1);
   const eyeT = 0.72;
   const eyeY = hull.keel(eyeT) + (hull.sheer(eyeT) - hull.keel(eyeT)) * 0.68;
   for (const side of [-1, 1]) {
@@ -1577,10 +1602,11 @@ function createJunk() {
       shell,
       accent: paint(0xa33b32, 0.55),
       trim: paint(0x3a2418, 0.75),
+      cloth: paint(0xa9683c, 1),
       eye,
       sail: new THREE.MeshStandardMaterial({
         map: TEXTURES.cloth,
-        color: 0xc6a56c,
+        color: 0xb9703f,
         roughness: 1,
         side: THREE.DoubleSide,
       }),

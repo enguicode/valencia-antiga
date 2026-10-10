@@ -1009,21 +1009,22 @@ function createNumberTexture() {
 }
 const NUMBER = createNumberTexture();
 
-// The jet ski: a flat chined hull under a top deck that rises in a hood to
-// the bars and runs aft as a long saddle, and the same boatman astride it in
-// his straw hat. The plume astern grows with the speed.
+// The jet ski. The shell is the low, narrower bottom; the deck above it is
+// wider and carries the footprint (length 3.35, beam about 1.04). Proportions
+// from photographs of a Sea-Doo, not from a lines plan.
 const JETSKI_HULL = {
   length: 3.35,
   halfBeam: (t) => {
-    // Full beam under the rider, a fine entry, a broad stern.
-    const entry = t > 0 ? (1 - t ** 1.55) ** 0.55 : 1;
-    const stern = t < -0.55 ? 1 - 0.08 * ((-t - 0.55) / 0.45) ** 2 : 1;
-    return 0.52 * entry * stern;
+    const entry = t > 0.02 ? (1 - ((t - 0.02) / 0.98) ** 1.4) ** 0.62 : 1;
+    const stern = t < -0.75 ? 1 - 0.2 * ((-t - 0.75) / 0.25) ** 1.3 : 1;
+    return 0.4 * entry * stern;
   },
-  sheer: (t) => 0.3 + 0.42 * Math.max(t - 0.12, 0) ** 1.45,
-  keel: (t) => -0.22 + 0.4 * Math.max(t, 0) ** 2,
-  flare: 0.36,
-  turn: 3.4,
+  sheer: (t) => 0.14 + 0.2 * Math.max(t - 0.05, 0) ** 1.35,
+  keel: (t) => -0.16 + 0.24 * Math.max(t, 0) ** 2.15,
+  flare: 0.8,
+  turn: 2.15,
+  stations: 20,
+  girth: 12,
 };
 
 function createJetSki() {
@@ -1031,42 +1032,90 @@ function createJetSki() {
   const { add, geometries } = pieceBin();
   const hull = JETSKI_HULL;
   const z = (t) => stationZ(hull, t);
-  const deck = createLidGeometry(hull);
-  deck.computeVertexNormals();
-  add('deck', deck);
+  const ease = THREE.MathUtils.smoothstep;
+  // Deck wider than the shell, low amidships, pinching onto the bow and
+  // dropping a hand's breadth at the stern for the boarding platform.
+  const railY = (t) => {
+    const deck = 0.3 - 0.08 * ease(-t, 0.6, 0.95);
+    return deck * (1 - ease(t, 0.55, 0.92)) + (hull.sheer(t) + 0.02) * ease(t, 0.55, 0.92);
+  };
+  const deckHalf = (t) => {
+    const entry = t > 0 ? (1 - Math.min(1, t) ** 1.55) ** 0.55 : 1;
+    const stern = t < -0.8 ? 1 - 0.06 * ((-t - 0.8) / 0.2) : 1;
+    const wide = 0.52 * entry * Math.max(0.9, stern);
+    const bow = ease(t, 0.62, 0.9);
+    return Math.max(0.04, wide * (1 - bow) + hull.halfBeam(t) * bow);
+  };
+  const crownLift = (t) => {
+    const seat = 0.24 * (1 - ease(t, -0.05, 0.12)) * (1 - ease(-t, 0.48, 0.7));
+    const hood = 0.44 * Math.exp(-(((t - 0.24) / 0.18) ** 2));
+    return Math.max(seat, hood);
+  };
+  const wellDepth = (t) => 0.15 * ease(t, -0.58, -0.38) * (1 - ease(t, 0.16, 0.4));
+  // Closed section: underside tucked onto the shell, trenches beside a centre
+  // that rises into the saddle and then the hood. Same point count every station.
+  const deckRing = (t) => {
+    const rail = railY(t);
+    const half = deckHalf(t);
+    const skin = Math.min(half - 0.02, hull.halfBeam(t) + 0.015);
+    const skirtY = Math.min(rail - 0.04, hull.sheer(t) - 0.015);
+    const floorY = rail - Math.max(wellDepth(t), 0.012);
+    const crown = rail + crownLift(t);
+    const limit = half - 0.02;
+    let x2 = 0.1 + Math.min(0.1, crownLift(t) * 0.25);
+    let x3 = x2 + 0.035;
+    let x4 = Math.min(half - 0.055, Math.max(x3 + 0.14, half - 0.1));
+    if (x4 > limit) {
+      const scale = limit / x4;
+      x2 *= scale;
+      x3 *= scale;
+      x4 = limit;
+    }
+    if (x3 > x4 - 0.015) x3 = x4 - 0.015;
+    if (x2 > x3 - 0.015) x2 = Math.max(0.03, x3 - 0.015);
+    return [
+      [-skin, skirtY],
+      [skin, skirtY],
+      [half, rail],
+      [x4, rail],
+      [x4, floorY],
+      [x3, floorY],
+      [x2, crown],
+      [0.012, crown],
+      [-0.012, crown],
+      [-x2, crown],
+      [-x3, floorY],
+      [-x4, floorY],
+      [-x4, rail],
+      [-half, rail],
+    ];
+  };
+  const deckFrom = -0.97;
+  const deckTo = 0.9;
   add('shell', createHullGeometry(hull));
   add('shell', transomCap(hull));
-  // Gunwale and the red boot stripe, just proud of the topsides.
-  for (const tube of sideTubes((t) => v(hull.halfBeam(t), hull.sheer(t) + 0.02, z(t)), 0.026)) add('saddle', tube);
-  for (const tube of sideTubes(
-    (t) => v(hull.halfBeam(t) * 1.02, hull.keel(t) + (hull.sheer(t) - hull.keel(t)) * 0.58, z(t)),
-    0.03,
-    -0.9,
-    0.72,
-  )) {
+  add('shell', loft(stations(z(deckFrom), z(deckTo), 16, (u) => deckRing(deckFrom + (deckTo - deckFrom) * u))));
+  add(
+    'saddle',
+    loft(
+      stations(z(-0.58), z(0.02), 7, (u) => {
+        const t = -0.58 + 0.6 * u;
+        return ovalRing(0, railY(t) + crownLift(t) + 0.02, 0.1 + 0.07 * Math.sin(u * Math.PI), 0.05, 10);
+      }),
+    ),
+  );
+  for (const tube of sideTubes((t) => v(deckHalf(t), railY(t), z(t)), 0.016, -0.94, 0.78)) add('saddle', tube);
+  const bandY = (t) => hull.keel(t) + (hull.sheer(t) - hull.keel(t)) * 0.5;
+  for (const tube of sideTubes((t) => v(hullHalfWidth(hull, t, bandY(t)) + 0.008, bandY(t), z(t)), 0.018, -0.85, 0.65)) {
     add('accent', tube);
   }
-  // Footwells either side of the saddle, floored below the side decks.
-  for (const side of [-1, 1]) {
-    add('shell', new THREE.BoxGeometry(0.14, 0.07, 1.05), side * 0.42, 0.36, -0.05);
-    add('saddle', new THREE.BoxGeometry(0.22, 0.035, 0.78), side * 0.29, 0.318, 0.02);
+  for (const side of [-1, 1]) add('deck', new THREE.BoxGeometry(0.18, 0.016, 0.9), side * 0.32, 0.17, -0.05);
+  add('accent', new THREE.SphereGeometry(1, 12, 8).scale(0.22, 0.035, 0.3), 0, railY(0.3) + crownLift(0.3) + 0.02, z(0.3));
+  const padT = -0.78;
+  add('saddle', new THREE.BoxGeometry(0.5, 0.028, 0.32), 0, railY(padT) + 0.02, z(padT));
+  for (let i = 0; i < 3; i++) {
+    add('shell', new THREE.BoxGeometry(0.42, 0.01, 0.02), 0, railY(padT) + 0.042, z(padT) + 0.08 - i * 0.08);
   }
-  // The top deck in one line from stern to bow: saddle, then the hood.
-  const ease = THREE.MathUtils.smoothstep;
-  const top = (t) => 0.5 + 0.12 * ease(t, 0, 0.45) + 0.2 * ease(t, 0.45, 0.62) - 0.44 * ease(t, 0.66, 1);
-  const wide = (t) => 0.2 + 0.1 * ease(t, 0.4, 0.62) - 0.26 * ease(t, 0.72, 1);
-  const body = (from, to, count) =>
-    loft(
-      stations(z(-0.8) + (z(0.93) - z(-0.8)) * from, z(-0.8) + (z(0.93) - z(-0.8)) * to, count, (u) => {
-        const t = from + (to - from) * u;
-        return ovalRing(0, (0.3 + top(t)) / 2, wide(t), (top(t) - 0.3) / 2);
-      }),
-    );
-  add('saddle', body(0, 0.5, 6));
-  add('shell', body(0.5, 1, 9));
-  add('accent', new THREE.SphereGeometry(1, 12, 8).scale(0.2, 0.05, 0.34), 0, 0.72, 0.95); // hood flash
-  add('saddle', new THREE.BoxGeometry(0.66, 0.045, 0.4), 0, 0.33, z(-0.72)); // boarding pad
-  for (let i = 0; i < 3; i++) add('shell', new THREE.BoxGeometry(0.46, 0.012, 0.025), 0, 0.36, z(-0.72) + 0.1 - i * 0.08);
   // The bars, on a column out of the back of the hood.
   add('saddle', spar(v(0, 0.6, 0.3), v(0, 0.86, 0.16), 0.045));
   add('metal', new THREE.CylinderGeometry(0.026, 0.026, 0.62, 8).rotateZ(Math.PI / 2), 0, 0.86, 0.16);
@@ -1074,18 +1123,20 @@ function createJetSki() {
     add('saddle', new THREE.CylinderGeometry(0.034, 0.034, 0.14, 8).rotateZ(Math.PI / 2), side * 0.34, 0.86, 0.16);
   }
   add('glass', new THREE.BoxGeometry(0.36, 0.14, 0.016).rotateX(-0.75), 0, 0.88, 0.44);
-  // Grab rail, jet nozzle and the intake grate under the flat bottom.
-  add('metal', spar(v(-0.16, 0.52, -0.62), v(-0.16, 0.74, -0.74), 0.016));
-  add('metal', spar(v(0.16, 0.52, -0.62), v(0.16, 0.74, -0.74), 0.016));
-  add('metal', spar(v(-0.16, 0.74, -0.74), v(0.16, 0.74, -0.74), 0.016));
+  // Grab rail on the platform, jet nozzle and the intake grate under the flat bottom.
+  const gy = railY(-0.82) + 0.02;
+  const gz = z(-0.82);
+  add('metal', spar(v(-0.14, gy, gz + 0.16), v(-0.14, gy + 0.14, gz), 0.016));
+  add('metal', spar(v(0.14, gy, gz + 0.16), v(0.14, gy + 0.14, gz), 0.016));
+  add('metal', spar(v(-0.14, gy + 0.14, gz), v(0.14, gy + 0.14, gz), 0.016));
   add('saddle', new THREE.CylinderGeometry(0.07, 0.1, 0.2, 12).rotateX(Math.PI / 2), 0, 0.02, z(-1) - 0.06);
   add('metal', new THREE.TorusGeometry(0.062, 0.012, 6, 14).rotateY(Math.PI / 2), 0, 0.02, z(-1) - 0.16);
   add('saddle', new THREE.BoxGeometry(0.26, 0.02, 0.32), 0, -0.04, z(-1) + 0.02);
   for (let i = 0; i < 4; i++) add('metal', new THREE.BoxGeometry(0.2, 0.012, 0.02), 0, hull.keel(0) - 0.01, -0.12 + i * 0.055);
-  // The boatman, astride the saddle and leaned forward onto the bars.
+  // The boatman, astride the saddle, feet down in the wells, leaned onto the bars.
   const seat = -0.3;
   for (const side of [-1, 1]) {
-    add('breeches', spar(v(side * 0.14, 0.68, seat + 0.05), v(side * 0.3, 0.4, 0.08), 0.072));
+    add('breeches', spar(v(side * 0.14, 0.68, seat + 0.05), v(side * 0.32, 0.24, 0.0), 0.072));
     add('shirt', spar(v(side * 0.16, 1.1, seat + 0.08), v(side * 0.28, 0.9, 0.14), 0.046));
   }
   add('breeches', new THREE.BoxGeometry(0.34, 0.14, 0.3), 0, 0.66, seat);
@@ -1360,15 +1411,28 @@ function addCrew(add, x, y, z) {
   add('straw', new THREE.CylinderGeometry(0.11, 0.14, 0.12, 12), x, y + 1.09, z);
 }
 
-// Long, narrow and black, with the iron comb on the bow and one oar. No sail,
-// so nothing has to come down for a bridge.
+// Long, narrow and black, bow higher than the stern, flat bottom, ends rising
+// clear of the water. Length and the port half-beam stay put: the starboard
+// lean is applied in createGondola, inside that half-beam.
 const GONDOLA_HULL = {
   length: 11,
-  halfBeam: (t) => 0.68 * (1 - Math.abs(t) ** 1.7) ** 0.72,
-  sheer: (t) => 0.26 + 0.7 * Math.abs(t) ** 2.2,
-  keel: (t) => -0.2 + 0.28 * t * t,
-  flare: 0.5,
-  turn: 2.3,
+  halfBeam: (t) => 0.68 * (1 - Math.abs(t) ** 2.05) ** 0.55,
+  sheer: (t) => {
+    const up = (s, from) => {
+      const u = Math.max(0, (s - from) / (1 - from));
+      return u * u * (3 - 2 * u);
+    };
+    return 0.3 + 0.74 * up(Math.max(t, 0), 0.4) + 0.52 * up(Math.max(-t, 0), 0.32);
+  },
+  keel: (t) => {
+    const u = Math.max(0, (Math.abs(t) - 0.58) / 0.42);
+    const s = u * u * (3 - 2 * u);
+    return -0.18 + 0.46 * s;
+  },
+  flare: 0.9,
+  turn: 5.2,
+  stations: 22,
+  girth: 14,
 };
 
 function createGondola() {
@@ -1376,41 +1440,187 @@ function createGondola() {
   const { add, geometries } = pieceBin();
   const hull = GONDOLA_HULL;
   const z = (t) => stationZ(hull, t);
-  add('shell', createHullGeometry(hull));
-  for (const tube of sideTubes((t) => v(hull.halfBeam(t), hull.sheer(t) + 0.02, z(t)), 0.02, -0.92, 0.9)) {
-    add('metal', tube);
+  // The hull lists to starboard (the rowing side). Port stays on halfBeam so
+  // the plan box does not grow. The shared hull builder is symmetric.
+  const sideX = (t, x) => (x < 0 ? x * (1 - 0.22 * Math.max(0, 1 - Math.abs(t) ** 1.45)) : x);
+  const shellGeo = createHullGeometry(hull);
+  const positions = shellGeo.attributes.position;
+  for (let i = 0; i < positions.count; i++) {
+    const t = (positions.getZ(i) * 2) / hull.length;
+    positions.setX(i, sideX(t, positions.getX(i)));
   }
-  add('deck', new THREE.BoxGeometry(0.55, 0.04, 6.2), 0, 0.1, -0.3);
-  // Two armchairs and the little stool the gondolier stands on.
-  for (const seat of [-1.15, 0.55]) {
-    add('accent', new THREE.BoxGeometry(0.46, 0.08, 0.48), 0, 0.2, seat);
-    add('accent', new THREE.BoxGeometry(0.46, 0.32, 0.06), 0, 0.38, seat - 0.21);
+  shellGeo.computeVertexNormals();
+  add('shell', shellGeo);
+  // sideTubes mirrors, which would undo the lean.
+  const railOf = (side) => {
+    const points = [];
+    for (let i = 0; i <= 18; i++) {
+      const t = -0.92 + (1.82 * i) / 18;
+      points.push(v(sideX(t, side * hull.halfBeam(t)), hull.sheer(t) + 0.02, z(t)));
+    }
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 36, 0.02, 5);
+  };
+  add('metal', railOf(-1));
+  add('metal', railOf(1));
+  const sheet = (t0, t1, yAt, inset) => {
+    const steps = 8;
+    const sheetPositions = [];
+    const indices = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = t0 + ((t1 - t0) * i) / steps;
+      const within = Math.min(sideX(t, hull.halfBeam(t)), -sideX(t, -hull.halfBeam(t))) - inset;
+      const half = Math.max(0.05, within);
+      sheetPositions.push(-half, yAt(t), z(t), half, yAt(t), z(t));
+      if (i) {
+        const a = (i - 1) * 2;
+        indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(sheetPositions, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
+  };
+  add('deck', sheet(0.56, 0.88, (t) => hull.sheer(t) - 0.035, 0.05));
+  add('deck', sheet(-0.92, -0.5, (t) => hull.sheer(t) - 0.04, 0.05));
+  add('deck', sheet(-0.4, 0.4, () => 0.06, 0.12));
+  // Two seats: the forward one faces the stern, the aft one faces the bow.
+  const archedBack = () => {
+    const w = 0.5;
+    const h = 0.4;
+    const shape = new THREE.Shape();
+    shape.moveTo(-w / 2, 0);
+    shape.lineTo(-w / 2, 0.12);
+    shape.lineTo(-w * 0.32, h * 0.62);
+    shape.lineTo(-w * 0.1, h * 0.9);
+    shape.lineTo(0, h);
+    shape.lineTo(w * 0.1, h * 0.9);
+    shape.lineTo(w * 0.32, h * 0.62);
+    shape.lineTo(w / 2, 0.12);
+    shape.lineTo(w / 2, 0);
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: false });
+    geometry.translate(0, 0, -0.02);
+    return geometry;
+  };
+  const sit = (at, facing) => {
+    add('trim', new THREE.BoxGeometry(0.46, 0.16, 0.4), 0, 0.16, at);
+    add('accent', new THREE.BoxGeometry(0.48, 0.07, 0.42), 0, 0.275, at);
+    add('trim', archedBack(), 0, 0.24, at + facing * 0.26);
+    add('accent', new THREE.BoxGeometry(0.4, 0.18, 0.03), 0, 0.42, at + facing * 0.22);
+    for (const side of [-1, 1]) add('trim', new THREE.BoxGeometry(0.04, 0.06, 0.32), side * 0.25, 0.32, at);
+  };
+  sit(0.62, 1);
+  sit(-1.05, -1);
+  // Ferro, from the photograph: axe head with the Rialto notch, one tooth aft
+  // under the head, six teeth forward growing longer toward the bottom. The
+  // outline is [z, y] from the stem head. Kept inside the old iron's reach.
+  const ferro = [[-0.42, -0.58], [-0.16, -0.22], [0, -0.02], [0.015, 0.04]];
+  for (let i = 0; i < 6; i++) {
+    const y0 = 0.05 + i * 0.052;
+    const reach = 0.24 - i * 0.02;
+    ferro.push([0.015, y0], [reach, y0], [reach, y0 + 0.028], [0.015, y0 + 0.028]);
   }
-  const stand = -3.5;
-  add('deck', new THREE.BoxGeometry(0.5, 0.06, 0.7), 0, hull.sheer(-0.64) - 0.08, stand);
-  // Ferro: a spine and six teeth that rise forward, plus the hooked crest.
-  // Flat rungs on a post read as a ladder from the side.
+  ferro.push(
+    [0.02, 0.4],
+    [0.14, 0.44],
+    [0.22, 0.5],
+    [0.12, 0.545],
+    [0.09, 0.6],
+    [0.14, 0.655],
+    [0.24, 0.74],
+    [0.26, 0.92],
+    [0.18, 1.1],
+    [0.04, 1.18],
+    [-0.05, 1.1],
+    [-0.06, 0.86],
+    [-0.04, 0.64],
+    [-0.14, 0.58],
+    [-0.14, 0.5],
+    [-0.02, 0.46],
+    [-0.03, 0.2],
+    [-0.06, 0.02],
+    [-0.2, -0.16],
+    [-0.42, -0.5],
+  );
   const bowY = hull.sheer(1);
   const bowZ = z(1);
-  add('metal', new THREE.BoxGeometry(0.028, 1.15, 0.03), 0, bowY + 0.48, bowZ - 0.02);
-  for (let i = 0; i < 6; i++) {
-    // Root on the spine, then raked up toward the bow. A shallow rake still
-    // reads as the rungs of a ladder from the side.
-    const tooth = new THREE.BoxGeometry(0.02, 0.045, 0.32 - i * 0.028);
-    tooth.translate(0, 0, (0.32 - i * 0.028) / 2);
-    tooth.rotateX(-0.78 - i * 0.05);
-    add('metal', tooth, 0, bowY + 0.16 + i * 0.13, bowZ - 0.02);
+  add('metal', plate(ferro, 0.016), 0, bowY, bowZ);
+  // Risso: a small curl on the sternpost. No photograph of one was found, so
+  // this is only the hook, not the full iron.
+  add(
+    'metal',
+    plate(
+      [
+        [0, 0],
+        [0.045, 0],
+        [0.05, 0.28],
+        [0.02, 0.4],
+        [-0.04, 0.42],
+        [-0.02, 0.34],
+        [0.015, 0.3],
+        [0.012, 0.02],
+      ],
+      0.016,
+    ),
+    0,
+    hull.sheer(-1),
+    z(-1),
+  );
+  // Fórcola on the starboard gunwale, canted out so the morso meets the oar at rest.
+  const forcolaT = -0.7;
+  // Sanca on the aft edge, morso hooked over the oar. Exaggerated so it reads at this scale.
+  const forcola = plate(
+    [
+      [0.035, 0],
+      [0.05, 0.16],
+      [0.06, 0.46],
+      [0.09, 0.66],
+      [0.06, 0.78],
+      [-0.04, 0.62],
+      [0.02, 0.55],
+      [-0.04, 0.42],
+      [-0.09, 0.3],
+      [0.045, 0.22],
+      [0.03, 0],
+    ],
+    0.042,
+  );
+  forcola.rotateZ(0.32);
+  add('trim', forcola, sideX(forcolaT, -hull.halfBeam(forcolaT)) + 0.02, hull.sheer(forcolaT) + 0.01, z(forcolaT));
+  // Cavalli: flat seahorses on the metal already used for the iron (silver, not brass).
+  const cavallo = plate(
+    [
+      [0.09, 0.04],
+      [0.05, 0.08],
+      [0.065, 0.18],
+      [0.02, 0.27],
+      [0.07, 0.26],
+      [0.1, 0.3],
+      [0.01, 0.33],
+      [-0.045, 0.27],
+      [0, 0.2],
+      [-0.035, 0.12],
+      [-0.02, 0.04],
+      [0.02, 0],
+      [0.075, 0],
+    ],
+    0.014,
+  );
+  for (const side of [-1, 1]) {
+    const piece = cavallo.clone();
+    piece.rotateZ(side * -0.28);
+    const t = 0.25;
+    add('metal', piece, sideX(t, side * hull.halfBeam(t)) - side * 0.08, hull.sheer(t) + 0.02, z(t));
   }
-  add('metal', new THREE.BoxGeometry(0.02, 0.42, 0.06).rotateX(0.7), 0, bowY + 1.08, bowZ + 0.08);
-  add('metal', new THREE.BoxGeometry(0.02, 0.22, 0.05).rotateX(-0.9), 0, bowY + 1.28, bowZ + 0.16);
   // The oar trails on the starboard side. He rows standing, facing the bow.
+  // Grip and blade stay where animateBoat expects them; the arms end at the grip.
+  const stand = -3.5;
   const grip = v(-0.42, hull.sheer(-0.64) + 1.05, stand + 0.15);
   const blade = v(-1.05, -0.05, stand - 1.7);
-  // The oar is a piece of its own, hung from the grip, so that it can row.
   const oar = pieceBin();
   oar.add('deck', spar(grip, blade, 0.035), -grip.x, -grip.y, -grip.z);
   oar.add('deck', new THREE.BoxGeometry(0.22, 0.025, 0.55), blade.x - grip.x, blade.y - grip.y, blade.z - 0.15 - grip.z);
-  add('trim', new THREE.CylinderGeometry(0.03, 0.03, 0.16, 6), -hull.halfBeam(-0.35) + 0.02, hull.sheer(-0.35) + 0.08, z(-0.35));
   addCrew(add, 0, hull.sheer(-0.64) - 0.02, stand);
   add('shirt', spar(v(-0.16, hull.sheer(-0.64) + 0.85, stand + 0.05), grip, 0.045));
   add('shirt', spar(v(0.16, hull.sheer(-0.64) + 0.85, stand + 0.05), v(-0.05, hull.sheer(-0.64) + 0.95, stand + 0.35), 0.045));
@@ -1427,7 +1637,25 @@ function createGondola() {
       trim: paint(0x4a2f1c, 0.7),
     },
     lantern: [0, bowY + 0.35, bowZ - 0.35],
-    lid: createLidGeometry(hull),
+    // A symmetric lid would overhang the leaned starboard gunwale and punch a slot in the water.
+    lid: (() => {
+      const steps = 22;
+      const lidPositions = [];
+      const indices = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * 2 - 1;
+        const y = hull.sheer(t) + 0.012;
+        lidPositions.push(sideX(t, -hull.halfBeam(t)), y, z(t), sideX(t, hull.halfBeam(t)), y, z(t));
+        if (i) {
+          const a = (i - 1) * 2;
+          indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        }
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(lidPositions, 3));
+      geometry.setIndex(indices);
+      return geometry;
+    })(),
     oar: { grip: grip.toArray(), geometries: oar.geometries() },
   };
 }

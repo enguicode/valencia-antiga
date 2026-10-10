@@ -41,7 +41,8 @@ const SUBJECTS = {
   nazaret: { aim: 4, span: 55, top: 8 },
   playa: { aim: 2, span: 140, top: 6 },
   // Convents stand back from the bank: the camera goes over to them.
-  convent: { aim: 9, span: 90, top: 24, fly: true, standOff: 0.8, above: 9 },
+  // They stand among trees: the low shot is taken from over the crowns.
+  convent: { aim: 9, span: 90, top: 24, low: 8, fly: true, standOff: 0.8, above: 9 },
 };
 
 const PALE = 0xf4e9d2; // the parchment of the panels, so the rings do not shout

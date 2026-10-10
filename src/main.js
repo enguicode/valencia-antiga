@@ -676,7 +676,8 @@ function frameShot(subject, shot, u, room) {
     const reach = Math.max(top * 1.25, subject.span * 0.6) * (subject.near ?? 1) * fit * (1 - 0.08 * u);
     cameraGoal.set(subject.x + dx * reach, ground + (subject.low ?? 2.6) + 1.6 * u, subject.z + dz * reach);
     overRoofs(cameraGoal);
-    lookGoal.set(subject.x, ground + top * (0.45 + 0.2 * u), subject.z);
+    // Not too high, or the foot of the place slips under the caption.
+    lookGoal.set(subject.x, ground + top * (0.38 + 0.12 * u), subject.z);
     return baseFov;
   }
   // From high up, coming round from one side to the front: where it stands.

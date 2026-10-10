@@ -73,7 +73,7 @@ Las versiones en valenciano y en inglés de las fichas y de la interfaz son trad
 
 Todo lo de esta versión es decorado, sin fuente histórica detrás:
 
-- **Hora del día:** se elige con el botón de abajo (alba, mañana, mediodía, tarde, ocaso y noche) o en los ajustes, y no avanza sola. Colores, niebla y posición del sol elegidos a ojo. El sol sale por el este y se pone por el oeste, algo al norte en los extremos, como en verano; de noche la misma luz hace de luna.
+- **Hora del día:** se elige con el botón de abajo (alba, mediodía, tarde y noche) o en los ajustes, y no avanza sola. Colores, niebla y posición del sol elegidos a ojo. El sol sale por el este y se pone por el oeste, algo al norte en los extremos, como en verano; de noche la misma luz hace de luna.
 - **Reflejos del agua:** no son reflejos reales de la escena. El agua toma un tinte del cielo y brilla con el sol.
 - **Otras barcas, lavanderas, humo y pájaros:** colocados al azar. Las barcas de decorado van siempre a vela. Las lavanderas están junto a las escaleras inventadas de la v0.3.
 - **Luces de noche:** ventanas encendidas, faroles en puentes, pretiles y barcas, antorchas en las puertas, luna y luciérnagas. Son adorno: hacia 1700 la ciudad no tenía alumbrado público.

@@ -31,26 +31,21 @@ const KEYS = [
   night,
 }));
 
-// The round button beside the sticks steps through the same six hours as the
-// settings, in clock order. The cover still starts on day, dusk or night.
+// The round button beside the sticks steps through the same four hours as
+// the cover and the settings, in clock order. Morning and the old afternoon
+// folded into midday; the sunset hour stays, under the name of afternoon.
 const HOURS = [
   { value: '6.6', id: 'dawn' },
-  { value: '10', id: 'morning' },
   { value: '13', id: 'noon' },
-  { value: '18', id: 'afternoon' },
-  { value: '20', id: 'sunset' },
+  { value: '20', id: 'afternoon' },
   { value: '23.5', id: 'night' },
 ];
-const QUICK_HOURS = [18, 20, 23.5];
 const ICONS = {
   dawn: '<path d="M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.5 6.5 12 4l2.5 2.5"/>',
-  morning: '<circle cx="9" cy="11" r="3.2"/><path d="M9 4.8v1.4M2.8 11h1.4M13.8 11h1.4M4.6 6.6l1 1M12.4 7.6l1-1M3 19h18"/>',
   noon: '<circle cx="12" cy="12" r="4.2"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M5.6 18.4l1.6-1.6M16.8 7.2l1.6-1.6"/>',
-  afternoon: '<circle cx="15" cy="11" r="3.2"/><path d="M15 4.8v1.4M8.8 11h1.4M19.8 11h1.4M10.6 6.6l1 1M18.4 7.6l1-1M3 19h18"/>',
-  sunset: '<path d="M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.5 7.5 12 10l2.5-2.5"/>',
+  afternoon: '<path d="M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.5 7.5 12 10l2.5-2.5"/>',
   night: '<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5zM17.5 4v2.4M16.3 5.2h2.4"/>',
 };
-const phaseOf = (hour) => (hour >= 21 || hour < 5.5 ? 'night' : hour >= 19 || hour < 7.5 ? 'dusk' : 'day');
 const momentIndex = (value) => {
   const index = HOURS.findIndex((item) => item.value === value);
   return index === -1 ? 0 : index;
@@ -58,12 +53,16 @@ const momentIndex = (value) => {
 
 const lerp = THREE.MathUtils.lerp;
 
-// Each visit starts at the moment of day it is on the visitor's own clock:
-// day, dusk or night. From there on it only changes by hand.
+// Each visit starts at the moment of day it is on the visitor's own clock.
+// Dawn is 5:30–7:30, afternoon 19:00–21:00, night 21:00–5:30, and the rest
+// midday. From there on it only changes by hand.
 function clockHour() {
   const now = new Date();
-  const phase = phaseOf(now.getHours() + now.getMinutes() / 60);
-  return String(QUICK_HOURS[['day', 'dusk', 'night'].indexOf(phase)]);
+  const hour = now.getHours() + now.getMinutes() / 60;
+  if (hour >= 21 || hour < 5.5) return '23.5';
+  if (hour < 7.5) return '6.6';
+  if (hour >= 19) return '20';
+  return '13';
 }
 
 export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisphere }, waterMaterial, select, button, refreshEnvironment) {
@@ -95,7 +94,7 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
   showMoment();
   onLanguageChange(showMoment);
 
-  // One press moves on to the next hour: dawn, morning, midday, afternoon, sunset, night.
+  // One press moves on to the next hour: dawn, midday, afternoon, night.
   button.addEventListener('click', () => {
     const next = HOURS[(momentIndex(select.value) + 1) % HOURS.length];
     select.value = next.value;

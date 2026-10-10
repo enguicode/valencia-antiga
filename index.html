@@ -715,7 +715,18 @@
       color: #f6efe1;
     }
 
-    #intro .moments { margin-bottom: 14px; }
+    #intro .moments {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 14px;
+    }
+
+    #intro .moments button {
+      flex-direction: column;
+      gap: 3px;
+      padding: 7px 1px 6px;
+      font-size: clamp(0.64rem, 2.8vw, 0.78rem);
+    }
 
     #intro .languages {
       padding: 2px;
@@ -748,9 +759,10 @@
       mask: var(--icon) center / contain no-repeat;
     }
 
-    #intro .moments button[data-hour="18"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4'/%3E%3C/svg%3E"); }
-    #intro .moments button[data-hour="20"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 18h18M6 21h12M7 18a5 5 0 0 1 10 0M12 7v3M5.3 10.3l1.8 1.8M18.7 10.3l-1.8 1.8'/%3E%3C/svg%3E"); }
-    #intro .moments button[data-hour="23.5"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.500z'/%3E%3C/svg%3E"); }
+    #intro .moments button[data-hour="6.6"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.5 6.5 12 4l2.5 2.5'/%3E%3C/svg%3E"); }
+    #intro .moments button[data-hour="13"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4.2'/%3E%3Cpath d='M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M5.6 18.4l1.6-1.6M16.8 7.2l1.6-1.6'/%3E%3C/svg%3E"); }
+    #intro .moments button[data-hour="20"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.5 7.5 12 10l2.5-2.5'/%3E%3C/svg%3E"); }
+    #intro .moments button[data-hour="23.5"] { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5zM17.5 4v2.4M16.3 5.2h2.4'/%3E%3C/svg%3E"); }
     #start { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 16h18l-2.5 4h-13zM12 15V3M12 4l6 9h-6M12 7l-4 6h4'/%3E%3C/svg%3E"); }
     #start-tour { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M15.800 8.200l-2.200 5.400-5.400 2.200 2.200-5.400z'/%3E%3C/svg%3E"); }
 
@@ -861,10 +873,10 @@
       border-radius: 3px;
     }
 
-    /* Six little skies, all in view. Tapping one is the hour. */
+    /* Four little skies, all in view. Tapping one is the hour. */
     #info .hours {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
       margin: 0 0 4px;
     }
@@ -915,13 +927,11 @@
     }
 
     @media (max-width: 600px) {
-      #info .hours { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      #info .hours { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     #info .hours button[data-hour="6.6"] { --top: #aab6dc; --low: #f4b08a; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.500 6.500L12 4l2.500 2.500'/%3E%3C/svg%3E"); }
-    #info .hours button[data-hour="10"] { --top: #8fc6f2; --low: #e6f2fb; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='11' r='3.200'/%3E%3Cpath d='M9 4.800v1.400M2.8 11h1.400M13.8 11h1.400M4.6 6.6l1 1M12.4 7.6l1 -1M3 19h18'/%3E%3C/svg%3E"); }
     #info .hours button[data-hour="13"] { --top: #4f9fe4; --low: #b9defa; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4.200'/%3E%3Cpath d='M12 3v2.200M12 18.800V21M3 12h2.200M18.800 12H21M5.600 5.600l1.600 1.600M16.800 16.800l1.600 1.600M5.600 18.400l1.600-1.600M16.800 7.200l1.600-1.600'/%3E%3C/svg%3E"); }
-    #info .hours button[data-hour="18"] { --top: #79addb; --low: #f6dca6; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='15' cy='11' r='3.200'/%3E%3Cpath d='M15 4.800v1.400M8.8 11h1.400M19.8 11h1.400M10.6 6.6l1 1M18.4 7.6l1 -1M3 19h18'/%3E%3C/svg%3E"); }
     #info .hours button[data-hour="20"] { --top: #5d5596; --low: #f0884a; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 19h18M8 19a4 4 0 0 1 8 0M12 4v6M9.500 7.500L12 10l2.500-2.500'/%3E%3C/svg%3E"); }
     #info .hours button[data-hour="23.5"] { --top: #10163a; --low: #30336a; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 14.500A7.500 7.500 0 0 1 9.500 5a7.500 7.500 0 1 0 9.500 9.500zM17.500 4v2.400M16.300 5.200h2.400'/%3E%3C/svg%3E"); }
 
@@ -1255,9 +1265,10 @@
       <p data-i18n="intro.lead">Baja en barca por el viejo cauce del Turia y mira la ciudad amurallada desde el agua: la muralla y sus puertas, los cinco puentes de piedra y el perfil de torres y campanarios.</p>
       <p class="caption" data-i18n="intro.moment">Momento del día</p>
       <div class="choice moments" role="group" aria-label="Momento del día" data-i18n-label="intro.moment">
-        <button type="button" data-hour="18" data-i18n="sky.day">Día</button>
-        <button type="button" data-hour="20" data-i18n="sky.dusk">Atardecer</button>
-        <button type="button" data-hour="23.5" data-i18n="sky.night">Noche</button>
+        <button type="button" data-hour="6.6" data-i18n="hour.dawn">Alba</button>
+        <button type="button" data-hour="13" data-i18n="hour.noon">Mediodía</button>
+        <button type="button" data-hour="20" data-i18n="hour.afternoon">Tarde</button>
+        <button type="button" data-hour="23.5" data-i18n="hour.night">Noche</button>
       </div>
       <div class="actions">
         <button id="start" type="button" disabled data-i18n="start.loading">Cargando…</button>
@@ -1277,7 +1288,7 @@
       <li data-i18n-html="help.touch"><strong>Pantalla táctil:</strong> el mando de abajo a la izquierda lleva la barca (arriba para avanzar, a los lados para virar) y el de abajo a la derecha, el del ojo, gira la cámara. También puedes arrastrar en cualquier parte de la pantalla.</li>
       <li data-i18n-html="help.points"><strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro claro sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha: la cámara se vuelve unos segundos hacia el sitio, o vuela hasta él si está lejos, y regresa sola (o antes, si mueves tú la cámara). Mientras tanto la barca va despacio. La flecha del borde de la pantalla lleva al más cercano que te falte. Hay dieciocho; toca la cuenta de arriba a la izquierda para repasarlos y, con el ojo de cada ficha, volver a verlos de cerca. Hay uno más: al entrar en su aro anochece, y al alejarte vuelve la hora que había.</li>
       <li data-i18n-html="help.bridges"><strong>Puentes:</strong> al acercarte, la barca se encauza sola hacia el arco más cercano y abate la vela para pasar por debajo.</li>
-      <li data-i18n-html="help.menu"><strong>Menú:</strong> el botón que hay bajo el mapa despliega los ajustes, estos controles, los créditos y el reinicio de los puntos. El momento del día y el sonido tienen sus botones redondos abajo, en el centro.</li>
+      <li data-i18n-html="help.menu"><strong>Menú:</strong> el botón que hay bajo el mapa despliega los ajustes, estos controles, los créditos y el reinicio de los puntos. El botón redondo de la hora, abajo en el centro, pasa por el alba, el mediodía, la tarde y la noche. Al lado está el del sonido.</li>
       <li data-i18n-html="help.tour"><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez el botón de la brújula, abajo a la izquierda.</li>
       <li data-i18n-html="help.sea"><strong>Hasta el mar:</strong> pasado el final del paseo se puede seguir. El río va entre huerta, acequias y barracas hasta la desembocadura, el Grau y la playa. En el agua hay unos aros más, con su ficha; no cuentan para los dieciocho ni salen en el mapa. Mar adentro, un banco de niebla devuelve al principio.</li>
     </ul>
@@ -1305,19 +1316,15 @@
     <p><span data-i18n="settings.hour">Hora del día:</span></p>
     <div class="hours" role="group" aria-label="Hora del día" data-i18n-label="settings.hour">
       <button type="button" data-hour="6.6" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.dawn">Alba</span></button>
-      <button type="button" data-hour="10" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.morning">Mañana</span></button>
       <button type="button" data-hour="13" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.noon">Mediodía</span></button>
-      <button type="button" data-hour="18" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.afternoon">Tarde</span></button>
-      <button type="button" data-hour="20" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.sunset">Ocaso</span></button>
+      <button type="button" data-hour="20" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.afternoon">Tarde</span></button>
       <button type="button" data-hour="23.5" aria-pressed="false"><span class="sky"></span><span class="name" data-i18n="hour.night">Noche</span></button>
     </div>
     <p hidden><label>
       <select id="hour">
         <option value="6.6" data-i18n="hour.dawn">Alba</option>
-        <option value="10" data-i18n="hour.morning">Mañana</option>
         <option value="13" data-i18n="hour.noon">Mediodía</option>
-        <option value="18" data-i18n="hour.afternoon">Tarde</option>
-        <option value="20" data-i18n="hour.sunset">Ocaso</option>
+        <option value="20" data-i18n="hour.afternoon">Tarde</option>
         <option value="23.5" data-i18n="hour.night">Noche</option>
       </select>
     </label></p>

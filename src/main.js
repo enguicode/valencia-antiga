@@ -265,9 +265,9 @@ function start(withTour) {
   orbit.idle = ORBIT.holdSeconds;
   if (withTour) document.getElementById('tour').click();
 }
-// The start screen offers three moments of the day and the settings six,
-// each a button with its own sky; they drive the same setting as the sky
-// button, which is kept in a list that is not shown.
+// The start screen and the settings offer the same four moments of the day.
+// Each is a button; they drive the same setting as the sky button, which is
+// kept in a list that is not shown.
 const hourSelect = document.getElementById('hour');
 const momentButtons = [...document.querySelectorAll('#intro .moments button, #info .hours button')];
 const showMoment = () => {
@@ -409,7 +409,7 @@ const settingSelects = [languageSelect, document.getElementById('quality'), hour
 const hourCards = document.querySelector('#info .hours');
 let settingsBefore = null;
 // The old sheet was a sideways strip: the card left in the middle was the hour.
-// The six skies now sit in view, so that only applies if the row still overflows.
+// The four skies sit in view, so that only applies if the row still overflows.
 function centreHour(smooth) {
   if (hourCards.scrollWidth <= hourCards.clientWidth + 4) return;
   const card = hourCards.querySelector('[aria-pressed="true"]');

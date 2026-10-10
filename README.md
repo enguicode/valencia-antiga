@@ -15,10 +15,10 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 | | |
 | --- | --- |
 | **Navegar** | 3 km de río, que son el paseo, desde la altura de las Torres de Quart hasta pasado el de la Mar; el río sigue si se continúa. La barca frena contra las orillas y, al llegar a un puente, se encauza sola por un arco y abate la vela. |
-| **Encontrar los puntos** | Junto a cada sitio flota un aro claro. Al entrar sale la ficha, la cámara mira el lugar (o vuela hasta él si está lejos) y la barca va despacio mientras tanto. Una flecha en el borde lleva al más cercano que falte. |
+| **Encontrar los puntos** | Junto a cada sitio flota un aro claro. Al entrar por primera vez la cámara vuela hasta el lugar y empieza el modo cine: la pantalla se queda limpia, sin mandos ni mapa, el sitio se enseña en tres planos que se van cortando (uno general, uno desde abajo y uno alto en arco) y la ficha sale entera en un cartel abajo. La barca espera. «Continuar», o Intro, Espacio o Esc, devuelve la cámara y los mandos. Volver a pasar por un aro ya conseguido no enseña nada. Una flecha en el borde lleva al más cercano que falte. |
 | **La luna** | Al entrar en el aro anochece solo, sin botón: la cámara mira al cielo y sale la ficha. Al alejarte vuelve la hora que había, salvo que la cambies tú. En el listado se ve una luna, no el nombre, hasta que se consigue. |
-| **Repasar** | La cuenta de arriba a la izquierda abre el cuaderno. Lo no descubierto sale en blanco. Lo encontrado lleva un ojo que lleva la cámara hasta ese sitio. El ojo de la luna, si es de día, deja el cielo de noche mientras dura la ficha y luego devuelve la hora que había. |
-| **Recorrido guiado** | La barca baja sola por el centro y pasa por los dieciocho aros. Arrastrar solo mueve la cámara. |
+| **Repasar** | La cuenta de arriba a la izquierda abre el cuaderno. Lo no descubierto sale en blanco. Lo encontrado lleva un ojo que vuelve a enseñar ese sitio en modo cine. El ojo de la luna, si es de día, deja el cielo de noche mientras dura la ficha y luego devuelve la hora que había. |
+| **Recorrido guiado** | La barca baja sola por el centro y pasa por los dieciocho aros. En cada uno el modo cine da una vuelta a sus tres planos y la barca sigue sola. Arrastrar solo mueve la cámara. |
 | **La hora** | Al entrar, la portada premarca el alba, el mediodía, la tarde o la noche según el reloj del visitante, con su huso horario. Desde ahí solo cambia a mano. El botón redondo de abajo pasa por esos cuatro momentos, y en los ajustes se elige cualquiera de un vistazo. De noche se encienden ventanas, faroles y luciérnagas, y los carteles de la interfaz pasan a un tono oscuro. |
 | **El final** | El paseo acaba pasado el Pont de la Mar. Ahí una línea clara cruza el río: al pasarla, el mapa y los puntos cambian por los del tramo hasta la playa (la huerta, Natzaret, el Grau y la playa), que no cuentan para los dieciocho. Aguas arriba vuelven los de la ciudad. Mar adentro, la niebla devuelve al principio. |
 | **La barca** | De la Albufera, con el barquero a la percha, o de río, con timonel sentado. También una góndola y un junco chino, de la misma época y a la misma velocidad, aunque no sean del Turia. Y, fuera de época a propósito, una moto de agua que va tres veces más rápido, una lancha motora que va cinco, un pontón que va seis, una lancha offshore que va ocho, un hidroplano de carreras que va diez y el Spirit of Australia, el del récord del agua, que va dieciséis. Se eligen en los ajustes, en un escaparate en 3D que se pasa deslizando. |
@@ -71,14 +71,14 @@ valencia-antiga/
 
 | Módulo | De qué se ocupa |
 | --- | --- |
-| `main.js` | Arranque, bucle y cámara: seguir la barca, enfocar, volar a un sitio y pasar bajo los puentes |
+| `main.js` | Arranque, bucle y cámara: seguir la barca, volar a un sitio, el modo cine y pasar bajo los puentes |
 | `config.js` | Medidas, colores y utilidades |
 | `path.js` | El eje del río y lo que se repite a lo largo |
 | `water.js`, `environment.js`, `riverside.js` | Agua; cielo, luces, orillas y árboles; pretiles, escaleras y azud |
 | `sea.js` | Huerta, desembocadura, playa y Grau |
 | `walls.js`, `bridges.js`, `city.js`, `landmarks.js` | Muralla y puertas; puentes; casas; edificios singulares |
 | `materials.js` | Texturas pintadas por código |
-| `boat.js` | Las dos barcas, su manejo y su animación |
+| `boat.js` | Las diez embarcaciones, su manejo y su animación |
 | `guide.js` | Aros, fichas, cuenta y recorrido guiado |
 | `atmosphere.js`, `lights.js`, `life.js`, `sound.js` | Hora del día; luces de noche; barcas, lavanderas, humo y pájaros; sonido |
 | `input.js`, `minimap.js`, `quality.js`, `i18n.js` | Controles; mapa; calidad; idiomas |

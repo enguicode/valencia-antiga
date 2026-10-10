@@ -18,29 +18,30 @@ const CARD_STAYS_WITHIN = 75; // metres from the ring before the card goes
 const VISIBLE_WITHIN = 750;
 const PIN_SIZE = 0.05; // of the viewport's height
 // What the camera turns to on entering a ring: how high to aim on the place
-// itself and how wide a view it needs, in metres.
+// itself, how wide a view it needs and how tall it stands, in metres. The
+// height is for the cinema's shots and is rounded, not surveyed.
 const SUBJECTS = {
   // A bridge is always shown whole, from upstream and a little above its deck.
-  bridge: { aim: 4, span: 150, fly: true, standOff: 0.8, above: 8 },
-  gate: { aim: 12, span: 52 },
+  bridge: { aim: 4, span: 150, top: 10, near: 0.75, fly: true, standOff: 0.8, above: 8 },
+  gate: { aim: 12, span: 52, top: 30 },
   // A stretch of curtain, at the corner where it meets the river.
-  wall: { aim: 5, span: 130 },
-  start: { aim: 2, span: 60 },
+  wall: { aim: 5, span: 130, top: 12, standOff: 0.7, above: 10 },
+  start: { aim: 2, span: 60, top: 6, standOff: 0.9, above: 8 },
   // Seen from the west, where the cathedral stands behind it and not in front.
-  micalet: { aim: 34, span: 110, facing: [-0.94, 0.34], above: 32 },
+  micalet: { aim: 34, span: 110, top: 62, facing: [-0.94, 0.34], above: 32 },
   // Off the river, on the west wall. Close on the two towers and from below.
   // The way there is over open country, outside the wall.
-  quart: { aim: 18, span: 46, standOff: 1, above: -9 },
+  quart: { aim: 18, span: 46, top: 34, standOff: 1, above: -9 },
   // Far from the water: the camera goes in closer than its width would ask.
-  palace: { aim: 12, span: 150, standOff: 0.75, above: 14 },
+  palace: { aim: 12, span: 150, top: 26, near: 0.75, standOff: 0.75, above: 14 },
   // The Grau church stands back from the mouth, on the beach.
-  grau: { aim: 14, span: 90, fly: true, standOff: 0.65, above: 12 },
+  grau: { aim: 14, span: 90, top: 36, fly: true, standOff: 0.65, above: 12 },
   // Rings in the channel past the tour. The camera only turns; it does not fly off.
-  huerta: { aim: 3, span: 90 },
-  nazaret: { aim: 4, span: 55 },
-  playa: { aim: 2, span: 140 },
+  huerta: { aim: 3, span: 90, top: 8 },
+  nazaret: { aim: 4, span: 55, top: 8 },
+  playa: { aim: 2, span: 140, top: 6 },
   // Convents stand back from the bank: the camera goes over to them.
-  convent: { aim: 9, span: 90, fly: true, standOff: 0.8, above: 9 },
+  convent: { aim: 9, span: 90, top: 24, fly: true, standOff: 0.8, above: 9 },
 };
 
 const PALE = 0xf4e9d2; // the parchment of the panels, so the rings do not shout
@@ -161,16 +162,17 @@ export function createGuide(points, layout, path, camera, elements) {
       const toward = id === 'nazaret' ? 1 : -1;
       const ahead = id === 'playa' ? 90 : 0;
       const out = id === 'playa' ? 50 : 80;
-      return {
-        s: station,
-        side: 0,
-        reach: 0,
-        subject: {
-          ...SUBJECTS[id],
-          x: sample.x + sample.rx * toward * out + sample.tx * ahead,
-          z: sample.z + sample.rz * toward * out + sample.tz * ahead,
-        },
-      };
+      // Natzaret's huts stand on the south bank where the mouth has already
+      // opened wide, a long way from the ring: the place is the huts.
+      const bank = path.pointAt(path.mouth - 200);
+      const place =
+        id === 'nazaret'
+          ? { x: bank.x + bank.rx * 331, z: bank.z + bank.rz * 331 }
+          : {
+              x: sample.x + sample.rx * toward * out + sample.tx * ahead,
+              z: sample.z + sample.rz * toward * out + sample.tz * ahead,
+            };
+      return { s: station, side: 0, reach: 0, subject: { ...SUBJECTS[id], ...place } };
     } else {
       const landmark = layout.landmarks.find((item) => item.id === id);
       ({ x, z } = landmark);
@@ -201,6 +203,7 @@ export function createGuide(points, layout, path, camera, elements) {
     const onWater = point.at.type === 'sea' || point.at.type === 'along';
     const ground = onWater ? 1.2 : point.at.type === 'bridge' || point.at.type === 'start' ? 0 : BANK.height;
     subject.y = ground + subject.aim;
+    subject.ground = ground;
     const centre = path.pointAt(s);
     const x = centre.x + centre.rx * side * (reach ?? RING_OFFSET);
     const z = centre.z + centre.rz * side * (reach ?? RING_OFFSET);
@@ -264,6 +267,13 @@ export function createGuide(points, layout, path, camera, elements) {
     // Leaving the moon's ring is what brings the daylight back.
     if (leaving?.bonus === 'night') onLeave?.();
     const first = !found.has(marker.id);
+    // The card and the look at the place are for the first time, or for when
+    // the logbook asks. Sailing back through a ring already found brings up
+    // nothing. The moon is the exception: its ring is what brings the night.
+    if (!first && !requested && marker.bonus !== 'night') {
+      card.classList.remove('visible');
+      return;
+    }
     if (first) {
       found.add(marker.id);
       paint(marker);
@@ -274,9 +284,9 @@ export function createGuide(points, layout, path, camera, elements) {
       }
       showCount();
     }
-    onEnter?.(marker, requested);
     marker.repeat = !first;
     write(marker);
+    onEnter?.(marker, requested);
   }
 
   function write(marker) {

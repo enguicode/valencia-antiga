@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { BANK } from './config.js';
 import { createRiverPath } from './path.js';
 import { createEnvironment } from './environment.js';
 import { createSea } from './sea.js';
@@ -131,6 +132,13 @@ const guide = createGuide(points, layout, path, camera, {
     focus.bend = subject.facing
       ? THREE.MathUtils.clamp((distance - LONG_FLIGHT.bendFrom) * LONG_FLIGHT.bend, 0, LONG_FLIGHT.widest)
       : 0;
+    // Every place is shown off in the cinema, so the camera goes over to
+    // all of them, the near ones in a low hop. The moon is only looked up at.
+    cinema.pending = !subject.moon;
+    if (cinema.pending) {
+      focus.rise = focus.flight ? (subject.fly ? 4 : 18) : Math.min(18, distance * 0.09);
+      focus.flight = true;
+    }
     focus.total = focus.flight ? focus.out + focus.hold + focus.back : FOCUS.seconds;
     if (borrowed) focus.total += 4; // stay with the moon once the light has gone
     focus.left = focus.total;
@@ -507,7 +515,7 @@ const FLIGHT = { beyond: 200, out: 3.5, hold: 4.5, back: 3, standOff: 1.25, abov
 // A long flight takes longer, so it does not rush, and swings wide so that
 // it reaches the place from the front instead of sliding in sideways.
 const LONG_FLIGHT = { speed: 75, slowest: 2, bendFrom: 150, bend: 0.4, widest: 140 };
-const focus = { subject: null, left: 0, total: 0, out: 0, hold: 0, back: 0, bend: 0, flight: false };
+const focus = { subject: null, left: 0, total: 0, out: 0, hold: 0, back: 0, bend: 0, rise: 18, flight: false };
 const MOON_DIRECTION = new THREE.Vector3(-0.4, 0.8, -0.3).normalize(); // where the moon hangs in the sky
 // Radians a second at most, how quickly it gets there and how soon it eases off.
 const TURN = { fastest: 1.9, gather: 5, settle: 6 };
@@ -550,6 +558,7 @@ let viewShift = 0;
 let viewShifted = false;
 const cardElement = document.getElementById('card');
 function shiftBelowCard() {
+  if (!cardElement.classList.contains('visible')) return 0;
   const card = cardElement.getBoundingClientRect();
   if (card.height < 2 || card.width < window.innerWidth * 0.5) return 0;
   const floor = window.innerHeight - (document.body.classList.contains('touch') ? 210 : 100);
@@ -557,9 +566,148 @@ function shiftBelowCard() {
   return Math.max(0, (2 * middle) / window.innerHeight - 1);
 }
 
+// Where the camera hovers in front of a place: `drift` runs the arc.
+function hoverSpot(subject, drift, room = 1) {
+  let [dx, dz] = subject.facing ?? [boat.mesh.position.x - subject.x, boat.mesh.position.z - subject.z];
+  const distance = Math.hypot(dx, dz) || 1;
+  const swing = (drift - 0.5) * FLIGHT.swing;
+  [dx, dz] = [
+    (dx * Math.cos(swing) - dz * Math.sin(swing)) / distance,
+    (dx * Math.sin(swing) + dz * Math.cos(swing)) / distance,
+  ];
+  // Upright, a phone's lens is narrow across: stand further back, or the
+  // place does not fit. The longer lens asks for a little more as well.
+  const fit = (Math.max(1, 0.8 / camera.aspect) / Math.sqrt(FLIGHT.lens)) * room;
+  const standOff = subject.span * (subject.standOff ?? FLIGHT.standOff) * fit * (1.12 - 0.2 * drift);
+  const above = (subject.above ?? FLIGHT.above) * Math.sqrt(fit) * (1.15 - 0.3 * drift);
+  flightSpot.set(subject.x + dx * standOff, subject.y + above, subject.z + dz * standOff);
+  return [dx, dz];
+}
+
+// The cinema. A point found, or asked for from the logbook, is not a card
+// over the helm: once the camera has flown over, the screen is cleared and
+// the place is shown in three shots, cut one to the next and round again,
+// with its card as a caption along the bottom. The boat waits. "Continue"
+// brings the camera back and the helm with it. On the guided tour it goes on
+// by itself after one round.
+const CINEMA = { shot: 6.5, shots: 3 };
+const cinema = { pending: false, active: false, shot: 0, time: 0, rounds: 0, from: 0 };
+const cinemaPanel = document.getElementById('cinema');
+const stillShots = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function writeCaption() {
+  cinemaPanel.querySelector('h2').textContent = cardElement.querySelector('h2').textContent;
+  cinemaPanel.querySelector('.text').textContent = cardElement.querySelector('.text').textContent;
+  const source = cinemaPanel.querySelector('a');
+  source.href = cardElement.querySelector('a').href;
+  source.textContent = cardElement.querySelector('a').textContent;
+  cinemaPanel.querySelector('.tally').textContent = cardElement.querySelector('.tally').textContent;
+}
+onLanguageChange(() => {
+  if (cinema.active) writeCaption();
+});
+
+function startCinema(drift) {
+  Object.assign(cinema, { pending: false, active: true, shot: 0, time: 0, rounds: 0, from: drift });
+  writeCaption();
+  cinemaPanel.scrollTop = 0;
+  document.body.classList.add('cinema');
+  guide.group.visible = false;
+  boat.state.speed = 0;
+}
+
+function endCinema() {
+  if (!cinema.active) return;
+  cinema.active = false;
+  document.body.classList.remove('cinema');
+  guide.group.visible = true;
+  // The caption has been read: the card does not come back over the helm.
+  cardElement.classList.remove('visible');
+  focus.left = focus.back;
+}
+document.getElementById('cinema-continue').addEventListener('click', endCinema);
+window.addEventListener('keydown', (event) => {
+  if (!cinema.active || !['Enter', ' ', 'Escape'].includes(event.key)) return;
+  event.preventDefault();
+  endCinema();
+});
+
+// How much of the screen the caption takes, from the bottom up.
+function captionShare() {
+  const top = cinemaPanel.getBoundingClientRect().top;
+  return THREE.MathUtils.clamp(1 - top / window.innerHeight, 0, 0.6);
+}
+
+// Inside the walls the houses stand shoulder to shoulder: a camera in there
+// stays above the roofs, or it would be looking at somebody's bedroom wall.
+const ROOFS = BANK.height + 17;
+function overRoofs(position) {
+  let inside = false;
+  const wall = layout.wall;
+  for (let i = 0, j = wall.length - 1; i < wall.length; j = i++) {
+    const [xi, zi] = wall[i];
+    const [xj, zj] = wall[j];
+    if (zi > position.z !== zj > position.z && position.x < ((xj - xi) * (position.z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  if (inside) position.y = Math.max(position.y, ROOFS);
+}
+
+// One of the three shots, `u` of the way through it.
+function frameShot(subject, shot, u, room) {
+  const ground = subject.ground ?? 0;
+  const top = subject.top ?? (subject.y - ground) * 2;
+  if (shot === 0) {
+    // The way the flight arrives: in front, a little above, closing on an arc.
+    hoverSpot(subject, THREE.MathUtils.lerp(cinema.rounds ? 0.15 : cinema.from, 1, u), room);
+    cameraGoal.copy(flightSpot);
+    lookGoal.set(subject.x, subject.y, subject.z);
+    return baseFov * FLIGHT.lens;
+  }
+  let [fx, fz] = subject.facing ?? [boat.mesh.position.x - subject.x, boat.mesh.position.z - subject.z];
+  const length = Math.hypot(fx, fz) || 1;
+  fx /= length;
+  fz /= length;
+  const fit = Math.max(1, 0.8 / camera.aspect) * room;
+  const round = (angle) => [fx * Math.cos(angle) - fz * Math.sin(angle), fx * Math.sin(angle) + fz * Math.cos(angle)];
+  if (shot === 1) {
+    // From below and close, through the wide lens, tilting up: the shot
+    // that makes it tall.
+    const [dx, dz] = round((subject.lowSide ?? 0.55) - 0.22 * u);
+    const reach = Math.max(top * 1.25, subject.span * 0.6) * (subject.near ?? 1) * fit * (1 - 0.08 * u);
+    cameraGoal.set(subject.x + dx * reach, ground + (subject.low ?? 2.6) + 1.6 * u, subject.z + dz * reach);
+    overRoofs(cameraGoal);
+    lookGoal.set(subject.x, ground + top * (0.45 + 0.2 * u), subject.z);
+    return baseFov;
+  }
+  // From high up, coming round from one side to the front: where it stands.
+  const [dx, dz] = round((subject.highFrom ?? 1.15) - 0.6 * u);
+  const reach = Math.max(subject.span * 1.05, top * 1.9) * (subject.far ?? 1) * fit;
+  const height = Math.max(subject.span * 0.55, top * 1.25) * Math.sqrt(fit);
+  cameraGoal.set(subject.x + dx * reach, ground + height, subject.z + dz * reach);
+  lookGoal.set(subject.x, ground + top * 0.4, subject.z);
+  return baseFov * FLIGHT.lens;
+}
+
 function updateCamera(dt, snap = false) {
   let wantedFov = baseFov;
   focus.left -= dt;
+  if (focus.left <= 0) cinema.pending = false;
+  if (cinema.pending && focus.total - focus.left >= focus.out) {
+    startCinema(THREE.MathUtils.smoothstep(focus.out, focus.out * 0.5, focus.out + focus.hold + focus.back * 0.3));
+  }
+  let caption = 0;
+  if (cinema.active) {
+    // Parked at the start of the way back, which "Continue" lets run.
+    focus.left = focus.back;
+    cinema.time += dt;
+    if (cinema.time >= CINEMA.shot) {
+      cinema.time -= CINEMA.shot;
+      cinema.shot = (cinema.shot + 1) % CINEMA.shots;
+      if (cinema.shot === 0) cinema.rounds++;
+      if (cinema.rounds > 0 && tour.active) endCinema();
+    }
+    caption = captionShare();
+  }
 
   // Where the camera would be if it were simply following the boat.
   const tucked = THREE.MathUtils.smoothstep(boat.state.underBridge, 0.3, 0.75);
@@ -572,28 +720,21 @@ function updateCamera(dt, snap = false) {
   chaseLook.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
   chaseLook.y = 2;
 
-  if (focus.left > 0 && focus.flight) {
+  if (cinema.active) {
+    const u = stillShots ? 0.5 : cinema.time / CINEMA.shot;
+    // Upright the flight stands well back, to be sure of the width; with
+    // the screen cleared the place can come nearer than that.
+    wantedFov = frameShot(focus.subject, cinema.shot, u, (1 + caption * 0.9) * (camera.aspect < 1 ? 0.78 : 1));
+  } else if (focus.left > 0 && focus.flight) {
     const { subject } = focus;
     const elapsed = focus.total - focus.left;
     const going = THREE.MathUtils.smootherstep(elapsed, 0, focus.out);
     const returning = THREE.MathUtils.smootherstep(elapsed, focus.out + focus.hold, focus.total);
     const away = going - returning; // 0 at the boat, 1 at the place
-    // Hover in front of the place if it has a front, otherwise on the boat's side of it.
-    let [dx, dz] = subject.facing ?? [boat.mesh.position.x - subject.x, boat.mesh.position.z - subject.z];
-    const distance = Math.hypot(dx, dz) || 1;
-    // The arc, from just before arriving until it has started back.
+    // Hover in front of the place if it has a front, otherwise on the boat's
+    // side of it. The arc runs from just before arriving until it has started back.
     const drift = THREE.MathUtils.smoothstep(elapsed, focus.out * 0.5, focus.out + focus.hold + focus.back * 0.3);
-    const swing = (drift - 0.5) * FLIGHT.swing;
-    [dx, dz] = [
-      (dx * Math.cos(swing) - dz * Math.sin(swing)) / distance,
-      (dx * Math.sin(swing) + dz * Math.cos(swing)) / distance,
-    ];
-    // Upright, a phone's lens is narrow across: stand further back, or the
-    // place does not fit. The longer lens asks for a little more as well.
-    const fit = Math.max(1, 0.8 / camera.aspect) / Math.sqrt(FLIGHT.lens);
-    const standOff = subject.span * (subject.standOff ?? FLIGHT.standOff) * fit * (1.12 - 0.2 * drift);
-    const above = (subject.above ?? FLIGHT.above) * Math.sqrt(fit) * (1.15 - 0.3 * drift);
-    flightSpot.set(subject.x + dx * standOff, subject.y + above, subject.z + dz * standOff);
+    const [dx, dz] = hoverSpot(subject, drift);
     wantedFov = THREE.MathUtils.lerp(baseFov, baseFov * FLIGHT.lens, away);
     // A curve from the boat to the spot, pulled out in front of the place.
     flightBend.set(flightSpot.x + dx * focus.bend, flightSpot.y, flightSpot.z + dz * focus.bend);
@@ -601,7 +742,7 @@ function updateCamera(dt, snap = false) {
     flightBend.lerpVectors(chasePosition, flightBend, away);
     cameraGoal.lerpVectors(flightBend, cameraGoal, away);
     // Rise over the roofs on the way there and back, unless it is a short hop.
-    cameraGoal.y += Math.sin(away * Math.PI) * (subject.fly ? 4 : 18);
+    cameraGoal.y += Math.sin(away * Math.PI) * focus.rise;
     lookGoal.set(subject.x, subject.y, subject.z).lerp(chaseLook, 1 - Math.min(1, away * 2.5));
   } else if (focus.left > 0) {
     const { subject } = focus;
@@ -631,7 +772,9 @@ function updateCamera(dt, snap = false) {
 
   const quick = orbit.idle < ORBIT.holdSeconds || boat.state.underBridge > 0.3 || (focus.left > 0 && focus.flight);
   // A fast craft would leave the camera far astern: it keeps up the faster it goes.
-  const ease = snap ? 1 : 1 - Math.exp(-dt * (quick ? 9 : Math.max(3, boat.state.speed / 7)));
+  // A shot is where it is: no easing into it, or a cut would be a swerve.
+  const hard = snap || (cinema.active && (cinema.shot > 0 || cinema.rounds > 0 || cinema.time > 1.5));
+  const ease = hard ? 1 : 1 - Math.exp(-dt * (quick ? 9 : Math.max(3, boat.state.speed / 7)));
   camera.position.lerp(cameraGoal, ease);
   lookAt.lerp(lookGoal, ease);
   // The camera never whips round: when the place a card is about lies astern,
@@ -639,20 +782,21 @@ function updateCamera(dt, snap = false) {
   // view. Dragging by hand is not held back.
   turnFrom.copy(camera.quaternion);
   camera.lookAt(lookAt);
-  if (!snap && orbit.idle >= ORBIT.holdSeconds) {
+  if (!hard && orbit.idle >= ORBIT.holdSeconds) {
     turnTo.copy(camera.quaternion);
     const wanted = Math.min(TURN.fastest, turnFrom.angleTo(turnTo) * TURN.settle);
     turnRate = Math.min(wanted, turnRate + TURN.gather * dt);
     camera.quaternion.copy(turnFrom).rotateTowards(turnTo, turnRate * dt);
   }
   if (Math.abs(camera.fov - wantedFov) > 0.05) {
-    camera.fov += (wantedFov - camera.fov) * (snap ? 1 : 1 - Math.exp(-dt * 2.5));
+    camera.fov += (wantedFov - camera.fov) * (hard ? 1 : 1 - Math.exp(-dt * 2.5));
     camera.updateProjectionMatrix();
   }
   // Where the card lies across the top of the screen, the picture slides
   // down, so that what the camera is looking at sits in the clear part and
   // not behind the text. The moon is aimed for the card already.
-  const wantedShift = focus.left > 0 && !focus.subject.moon ? shiftBelowCard() : 0;
+  // In the cinema it is the caption, along the bottom, and the picture goes up.
+  const wantedShift = cinema.active ? -caption : focus.left > 0 && !focus.subject.moon ? shiftBelowCard() : 0;
   viewShift += (wantedShift - viewShift) * (snap ? 1 : 1 - Math.exp(-dt * 3));
   if (Math.abs(viewShift) > 0.002 || viewShifted) {
     viewShifted = Math.abs(viewShift) > 0.002;
@@ -751,7 +895,11 @@ function frame() {
     orbit.lift = 2;
     orbit.idle = 0;
   }
-  if (tour.active) {
+  if (cinema.active) {
+    // The boat waits, and nothing on the screen is there to be steered with.
+    Object.assign(axes, { throttle: 0, steer: 0, looking: false, used: false });
+    boat.state.speed = 0;
+  } else if (tour.active) {
     // On the guided tour the boat steers itself and dragging only looks
     // around. Trying to steer brings up a reminder of how to take the helm.
     if (!tourWasActive || axes.throttle !== 0 || axes.steer !== 0 || axes.lookStarted) showTourNotice();
@@ -788,10 +936,12 @@ function frame() {
   mistBank.material.color.copy(scene.fog.color);
   // While the camera is showing a place off, the boat idles along.
   boat.update(dt, axes, time, focus.left > 0 ? FOCUS.speed : Infinity);
-  sun.target.position.copy(boat.mesh.position);
-  sun.position.copy(boat.mesh.position).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
-  // On a flight the water is animated and drawn around the camera, not the boat.
+  // On a flight the water is animated and drawn around the camera, not the
+  // boat, and the shadows fall where the camera is looking.
   const flying = focus.left > 0 && focus.flight;
+  const lit = flying ? lookAt : boat.mesh.position;
+  sun.target.position.copy(lit);
+  sun.position.copy(lit).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
   const waterRow = flying ? path.project(camera.position.x, camera.position.z).index : boat.state.row;
   water.update(time, waterRow);
   sea.update(time, waterRow);
@@ -855,5 +1005,5 @@ window.__valenciaReady = true;
 
 if (debug) {
   debugPanel.hidden = false;
-  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus };
+  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus, cinema };
 }

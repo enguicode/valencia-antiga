@@ -400,6 +400,77 @@
       font-style: italic;
     }
 
+    /* Cinema: when a point is found the screen is cleared for the place
+       itself. Everything else goes, and the card comes up as a caption along
+       the bottom, with the way back to the boat. */
+    body.cinema .panel:not(#cinema),
+    body.cinema .quick,
+    body.cinema .stick,
+    body.cinema #joystick,
+    body.cinema #controls,
+    body.cinema #menu-toggle,
+    body.cinema #pointer { visibility: hidden; }
+
+    #cinema {
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      width: min(720px, calc(100% - 20px));
+      max-height: 46vh;
+      overflow-y: auto;
+      padding: 14px 18px 12px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, 14px);
+      transition: opacity 0.6s ease, transform 0.6s ease, visibility 0s 0.6s;
+    }
+
+    body.cinema #cinema {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    #cinema h2 {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    #cinema .text {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    #cinema .foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 14px;
+    }
+
+    #cinema a,
+    #cinema .tally {
+      font-size: 0.78rem;
+      color: inherit;
+      opacity: 0.8;
+    }
+
+    #cinema .tally { font-style: italic; }
+
+    #cinema button {
+      margin-left: auto;
+      padding: 9px 20px;
+      font: inherit;
+      color: #f4e9d2;
+      background: var(--fill);
+      border: 0;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
     /* Arrow at the edge of the screen towards the nearest point still to find. */
     #pointer {
       position: fixed;
@@ -1199,6 +1270,16 @@
     <a target="_blank" rel="noopener" data-i18n="card.source">Fuente: Wikipedia</a>
     <span class="tally"></span>
   </article>
+
+  <section id="cinema" class="panel">
+    <h2></h2>
+    <p class="text"></p>
+    <div class="foot">
+      <a target="_blank" rel="noopener"></a>
+      <span class="tally"></span>
+      <button id="cinema-continue" type="button" data-i18n="cinema.continue">Continuar</button>
+    </div>
+  </section>
 
   <div id="help" class="panel">
     <span class="keys" data-i18n-html="hint.keys"></span>

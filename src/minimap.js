@@ -50,7 +50,7 @@ export function createMinimap(canvas, layout, path, guide) {
   // The same mark on both sheets, so the city plan ends where the other begins.
   function paintLimit(pen) {
     const at = path.pointAt(path.end);
-    const half = waterHalf(path, path.end) + 36;
+    const half = waterHalf(path, path.end) + 150;
     pen.lineCap = 'round';
     pen.strokeStyle = 'rgba(90, 70, 48, 0.9)';
     pen.lineWidth = 2.4 * ratio;
@@ -83,7 +83,7 @@ export function createMinimap(canvas, layout, path, guide) {
   function paintCity(pen) {
     const navigable = path.samples.filter((sample) => sample.s >= path.start && sample.s <= path.end);
     const limit = path.pointAt(path.end);
-    const reach = waterHalf(path, path.end) + 36;
+    const reach = waterHalf(path, path.end) + 150;
     const xs = [
       ...layout.wall.map(([x]) => x),
       ...navigable.map((sample) => sample.x),
@@ -143,7 +143,7 @@ export function createMinimap(canvas, layout, path, guide) {
       zs.push(marker.z);
     }
     const limit = path.pointAt(path.end);
-    const reach = waterHalf(path, path.end) + 36;
+    const reach = waterHalf(path, path.end) + 150;
     xs.push(limit.x - limit.rx * reach, limit.x + limit.rx * reach);
     zs.push(limit.z - limit.rz * reach, limit.z + limit.rz * reach);
     fit(xs, zs);

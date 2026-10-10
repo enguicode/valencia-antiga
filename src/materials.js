@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { COLORS, createRandom } from './config.js';
 
 // Surfaces. Every texture is painted here on a canvas, so the page still
-// ships no image files. Most are neutral (light greys) and take their hue
-// from the material or instance colour.
+// ships no image files. Most are neutral greys and take their hue from the
+// material or instance colour. The greys stay near the middle of the range:
+// a near-white map leaves no room for that hue once the noon sun and the
+// filmic tone map have had their turn, and the stone comes out grey.
 
 const SIZE = 256;
 
@@ -52,22 +54,23 @@ function blotches(context, random, amount, radius, strength) {
 
 function paintMasonry(context) {
   const random = createRandom(11);
-  context.fillStyle = grey(150);
+  context.fillStyle = grey(118); // mortar, dark enough that the courses read
   context.fillRect(0, 0, SIZE, SIZE);
   const course = SIZE / 8;
   for (let row = 0; row < 8; row++) {
     let x = -random() * 50;
     while (x < SIZE) {
       const width = 34 + random() * 46;
-      context.fillStyle = grey(200 + Math.floor(random() * 50));
+      // Mid grey, not near-white: the honey tint has to survive the multiply.
+      context.fillStyle = grey(186 + Math.floor(random() * 36));
       context.fillRect(x + 1.5, row * course + 1.5, width - 3, course - 3);
       // the same block again past the right edge, so the course tiles
       context.fillRect(x + 1.5 - SIZE, row * course + 1.5, width - 3, course - 3);
       x += width;
     }
   }
-  blotches(context, random, 26, 34, 0.16);
-  speckle(context, random, 5000, 0.14);
+  blotches(context, random, 18, 34, 0.1);
+  speckle(context, random, 4000, 0.1);
 }
 
 // Curved roof tiles. Channels run across U and the overlaps run down V,
@@ -116,7 +119,7 @@ function paintTapial(context) {
   const lift = SIZE / lifts;
   for (let row = 0; row < lifts; row++) {
     const y = row * lift;
-    const shade = 158 + Math.floor(random() * 28);
+    const shade = 168 + Math.floor(random() * 30);
     context.fillStyle = grey(shade);
     context.fillRect(0, y, SIZE, lift);
     for (let x = 0; x < SIZE; x += 7) {
@@ -137,6 +140,60 @@ function paintTapial(context) {
   }
   blotches(context, random, 18, 30, 0.1);
   speckle(context, random, 4000, 0.1);
+}
+
+// Running bond, smaller than the ashlar, so brick does not read as stone.
+function paintBrick(context) {
+  const random = createRandom(22);
+  const courses = 10;
+  const course = SIZE / courses;
+  context.fillStyle = grey(86);
+  context.fillRect(0, 0, SIZE, SIZE);
+  for (let row = 0; row < courses; row++) {
+    let x = (row % 2) * -26;
+    while (x < SIZE) {
+      const width = 44 + random() * 12;
+      context.fillStyle = grey(168 + Math.floor(random() * 34));
+      context.fillRect(x + 1.5, row * course + 1.5, width - 3, course - 3);
+      context.fillRect(x + 1.5 - SIZE, row * course + 1.5, width - 3, course - 3);
+      x += width;
+    }
+  }
+  blotches(context, random, 10, 28, 0.08);
+  speckle(context, random, 2200, 0.08);
+}
+
+// Limewash: light, soft, no courses. Darker maps cannot reach a pale plaster.
+function paintPlaster(context) {
+  const random = createRandom(23);
+  context.fillStyle = grey(236);
+  context.fillRect(0, 0, SIZE, SIZE);
+  blotches(context, random, 36, 38, 0.12);
+  speckle(context, random, 3500, 0.07);
+}
+
+// Beaten earth. Darker than the masonry and with no courses, so a stone
+// building still separates from the ground by value as well as by colour.
+function paintEarth(context) {
+  const random = createRandom(21);
+  context.fillStyle = grey(148);
+  context.fillRect(0, 0, SIZE, SIZE);
+  blotches(context, random, 80, 42, 0.32);
+  for (let i = 0; i < 22; i++) {
+    context.fillStyle = grey(96 + Math.floor(random() * 70), 0.4);
+    context.beginPath();
+    context.ellipse(
+      random() * SIZE,
+      random() * SIZE,
+      6 + random() * 24,
+      4 + random() * 14,
+      random() * 6,
+      0,
+      Math.PI * 2,
+    );
+    context.fill();
+  }
+  speckle(context, random, 7000, 0.18);
 }
 
 function paintMottle(context) {
@@ -280,6 +337,9 @@ export const TEXTURES = {
   masonry: paint(paintMasonry),
   tiles: paint(paintTiles),
   tapial: paint(paintTapial),
+  brick: paint(paintBrick),
+  plaster: paint(paintPlaster),
+  earth: paint(paintEarth),
   mottle: paint(paintMottle),
   planks: paint(paintPlanks),
   cloth: paint(paintCloth),
@@ -349,4 +409,4 @@ export function createSurface(texture, metres, options = {}) {
   );
 }
 
-export const stoneSurface = () => createSurface('masonry', 4, { color: COLORS.stone });
+export const stoneSurface = () => createSurface('masonry', 4, { color: COLORS.stone, roughness: 0.9 });

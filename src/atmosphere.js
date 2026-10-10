@@ -11,15 +11,17 @@ const SETTLE_RATE = 0.9; // how quickly the light moves to a newly chosen hour
 
 // hour, sky top, horizon and fog, sun colour, sun strength, ambient strength, fog reach, night (0-1)
 const KEYS = [
-  [0, 0x0b1026, 0x1a2140, 0x9fb4e6, 0.7, 0.6, 600, 1],
-  [5, 0x1c2550, 0x3a3558, 0x9fb4e6, 0.6, 0.6, 480, 1],
+  // Night light is a warm moon, not a blue one: a blue key turns honey stone grey.
+  [0, 0x0b1026, 0x161c28, 0xe6d8c2, 0.95, 0.85, 600, 1],
+  [5, 0x1c2550, 0x2a2438, 0xe6d8c2, 0.85, 0.8, 480, 1],
   [6.6, 0x5b78b8, 0xf2b98a, 0xffc79a, 1.2, 0.8, 420, 0.1],
-  [9, 0x5f97d2, 0xdfe6ea, 0xfff4e0, 1.9, 1.2, 760, 0],
-  [13, 0x4f8fd8, 0xe6eef2, 0xffffff, 2.1, 1.3, FOG.far, 0],
+  [9, 0x5f97d2, 0xe4e4d6, 0xfff4e0, 1.9, 1.2, 760, 0],
+  // Noon sun was pure white and the haze a cool grey; both washed the stone.
+  [13, 0x4f8fd8, 0xe7dfd0, 0xfff3d4, 1.9, 1.25, FOG.far, 0],
   [18, 0x5f97d2, 0xf0e2c6, 0xfff1d6, 1.9, 1.2, FOG.far, 0],
   [20, 0x4a5f9f, 0xf0a070, 0xff9d5c, 1.1, 0.7, 700, 0.1],
-  [21.5, 0x1c2550, 0x4a3a5a, 0x9fb4e6, 0.6, 0.6, 600, 1],
-  [24, 0x0b1026, 0x1a2140, 0x9fb4e6, 0.7, 0.6, 600, 1],
+  [21.5, 0x1c2550, 0x3a3048, 0xe6d8c2, 0.85, 0.8, 600, 1],
+  [24, 0x0b1026, 0x161c28, 0xe6d8c2, 0.95, 0.85, 600, 1],
 ].map(([hour, top, horizon, sun, sunStrength, ambient, reach, night]) => ({
   hour,
   top: new THREE.Color(top),
@@ -52,6 +54,10 @@ const momentIndex = (value) => {
 };
 
 const lerp = THREE.MathUtils.lerp;
+const bounceDay = new THREE.Color(0xc48a4a);
+const bounceNight = new THREE.Color(0x4a321c);
+const fillWarm = new THREE.Color(0xfff6e8);
+const skyFill = new THREE.Color();
 
 // Each visit starts at the moment of day it is on the visitor's own clock.
 // Dawn is 5:30–7:30, afternoon 19:00–21:00, night 21:00–5:30, and the rest
@@ -147,11 +153,18 @@ export function createAtmosphere(scene, { skyMaterial, stars, moon, sun, hemisph
 
     sun.color.lerpColors(a.sun, b.sun, t);
     sun.intensity = lerp(a.sunStrength, b.sunStrength, t);
-    // Half of the ambient light now comes from the sky's environment map.
+    // The environment map still fills, but less of it: its average is the
+    // sky, and that cool light was greying every face. The hemisphere gives
+    // the rest back, with a warm bounce off the ground.
     const ambient = lerp(a.ambient, b.ambient, t);
-    hemisphere.intensity = ambient * 0.5;
-    scene.environmentIntensity = 0.75;
-    state.night = lerp(a.night, b.night, t);
+    const night = lerp(a.night, b.night, t);
+    hemisphere.intensity = ambient * 0.72;
+    skyFill.copy(skyMaterial.uniforms.topColor.value).lerp(skyMaterial.uniforms.horizonColor.value, 0.5);
+    skyFill.lerp(fillWarm, 0.28 * (1 - night));
+    hemisphere.color.copy(skyFill);
+    hemisphere.groundColor.copy(bounceDay).lerp(bounceNight, night);
+    scene.environmentIntensity = lerp(0.5, 0.38, night);
+    state.night = night;
     state.light = ambient / 1.3;
     stars.material.opacity = state.night * 0.9;
     moon.material.opacity = state.night;

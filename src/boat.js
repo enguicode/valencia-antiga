@@ -77,6 +77,9 @@ const CRAFT = {
   spirit: { pace: 16, build: createSpirit },
 };
 
+// How many times faster than a boat under sail each one goes.
+export const boatPace = (typeName) => CRAFT[typeName]?.pace ?? 1;
+
 const stationZ = (type, t) => (t * type.length) / 2;
 
 function sharedMaterials() {
@@ -1270,8 +1273,10 @@ function createGondola() {
   // The oar trails on the starboard side. He rows standing, facing the bow.
   const grip = v(-0.42, hull.sheer(-0.64) + 1.05, stand + 0.15);
   const blade = v(-1.05, -0.05, stand - 1.7);
-  add('deck', spar(grip, blade, 0.035));
-  add('deck', new THREE.BoxGeometry(0.22, 0.025, 0.55), blade.x, blade.y, blade.z - 0.15);
+  // The oar is a piece of its own, hung from the grip, so that it can row.
+  const oar = pieceBin();
+  oar.add('deck', spar(grip, blade, 0.035), -grip.x, -grip.y, -grip.z);
+  oar.add('deck', new THREE.BoxGeometry(0.22, 0.025, 0.55), blade.x - grip.x, blade.y - grip.y, blade.z - 0.15 - grip.z);
   add('trim', new THREE.CylinderGeometry(0.03, 0.03, 0.16, 6), -hull.halfBeam(-0.35) + 0.02, hull.sheer(-0.35) + 0.08, z(-0.35));
   addCrew(add, 0, hull.sheer(-0.64) - 0.02, stand);
   add('shirt', spar(v(-0.16, hull.sheer(-0.64) + 0.85, stand + 0.05), grip, 0.045));
@@ -1290,6 +1295,7 @@ function createGondola() {
     },
     lantern: [0, bowY + 0.35, bowZ - 0.35],
     lid: createLidGeometry(hull),
+    oar: { grip: grip.toArray(), geometries: oar.geometries() },
   };
 }
 
@@ -1739,6 +1745,17 @@ function createCraftModel(typeName) {
     model.userData.lines = lines;
     model.userData.rigDown = 0;
   }
+  if (parts.oar) {
+    const oar = new THREE.Group();
+    oar.position.set(...parts.oar.grip);
+    for (const [name, geometry] of Object.entries(parts.oar.geometries)) {
+      const mesh = new THREE.Mesh(geometry, parts.materials[name]);
+      mesh.castShadow = true;
+      oar.add(mesh);
+    }
+    model.add(oar);
+    model.userData.oar = oar;
+  }
   if (parts.spray) {
     const spray = new THREE.Mesh(SPRAY.geometry, SPRAY.material);
     spray.position.set(...parts.spray.at);
@@ -1843,6 +1860,14 @@ export function animateBoat(model, dt, time, { closeness, speed, underSail = fal
     );
     if (data.jet) data.jet.material.emissiveIntensity = 0.35 + thrust * 1.8;
     return;
+  }
+  if (data.oar) {
+    // The gondolier's stroke: the blade sweeps aft and feathers back. It
+    // keeps a slow beat at rest, as a gondolier holding his place does.
+    const effort = 0.2 + 0.8 * Math.min(1, Math.abs(speed) / 1.2);
+    const phase = time * (1.5 + Math.abs(speed) * 0.3) + model.id;
+    data.oar.rotation.x = Math.sin(phase) * 0.2 * effort;
+    data.oar.rotation.z = Math.cos(phase) * 0.07 * effort;
   }
   if (!data.rig) return;
   const poling = Boolean(data.stroke) && !underSail && Math.abs(speed) < SAILING_SPEED;

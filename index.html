@@ -1022,8 +1022,16 @@
     .boat-picker .next { right: 0; border-right: 0; border-radius: 3px 0 0 3px; }
 
     .boat-picker .name {
-      margin: 6px 0 2px;
+      margin: 6px 0 0;
       font-weight: 600;
+    }
+
+    .boat-picker .pace {
+      margin: 0 0 4px;
+      color: var(--muted);
+      font-size: 0.78em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .boat-picker .dots span {
@@ -1334,6 +1342,7 @@
         <button type="button" class="next" data-i18n-label="boat.next" aria-label="Barca siguiente">›</button>
       </div>
       <p class="name" aria-live="polite"></p>
+      <p class="pace"></p>
       <div class="dots" aria-hidden="true"></div>
       <select id="boat-type" hidden>
         <option value="albufera" data-i18n="boat.albufera">De la Albufera, con percha</option>

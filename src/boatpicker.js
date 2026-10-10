@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { createBoatModel, animateBoat } from './boat.js';
+import { createBoatModel, animateBoat, boatPace } from './boat.js';
 import { COLORS } from './config.js';
-import { onLanguageChange } from './i18n.js';
+import { t, onLanguageChange } from './i18n.js';
 
 // The boats, shown one at a time on a little stage of their own in the
 // settings: slide sideways to see the next one; saving the sheet chooses it.
@@ -27,6 +27,7 @@ const SLIDE_PIXELS = 46; // a drag longer than this moves on to the next boat
 export function createBoatPicker(root, select, isShowing) {
   const canvas = root.querySelector('canvas');
   const name = root.querySelector('.name');
+  const pace = root.querySelector('.pace');
   const dots = root.querySelector('.dots');
   const types = [...select.options].map((option) => option.value);
 
@@ -66,6 +67,7 @@ export function createBoatPicker(root, select, isShowing) {
 
   function describe() {
     name.textContent = select.options[shown].textContent;
+    pace.textContent = t('boat.pace', { times: boatPace(types[shown]) });
     for (const dot of dots.children) dot.classList.toggle('on', dot.dataset.type === types[shown]);
     root.classList.toggle('current', types[shown] === select.value);
   }

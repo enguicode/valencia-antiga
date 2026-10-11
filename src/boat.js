@@ -4,7 +4,7 @@ import { RIVER, COLORS } from './config.js';
 import { waveHeight } from './water.js';
 import { TEXTURES } from './materials.js';
 
-const MAX_SPEED = 9;
+const MAX_SPEED = 11; // under sail; every other craft is a multiple of this
 const MAX_REVERSE = -2.5;
 const ACCELERATION = 6;
 const DRAG = 0.6;

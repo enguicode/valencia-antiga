@@ -442,7 +442,7 @@ invertSelect.addEventListener('change', () => {
     // As above.
   }
 });
-const settingSelects = [languageSelect, document.getElementById('quality'), hourSelect, invertSelect];
+const settingSelects = [languageSelect, document.getElementById('quality'), hourSelect];
 const hourCards = document.querySelector('#info .hours');
 let settingsBefore = null;
 // The old sheet was a sideways strip: the card left in the middle was the hour.

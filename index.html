@@ -1332,6 +1332,14 @@
   <dialog id="info">
     <section id="help-section">
     <h2 data-i18n="help.title">Controles</h2>
+    <p>
+      <label><span data-i18n="settings.invert">Invertir vertical:</span>
+        <select id="invert-look">
+          <option value="off" data-i18n="settings.no">No</option>
+          <option value="on" data-i18n="settings.yes">Sí</option>
+        </select>
+      </label>
+    </p>
     <ul>
       <li data-i18n-html="help.keyboard"><strong>Teclado:</strong> <kbd>W</kbd> <kbd>S</kbd> o las flechas arriba y abajo para avanzar y ciar; <kbd>A</kbd> <kbd>D</kbd> o izquierda y derecha para el timón.</li>
       <li data-i18n-html="help.mouse"><strong>Ratón:</strong> arrastra con el botón izquierdo para llevar la barca y con el derecho para girar la cámara.</li>
@@ -1360,12 +1368,6 @@
           <option value="high" data-i18n="quality.high">Alta</option>
           <option value="medium" data-i18n="quality.medium">Media</option>
           <option value="low" data-i18n="quality.low">Baja</option>
-        </select>
-      </label>
-      <label><span data-i18n="settings.invert">Invertir vertical:</span>
-        <select id="invert-look">
-          <option value="off" data-i18n="settings.no">No</option>
-          <option value="on" data-i18n="settings.yes">Sí</option>
         </select>
       </label>
     </p>

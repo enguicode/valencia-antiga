@@ -539,22 +539,36 @@ const droneButton = document.getElementById('drone');
 // A little quadcopter that takes off from the boat and flies just ahead.
 const droneModel = new THREE.Group();
 {
-  const dark = new THREE.MeshStandardMaterial({ color: 0x2b2b2e, roughness: 0.6 });
-  droneModel.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.46), dark));
-  const lens = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: 0xc8862e }));
-  lens.position.set(0, -0.06, 0.2);
-  droneModel.add(lens);
-  const blade = new THREE.BoxGeometry(0.44, 0.012, 0.05);
-  const pale = new THREE.MeshStandardMaterial({ color: 0xd8d2c4 });
+  const shell = new THREE.MeshStandardMaterial({ color: 0xe9e4d8, roughness: 0.45 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x26262a, roughness: 0.6 });
+  const blur = new THREE.MeshBasicMaterial({ color: 0x1a1a1c, transparent: true, opacity: 0.22, depthWrite: false });
+  const add = (geometry, material, x, y, z) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    droneModel.add(mesh);
+    return mesh;
+  };
+  // A pebble of a body, a darker belly and the camera slung under the nose.
+  add(new THREE.SphereGeometry(0.2, 16, 12), shell, 0, 0, 0).scale.set(0.8, 0.42, 1.25);
+  add(new THREE.SphereGeometry(0.16, 12, 8), dark, 0, -0.04, 0).scale.set(0.75, 0.35, 1.15);
+  add(new THREE.SphereGeometry(0.055, 12, 8), dark, 0, -0.09, 0.2);
+  add(new THREE.SphereGeometry(0.025, 8, 6), new THREE.MeshBasicMaterial({ color: 0x7fd0ff }), 0, -0.1, 0.245);
+  const motor = new THREE.CylinderGeometry(0.035, 0.04, 0.07, 10);
+  const disc = new THREE.CircleGeometry(0.17, 20).rotateX(-Math.PI / 2);
+  const blade = new THREE.BoxGeometry(0.32, 0.006, 0.03);
+  const leg = new THREE.CylinderGeometry(0.008, 0.008, 0.12, 5);
+  const lamp = new THREE.SphereGeometry(0.018, 6, 5);
   droneModel.userData.rotors = [-1, 1].flatMap((x) => [-1, 1].map((z) => {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.4), dark);
-    arm.position.set(x * 0.2, 0, z * 0.2);
-    arm.rotation.y = -x * z * Math.PI / 4;
-    const rotor = new THREE.Mesh(blade, pale);
-    rotor.position.set(x * 0.34, 0.07, z * 0.34);
-    droneModel.add(arm, rotor);
-    return rotor;
+    const arm = add(new THREE.BoxGeometry(0.03, 0.025, 0.34), dark, x * 0.14, 0.01, z * 0.14);
+    arm.rotation.y = x * z * Math.PI / 4;
+    add(motor, dark, x * 0.25, 0.03, z * 0.25);
+    add(disc, blur, x * 0.25, 0.075, z * 0.25);
+    add(leg, dark, x * 0.25, -0.06, z * 0.25);
+    // Green ahead, red astern, as on anything that flies.
+    add(lamp, new THREE.MeshBasicMaterial({ color: z > 0 ? 0x4dff7a : 0xff4d4d }), x * 0.25, -0.01, z * 0.25);
+    return add(blade, dark, x * 0.25, 0.072, z * 0.25);
   }));
+  droneModel.scale.setScalar(0.6);
 }
 droneModel.visible = false;
 scene.add(droneModel);

@@ -2235,11 +2235,6 @@ function anchorGeometry() {
   return geometryFrom(positions, indices);
 }
 
-// Vertical wheel, axle along Z. Bottom of the ring is at y = -(1 + tube).
-function noriaGeometry() {
-  return new THREE.TorusGeometry(1, 0.065, 5, 14);
-}
-
 // rotation.y sends local +X to (cos yaw, 0, -sin yaw) and local +Z to (sin, 0, cos).
 function localOffset(yaw, sx, sy, sz, lx, ly, lz) {
   const x = lx * sx;
@@ -2260,14 +2255,12 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
   const detail = createRandom(1734);
   const houseWalls = [];
   const thatchRoofs = [];
-  const tileRoofs = [];
   const limeBoxes = [];
   const woodBoxes = [];
   const sheets = [];
   const rounds = [];
   const anchors = [];
   const plants = [];
-  const norias = [];
   const oxen = [];
   const occupied = [];
 
@@ -2366,7 +2359,8 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
     }
   };
 
-  // --- Nazaret: a fishing and huerta scatter on the grass, doors to the river.
+  // --- Nazaret: a few fishermen's huts on the grass, doors to the river.
+  // No more than that: the village grew round the lazaretto, from 1720.
   const barracaSpots = [
     [-308, 28, 1, 0.08],
     [-290, 32, 0.96, -0.12],
@@ -2374,11 +2368,7 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
     [-254, 31, 0.98, -0.05],
     [-236, 27, 1.02, 0.1],
     [-218, 33, 0.95, -0.14],
-    [-204, 38, 1, 0],
-    [-300, 50, 0.97, 0.18],
     [-278, 54, 1.03, -0.16],
-    [-256, 48, 0.96, 0.1],
-    [-232, 52, 1, -0.08],
   ];
   barracaSpots.forEach(([sOff, inland, scale, turn], index) => {
     const spot = grassAt(sOff, inland);
@@ -2387,19 +2377,6 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
     placeGable(spot, 1.15, yaw, scale, 1, scale, thatchRoofs, thatches[index % thatches.length], true);
     if (index % 4 === 0) shade({ x: spot.x, y: 1.15, z: spot.z }, yaw, scale, 1, scale);
   });
-  const farmSpots = [
-    [-316, 68],
-    [-266, 70],
-    [-222, 66],
-  ];
-  farmSpots.forEach(([sOff, inland], index) => {
-    const spot = grassAt(sOff, inland);
-    if (!spot) return;
-    const yaw = yawTowards(-spot.sample.rx, -spot.sample.rz) + (index - 1) * 0.12;
-    // sy/sz lowers the pitch from the barraca's 60° to about 45°.
-    placeGable(spot, 1.15, yaw, 1.24, 0.84, 1.3, tileRoofs, COLORS.roofs[index], false);
-  });
-
   // Dirt path from the front rank down to the bank, then a short branch.
   for (let inland = 20; inland >= 10; inland -= 3.4) {
     const spot = grassAt(-250, inland);
@@ -2413,26 +2390,7 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
     limeBoxes.push(poseOf(spot.x, 1.19, spot.z, yawTowards(spot.sample.tx, spot.sample.tz), 4.2, 0.07, 2.2, 0xb29668));
   }
 
-  const era = grassAt(-242, 62);
-  if (era) {
-    limeBoxes.push(poseOf(era.x, 1.2, era.z, 0.4, 7.2, 0.08, 7.2, 0xc6ae78));
-    occupy(era.x, era.z, 4);
-  }
-  const well = grassAt(-270, 64);
-  if (well) {
-    const yaw = yawTowards(well.sample.tx, well.sample.tz);
-    norias.push(poseOf(well.x, 1.15 + 1.07, well.z, yaw, 1.05, 1.05, 1.05, 0x6a5040));
-    rounds.push(poseOf(well.x, 1.15 + 0.32, well.z, yaw, 1.15, 0.64, 1.15, 0xc8c0a8));
-    rounds.push(poseOf(well.x, 1.15 + 0.55, well.z, yaw, 0.7, 0.08, 0.7, 0x3d4e4c));
-    for (const sign of [-1, 1]) {
-      const o = localOffset(yaw, 1, 1, 1, 0, 0, 0.55 * sign);
-      woodBoxes.push(poseOf(well.x + o.x, 1.15 + 0.7, well.z + o.z, yaw, 0.12, 1.4, 0.12, COLORS.wood));
-    }
-    woodBoxes.push(poseOf(well.x, 1.15 + 1.45, well.z, yaw, 0.1, 0.1, 1.5, COLORS.wood));
-    occupy(well.x, well.z, 2.2);
-  }
-
-  // Two reed pens: one round the era, one on the inland edge of the scatter.
+  // A reed pen on the inland edge of the scatter.
   const pen = (sOff, inland, dirX, dirZ, length, posts) => {
     const spot = grassAt(sOff, inland);
     if (!spot) return;
@@ -2445,13 +2403,6 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
       woodBoxes.push(poseOf(spot.x, 1.15 + ly, spot.z, yaw, length, 0.06, 0.06, 0xa08458));
     }
   };
-  const samplePen = grassAt(-242, 62);
-  if (samplePen) {
-    pen(-242, 66.5, samplePen.sample.tx, samplePen.sample.tz, 8, 4);
-    pen(-242, 57.5, samplePen.sample.tx, samplePen.sample.tz, 8, 4);
-    pen(-246.5, 62, samplePen.sample.rx, samplePen.sample.rz, 8, 4);
-    pen(-237.5, 62, samplePen.sample.rx, samplePen.sample.rz, 8, 4);
-  }
   const hedge = grassAt(-300, 78);
   if (hedge) pen(-280, 78, hedge.sample.tx, hedge.sample.tz, 18, 6);
 
@@ -2777,10 +2728,6 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
   thatchMat.side = THREE.DoubleSide;
   thatchMat.onBeforeCompile = thatch.onBeforeCompile;
   thatchMat.customProgramCacheKey = thatch.customProgramCacheKey;
-  const tileMat = tiles.clone();
-  tileMat.side = THREE.DoubleSide;
-  tileMat.onBeforeCompile = tiles.onBeforeCompile;
-  tileMat.customProgramCacheKey = tiles.customProgramCacheKey;
 
   const add = (geometry, material, items) => {
     const mesh = buildPosed(geometry, material, items);
@@ -2788,13 +2735,11 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
   };
   add(barracaWallGeometry(), lime, houseWalls);
   add(gableRoofGeometry(), thatchMat, thatchRoofs);
-  add(gableRoofGeometry(), tileMat, tileRoofs);
   add(new THREE.BoxGeometry(1, 1, 1), lime, limeBoxes);
   add(new THREE.BoxGeometry(1, 1, 1), wood, woodBoxes);
   add(sheetGeometry(), cloth, sheets);
   add(new THREE.CylinderGeometry(0.5, 0.5, 1, 6), wood, rounds);
   add(anchorGeometry(), wood, anchors);
   add(new THREE.ConeGeometry(0.45, 1, 4), scrubMat, plants);
-  add(noriaGeometry(), wood, norias);
   add(oxGeometry(), oxMat, oxen);
 }

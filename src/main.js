@@ -44,7 +44,12 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
 
-const environment = createEnvironment(scene, path, landmarkClearings(layout));
+// No orchard where a bridge comes ashore on the far bank.
+const bridgeLandings = layout.bridges.map((bridge) => {
+  const { sample } = path.project(bridge.x, bridge.z);
+  return { x: sample.x - sample.rx * 74, z: sample.z - sample.rz * 74, radius: 16 };
+});
+const environment = createEnvironment(scene, path, landmarkClearings(layout), bridgeLandings);
 const { sky } = environment;
 const water = createWater(path);
 const bridgeGuide = createBridgeGuide(layout, path);
@@ -529,15 +534,40 @@ function updateOrbit(dt, axes) {
 // off the boat to fly over the city. The sail controls move it (ahead and
 // sideways, along where it looks) and the look controls turn it.
 const DRONE = { speed: 70, yawPerPixel: 0.004, pitchPerPixel: 0.003, floor: 2 };
-const drone = { on: false, yaw: 0, pitch: 0 };
+const drone = { on: false, yaw: 0, pitch: 0, takeoff: 0 };
 const droneButton = document.getElementById('drone');
+// A little quadcopter that takes off from the boat and flies just ahead.
+const droneModel = new THREE.Group();
+{
+  const dark = new THREE.MeshStandardMaterial({ color: 0x2b2b2e, roughness: 0.6 });
+  droneModel.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.46), dark));
+  const lens = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: 0xc8862e }));
+  lens.position.set(0, -0.06, 0.2);
+  droneModel.add(lens);
+  const blade = new THREE.BoxGeometry(0.44, 0.012, 0.05);
+  const pale = new THREE.MeshStandardMaterial({ color: 0xd8d2c4 });
+  droneModel.userData.rotors = [-1, 1].flatMap((x) => [-1, 1].map((z) => {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.4), dark);
+    arm.position.set(x * 0.2, 0, z * 0.2);
+    arm.rotation.y = -x * z * Math.PI / 4;
+    const rotor = new THREE.Mesh(blade, pale);
+    rotor.position.set(x * 0.34, 0.07, z * 0.34);
+    droneModel.add(arm, rotor);
+    return rotor;
+  }));
+}
+droneModel.visible = false;
+scene.add(droneModel);
 if (new URLSearchParams(location.search).get('drone') === 'true') {
   droneButton.hidden = false;
   droneButton.addEventListener('click', () => {
     drone.on = !drone.on;
     droneButton.setAttribute('aria-pressed', drone.on);
     droneButton.classList.toggle('active', drone.on);
+    droneModel.visible = drone.on;
     if (!drone.on) return;
+    drone.takeoff = 0;
+    droneModel.position.copy(boat.mesh.position).setY(2);
     camera.getWorldDirection(viewDirection);
     drone.yaw = Math.atan2(viewDirection.x, viewDirection.z);
     drone.pitch = Math.asin(viewDirection.y);
@@ -559,6 +589,13 @@ function updateDrone(dt, axes) {
   lookAt.copy(camera.position).add(viewDirection);
   camera.lookAt(lookAt);
   sky.position.copy(camera.position);
+  // The model leaves the boat, then keeps its place low in the view.
+  drone.takeoff = Math.min(1, drone.takeoff + dt / 1.6);
+  lookGoal.copy(camera.position).addScaledVector(viewDirection, 4.2);
+  lookGoal.addScaledVector(cameraGoal.set(0, 1, 0).applyQuaternion(camera.quaternion), -1.55);
+  droneModel.position.lerp(lookGoal, THREE.MathUtils.smoothstep(drone.takeoff, 0, 1));
+  droneModel.rotation.y = drone.yaw;
+  for (const rotor of droneModel.userData.rotors) rotor.rotation.y += dt * 40;
 }
 
 // For a few seconds after entering a ring the camera leaves the stern, steps

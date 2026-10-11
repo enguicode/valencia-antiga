@@ -253,7 +253,7 @@ export function createCrownGeometry() {
 }
 
 // Orchard trees on the bank opposite the city.
-function createTrees(path, clearings) {
+function createTrees(path, clearings, gaps) {
   // Same draw as before, on the city centreline only. Trees that used to
   // fall past the end of the tour (in the mist) are skipped, but the random
   // numbers are still consumed so the ones upstream do not move.
@@ -272,7 +272,8 @@ function createTrees(path, clearings) {
     if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
     // Past the tour these used to stand in the mist. The yaw is still drawn
     // so every later tree keeps the place it had.
-    if (sample.s > path.garden) {
+    // The same goes for the ones a bridge would land on.
+    if (sample.s > path.garden || gaps.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) {
       random();
       continue;
     }
@@ -309,7 +310,7 @@ function createTrees(path, clearings) {
   return group;
 }
 
-export function createEnvironment(scene, path, clearings) {
+export function createEnvironment(scene, path, clearings, gaps = []) {
   scene.fog = new THREE.Fog(COLORS.horizon, FOG.near, FOG.far);
 
   const { sky, stars, moon } = createSky();
@@ -321,7 +322,7 @@ export function createEnvironment(scene, path, clearings) {
   const sun = new THREE.DirectionalLight(0xfff1d6, 1.9);
   scene.add(sun, sun.target);
 
-  scene.add(createBank(path, 1), createBank(path, -1), createTrees(path, clearings));
+  scene.add(createBank(path, 1), createBank(path, -1), createTrees(path, clearings, gaps));
 
   return { sky, stars, moon, sun, hemisphere, skyMaterial: sky.material };
 }

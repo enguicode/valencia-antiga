@@ -216,6 +216,9 @@ function refreshEnvironment() {
   skyTarget?.dispose();
   skyTarget = next;
 }
+// A phone sent to the background may take the graphics context away. What
+// is drawn every frame comes back by itself; this map is drawn once.
+renderer.domElement.addEventListener('webglcontextrestored', refreshEnvironment);
 
 const atmosphere = createAtmosphere(
   scene,

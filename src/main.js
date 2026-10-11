@@ -532,7 +532,7 @@ if (new URLSearchParams(location.search).get('drone') === 'true') {
 
 function updateDrone(dt, axes) {
   drone.yaw += axes.lookX * DRONE.yawPerPixel;
-  drone.pitch = THREE.MathUtils.clamp(drone.pitch - axes.lookY * DRONE.pitchPerPixel, -1.5, 1.5);
+  drone.pitch = THREE.MathUtils.clamp(drone.pitch + axes.lookY * DRONE.pitchPerPixel, -1.5, 1.5);
   viewDirection.set(Math.sin(drone.yaw) * Math.cos(drone.pitch), Math.sin(drone.pitch), Math.cos(drone.yaw) * Math.cos(drone.pitch));
   // Faster the higher it is: a street wants care, the whole plain does not.
   const step = DRONE.speed * (1 + camera.position.y / 80) * dt;

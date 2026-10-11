@@ -58,6 +58,17 @@ RING_STREETS = [
     "Passeig de la Ciutadella",
 ]
 
+# The scene's bridges cross a smoothed river at right angles, so at their
+# OSM midpoint four of them missed their gate by 20 to 40 m. These are the
+# points on the river's centreline abreast of each gate, where the bridge
+# lands in front of it; the gates and the river keep the OSM positions.
+BRIDGE_FACES_GATE = {
+    "sant-josep": {"x": -334.2, "z": -320.9},
+    "serrans": {"x": 92.2, "z": -129.9},
+    "trinitat": {"x": 311.3, "z": 52.1},
+    "real": {"x": 636.6, "z": 346.9},
+}
+
 # Riverside gates stood at the city end of each historic bridge.
 BRIDGE_GATES = {
     "sant-josep": "Portal Nou",
@@ -391,7 +402,7 @@ def main():
                 "yards": {"name": "Drassanes del Grau", "x": round(to_local(GRAU_YARDS)[0], 1), "z": round(to_local(GRAU_YARDS)[1], 1)},
             },
         },
-        "bridges": [{**b, "x": round(b["x"], 1), "z": round(b["z"], 1)} for b in bridges],
+        "bridges": [{**b, **BRIDGE_FACES_GATE.get(b["id"], {"x": round(b["x"], 1), "z": round(b["z"], 1)})} for b in bridges],
         "wall": rounded(wall),
         "gates": gates,
         "towers": towers,

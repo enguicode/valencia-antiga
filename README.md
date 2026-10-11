@@ -35,7 +35,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 
 En el móvil, el primer dedo lleva la barca y el segundo gira la cámara, también fuera de los mandos.
 
-La pantalla se deja casi libre. Arriba a la izquierda, los puntos y los metros. Arriba a la derecha, el mapa, que se amplía al tocarlo, y debajo el botón «Menú» (reiniciar los puntos, ajustes y ayuda). Abajo, tres botones redondos: el recorrido guiado a la izquierda, y en el centro la hora y el sonido.
+La pantalla se deja casi libre. Arriba, una tira fina con el avance por el río, una marca por cada puente y los metros. Debajo, a la izquierda, el botón redondo del menú (ajustes, controles, créditos y reiniciar los puntos) y la cuenta de puntos, que abre el cuaderno. A la derecha, el mapa, que se amplía al tocarlo. Abajo, tres botones redondos: el recorrido guiado a la izquierda, y en el centro la hora y el sonido. Al conseguir un punto todo eso desaparece hasta pulsar «Continuar».
 
 ## Qué hay en la escena
 
@@ -63,10 +63,12 @@ valencia-antiga/
 ├── scripts/
 │   ├── build-layout.py regenera layout.json desde OpenStreetMap
 │   └── deploy.sh       publica en Cloudflare Pages
-└── docs/
-    ├── sources.md      de dónde sale cada dato y cuánto fiarse
-    ├── multiplayer-plan.md
-    └── sea-plan.md
+├── docs/
+│   ├── sources.md      de dónde sale cada dato y cuánto fiarse
+│   ├── sea-plan.md     el tramo del río hasta el mar
+│   └── multiplayer-plan.md
+├── AGENTS.md           reglas para quien toque el código, persona o asistente
+└── .claude/skills/     apuntes de la API de three.js (de terceros, MIT)
 ```
 
 | Módulo | De qué se ocupa |
@@ -88,7 +90,7 @@ El código y los comentarios están en inglés. Lo que se lee en pantalla sale d
 
 ### El trazado
 
-`scripts/build-layout.py` lee OpenStreetMap y escribe `data/layout.json`. El río es la línea de los puentes actuales sobre el viejo cauce. La muralla son las calles de ronda que ocuparon su sitio tras el derribo. El origen de coordenadas son las Torres dels Serrans: x hacia el este, z hacia el sur.
+`scripts/build-layout.py` lee OpenStreetMap y escribe `data/layout.json`. El río es la línea de los puentes actuales sobre el viejo cauce. Cuatro puentes van unos metros río arriba de su sitio, para desembocar frente a su puerta: el ajuste está en el propio script. La muralla son las calles de ronda que ocuparon su sitio tras el derribo. El origen de coordenadas son las Torres dels Serrans: x hacia el este, z hacia el sur.
 
 ```bash
 python3 scripts/build-layout.py
@@ -152,7 +154,7 @@ Cada versión se podía navegar.
 | v0.5 | Día y noche, otras barcas, lavanderas, humo, pájaros y sonido. |
 | v1.0 | Portada, ayuda, créditos y calidad gráfica. |
 
-Después, sobre esa base: las dos barcas con su manejo, las texturas, las sombras y el reflejo del cielo, la hora a elegir, el paso de verdad bajo los puentes, los monumentos rehechos con documentación, los tres idiomas, la portada con el momento del día, el punto de la luna y los carteles que se oscurecen de noche.
+Después, sobre esa base: las dos barcas con su manejo, las texturas, las sombras y el reflejo del cielo, la hora a elegir, el paso de verdad bajo los puentes, los monumentos rehechos con documentación, los tres idiomas, la portada con el momento del día, el punto de la luna y los carteles que se oscurecen de noche. Y luego el río hasta el mar, con la huerta, Natzaret, el Grau y la playa; las diez embarcaciones; el modo cine, que enseña cada sitio en tres planos; y la barra de avance.
 
 ## Pendiente
 

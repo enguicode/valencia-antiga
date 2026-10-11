@@ -15,12 +15,12 @@ Paseo 3D en three.js (0.170.0, import map desde CDN) por el Turia y la València
 ## Probar en local
 
 ```bash
-python3 -m http.server <puerto>
+python3 -m http.server <puerto> --bind 127.0.0.1
 ```
 
 - **Usa un puerto nuevo tras cada edición**: el navegador cachea módulos y JSON.
-- `?debug` muestra fps/triángulos/calidad y expone `window.__valencia` (boat, guide, path, layout, focus, camera). `?touch` activa los mandos táctiles.
-- Para fotografiar algo lejos del río, usa un vuelo (`focus.subject`, `focus.flight`), no muevas la cámara a mano: lo lejano está oculto por el recorte de instancias.
+- `?debug` muestra fps/triángulos/calidad y expone `window.__valencia` (boat, guide, path, layout, focus, camera). `?touch` activa los mandos táctiles. `?drone=true` añade un botón que suelta la cámara para sobrevolar la escena; con `?debug`, `window.__valencia.drone` (`yaw`, `pitch`) y `camera.position` la colocan donde haga falta.
+- Para fotografiar algo lejos del río, usa el drone: el recorte de instancias sigue a la cámara. Mira el terreno desde arriba antes de dar por bueno cualquier cambio de geometría.
 - Si el navegador automatizado va a 2-3 fps, comprueba que el renderer WebGL no sea «SwiftShader».
 
 ## Publicar (en cada cambio, salvo que se pida lo contrario)
@@ -35,3 +35,4 @@ python3 -m http.server <puerto>
 ## Qué NO hacer
 
 - No añadir dependencias, build ni assets externos sin pedirlo.
+- No dejar servidores de prueba abiertos: lánzalos con `--bind 127.0.0.1` y apágalos al terminar.

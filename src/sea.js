@@ -665,9 +665,18 @@ function createBeach(mouth, path) {
       const drowned = inland < 0;
       const lip = !drowned && inland < 22 ? (1 - inland / 22) * 0.42 : 0;
       const lift = drowned ? 0 : duneLift(along, seaward);
-      let height = -4;
-      if (!drowned) height = beachHeight(seaward) + lift + lip;
-      else if (inland > -16) height = -0.2 + ((16 + inland) / 16) * 0.35;
+      // One slope from the bed up to the sand: a step here, on a grid this
+      // coarse, shows as a row of teeth along the water's edge.
+      // Past the lip a wet shelf stays just out of the water for 16 m, so
+      // that whatever stands near the edge has sand under it on a grid this
+      // coarse; then it goes down in one slope, not a step.
+      const atLip = Math.max(0.2, beachHeight(seaward) + 0.42);
+      let height = beachHeight(seaward) + lift + lip;
+      if (drowned) {
+        height = inland > -16
+          ? THREE.MathUtils.lerp(atLip, 0.05, -inland / 16)
+          : Math.max(-4, 0.05 + (inland + 16) * 0.34);
+      }
       positions[offset] = at.x;
       positions[offset + 1] = height;
       positions[offset + 2] = at.z;
@@ -728,9 +737,9 @@ function createHinterland(mouth, path, fieldReach, material) {
       // little under the fields, so they are what shows; and level with
       // the back of the beach everywhere else.
       const fields = onRiver.s < path.mouth - 150 && lateral < fieldReach(onRiver.s) + 12;
-      let height = 1.42;
-      if (lateral < waterHalf(path, onRiver.s) + 8) height = -3;
-      else if (fields) height = 0.95;
+      // Sloped, not stepped, into the channel, as the sand is.
+      const past = lateral - (waterHalf(path, onRiver.s) + 8);
+      const height = Math.max(-3, (fields ? 0.95 : 1.42) + Math.min(0, past) * 0.25);
       const offset = (row * columns + column) * 3;
       positions[offset] = at.x;
       positions[offset + 1] = height;
@@ -1852,10 +1861,11 @@ function createShore(mouth, path, grau, villageLights) {
   const heads = [];
   const dunes = [];
   const shirts = [0xe7e1d4, 0x6d7f8c, 0x8a5a44, 0x4f5d48, 0xd9c7a2];
-  // The beach grid covers seaward -160..30. Keep props on that sand, which
-  // is about 200 m of bank upstream of the mouth and a short way past it.
+  // The beach grid covers seaward -160..30, but past the mouth it dips
+  // under the sea within a few metres. Keep props on the sand that shows:
+  // about 200 m of bank upstream of the mouth and a step past it.
   const onLip = (spot, margin = 2) =>
-    spot.seaward >= -150 && spot.seaward <= 26 && isDry(path, spot.x, spot.z, margin);
+    spot.seaward >= -150 && spot.seaward <= 8 && isDry(path, spot.x, spot.z, margin);
   const placeBarraca = (spot, yaw) => {
     // A house wants dry sand all round it: clear of the channel and above the wash.
     if (!onLip(spot, 14) || spot.seaward > -14) return;
@@ -2436,6 +2446,43 @@ function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, ki
     const spot = grassAt(sOff, inland);
     if (!spot) continue;
     rounds.push(poseOf(spot.x, 1.15 + 0.38, spot.z, 0, 0.5, 0.72, 0.5, 0x6e5340));
+  }
+
+  // The gardens round the huts: an irrigation ditch, two small orchards and
+  // beds of greens in rows. What makes the flat plots read as huerta.
+  const tree = (spot, size) => {
+    if (!spot || !free(spot.x, spot.z, 2)) return;
+    woodBoxes.push(poseOf(spot.x, 1.15 + size * 0.45, spot.z, 0, 0.22, size * 0.9, 0.22, 0x5c4630));
+    plants.push(poseOf(spot.x, 1.15 + size * 1.5, spot.z, detail() * Math.PI, size * 2.6, size * 1.9, size * 2.6, detail() < 0.5 ? 0x3f6b2e : 0x4c7a34));
+  };
+  for (const [from, inland0] of [[-332, 62], [-252, 60]]) {
+    for (let row = 0; row < 4; row++) {
+      for (let column = 0; column < 5; column++) {
+        tree(grassAt(from + column * 6.5, inland0 + row * 6.5), 1.15 + detail() * 0.35);
+      }
+    }
+  }
+  for (const [from, inland0, tone] of [[-296, 64, 0x5d8a3a], [-216, 58, 0x6e8f3e], [-296, 86, 0x7a9440]]) {
+    for (let row = 0; row < 6; row++) {
+      for (let column = 0; column < 12; column++) {
+        const spot = grassAt(from + column * 2.6, inland0 + row * 2.8);
+        if (!spot || !free(spot.x, spot.z, 0.8)) continue;
+        plants.push(poseOf(spot.x, 1.15 + 0.22, spot.z, detail() * Math.PI, 1.5, 0.5, 1.5, tone));
+      }
+    }
+  }
+  // The bank the ditch follows opens out towards the mouth, so each length
+  // is laid from one point to the next, or it would come out as dashes.
+  for (let sOff = -338; sOff < -206; sOff += 6) {
+    const from = grassAt(sOff, 57);
+    const to = grassAt(sOff + 6, 57);
+    if (!from || !to) continue;
+    const length = Math.hypot(to.x - from.x, to.z - from.z) + 0.4;
+    const yaw = yawTowards(to.x - from.x, to.z - from.z);
+    const x = (from.x + to.x) / 2;
+    const z = (from.z + to.z) / 2;
+    limeBoxes.push(poseOf(x, 1.19, z, yaw, length, 0.1, 2.4, 0x7d6f4a));
+    limeBoxes.push(poseOf(x, 1.21, z, yaw, length, 0.1, 1, 0x4f6f6c));
   }
 
   // --- Beach gear. Bow and oxen point inland, up off the channel.

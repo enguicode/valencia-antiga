@@ -267,10 +267,6 @@ export function createGuide(points, layout, path, camera, elements) {
     // Leaving the moon's ring is what brings the daylight back.
     if (leaving?.bonus === 'night') onLeave?.();
     const first = !found.has(marker.id);
-    // The card and the look at the place are for the first time, or for when
-    // the logbook asks. Sailing back through a ring already found brings up
-    // nothing. The moon is the exception: its ring is what brings the night.
-    if (!first && !requested && marker.bonus !== 'night') return;
     if (first) {
       found.add(marker.id);
       paint(marker);

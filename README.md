@@ -145,16 +145,16 @@ Colocar cada cosa donde estaba cuesta más que el 3D. Las reglas:
 
 ## Cómo fue creciendo
 
-Cada versión se podía navegar.
+Cada versión se podía navegar, y las primeras siguen publicadas tal como quedaron: el número lleva a cada una.
 
 | Versión | Qué trajo |
 | --- | --- |
-| v0.1 | Un río recto de prueba, una barca y una muralla genérica. |
-| v0.2 | El trazado real del río y de la muralla, las puertas y los cinco puentes. |
-| v0.3 | Edificios singulares, pretiles, escaleras y azud. |
-| v0.4 | Fichas, mapa y recorrido guiado. |
-| v0.5 | Día y noche, otras barcas, lavanderas, humo, pájaros y sonido. |
-| v1.0 | Portada, ayuda, créditos y calidad gráfica. |
+| [v0.1](https://07b55752.valencia-antiga.pages.dev/) | Un río recto de prueba, una barca y una muralla genérica. |
+| [v0.2](https://d4098fb7.valencia-antiga.pages.dev/) | El trazado real del río y de la muralla, las puertas y los cinco puentes. |
+| [v0.3](https://911c17aa.valencia-antiga.pages.dev/) | Edificios singulares, pretiles, escaleras y azud. |
+| [v0.4](https://d64d496e.valencia-antiga.pages.dev/) | Fichas, mapa y recorrido guiado. |
+| [v0.5](https://432d4afd.valencia-antiga.pages.dev/) | Día y noche, otras barcas, lavanderas, humo, pájaros y sonido. |
+| [v1.0](https://9b220339.valencia-antiga.pages.dev/) | Portada, ayuda, créditos y calidad gráfica. |
 
 Después, sobre esa base: las dos barcas con su manejo, las texturas, las sombras y el reflejo del cielo, la hora a elegir, el paso de verdad bajo los puentes, los monumentos rehechos con documentación, los tres idiomas, la portada con el momento del día, el punto de la luna y los carteles que se oscurecen de noche. Y luego el río hasta el mar, con la huerta, Natzaret, el Grau y la playa; las diez embarcaciones; el modo cine, que enseña cada sitio en tres planos; y la barra de avance.
 

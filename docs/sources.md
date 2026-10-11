@@ -89,6 +89,7 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 ## Detalle añadido y paso bajo los puentes
 
 - **Detalle de los edificios:** ventanas, puertas, contrafuertes, impostas, huecos de campanas y cornisas añadidos a ojo para que los sitios aguanten un plano cercano. No siguen ningún alzado. Lo mismo la galería volada, las aspilleras y las pilastras de las puertas de la muralla.
+- **Caminos y Casa de les Armes:** del pie de cada puente a su puerta va un camino de tierra batida; el trazado es un esbozo, no sale de un plano. La Casa de les Armes (1574) se dibuja como una nave larga con tejado, adosada a la muralla por dentro junto al Portal de la Mar: consta que estaba allí, su forma es inventada.
 - **Puentes y puertas:** los puentes de Sant Josep, Serrans, la Trinitat y el Real se han corrido río arriba entre 30 y 43 m respecto a su posición en OpenStreetMap, para que desemboquen frente a su puerta como en las vistas de Guesdon: al cruzar siempre en perpendicular a un río simplificado, quedaban desviados. El de la Mar no se ha tocado. Las rampas de los extremos se han acortado de 29 a 14 m.
 - **Puentes:** tajamares en todos los pilares y bolas sobre el pretil, genéricos. Los casalicios del Pont de la Mar constan en Wikipedia; los del Pont del Real se han puesto de memoria. En ambos casos la forma es un esbozo.
 - **Barquero y vela:** en la barca de la Albufera el barquero mueve la percha y la vela va arriada cuando se navega despacio, y se iza al coger velocidad. Es una animación inventada.

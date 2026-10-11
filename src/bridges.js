@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIVER, BANK, COLORS, yawTowards } from './config.js';
 import { createSurface } from './materials.js';
 import { createInstances } from './instancing.js';
@@ -139,12 +140,35 @@ function createArchRingGeometry(kind) {
   return new THREE.ShapeGeometry(shape, 8);
 }
 
+// A flat strip along a line of points, `width` across.
+function trackGeometry(points, width, lift) {
+  const positions = [];
+  const index = [];
+  points.forEach((point, i) => {
+    const before = points[Math.max(0, i - 1)];
+    const after = points[Math.min(points.length - 1, i + 1)];
+    const dx = after.x - before.x;
+    const dz = after.z - before.z;
+    const length = Math.hypot(dx, dz) || 1;
+    const px = (-dz / length) * (width / 2);
+    const pz = (dx / length) * (width / 2);
+    positions.push(point.x + px, point.y + lift, point.z + pz, point.x - px, point.y + lift, point.z - pz);
+    if (i) index.push(i * 2 - 2, i * 2, i * 2 - 1, i * 2 - 1, i * 2, i * 2 + 1);
+  });
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(index);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 export function createBridges(layout, path) {
   // Double-sided, so a camera that strays into the stonework sees stone
   // rather than straight through it.
   const stone = createSurface('masonry', 4, { color: COLORS.stone, side: THREE.DoubleSide });
   const pale = createSurface('masonry', 3, { color: 0xe8dcc0 });
-  const paving = createSurface('masonry', 2.4, { color: 0xcdbf9f });
+  const tracks = [];
+  const verges = [];
   const marble = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 });
   const roof = createSurface('tiles', 1.6, { color: 0x6f8f7a }); // glazed tiles
   const group = new THREE.Group();
@@ -308,18 +332,47 @@ export function createBridges(layout, path) {
     }
     group.add(model);
 
-    // A paved way from the foot of the ramp to the gate the bridge is for.
+    // A beaten track from the foot of the ramp to the gate the bridge is
+    // for. It leaves along the bridge and reaches the gate square on, so it
+    // bends where the two do not face each other.
     const gate = layout.gates.find((item) => item.id === bridge.id);
     if (gate) {
+      const count = layout.wall.length;
       const [gx, gz] = layout.wall[gate.vertex];
-      const reach = SPAN / 2 + RAMP - 1;
+      const [ax, az] = layout.wall[(gate.vertex + count - 1) % count];
+      const [bx, bz] = layout.wall[(gate.vertex + 1) % count];
+      // Out from the gate: across the wall, on the river's side of it.
+      let nx = -(bz - az);
+      let nz = bx - ax;
+      const length = Math.hypot(nx, nz) || 1;
+      const outward = Math.sign(nx * (sample.x - gx) + nz * (sample.z - gz)) || 1;
+      nx *= outward / length;
+      nz *= outward / length;
+      const reach = SPAN / 2 + RAMP - 2;
       const sx = sample.x + sample.rx * reach;
       const sz = sample.z + sample.rz * reach;
-      const road = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(gx - sx, gz - sz), 0.12, width), paving);
-      road.position.set((sx + gx) / 2, BANK.height + 0.03, (sz + gz) / 2);
-      road.rotation.y = yawTowards(gx - sx, gz - sz);
-      group.add(road);
+      const lead = Math.min(30, Math.hypot(gx - sx, gz - sz) * 0.3);
+      const y = BANK.height + 0.05;
+      const line = new THREE.CatmullRomCurve3(
+        [
+          new THREE.Vector3(sx, y, sz),
+          new THREE.Vector3(sx + sample.rx * lead, y, sz + sample.rz * lead),
+          new THREE.Vector3(gx + nx * lead, y, gz + nz * lead),
+          new THREE.Vector3(gx + nx * 2, y, gz + nz * 2),
+        ],
+        false,
+        'centripetal',
+      ).getSpacedPoints(Math.max(8, Math.ceil(Math.hypot(gx - sx, gz - sz) / 6)));
+      // A worn verge underneath, a little wider, takes the edge off.
+      verges.push(trackGeometry(line, width + 3.4, -0.03));
+      tracks.push(trackGeometry(line, width, 0));
     }
+  }
+  if (tracks.length) {
+    group.add(
+      new THREE.Mesh(mergeGeometries(verges), createSurface('mottle', 4, { color: 0x8f8756 })),
+      new THREE.Mesh(mergeGeometries(tracks), createSurface('mottle', 3, { color: 0xc9a873 })),
+    );
   }
 
   group.add(createInstances(new THREE.SphereGeometry(0.42, 12, 9), stone, balls));

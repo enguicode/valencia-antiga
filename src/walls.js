@@ -164,6 +164,7 @@ export function createWalls(layout, path) {
   // A dark wall set back inside an open hall, so a rear arch reads as an
   // opening with depth. Same material the arrow slits and the arches use.
   const halls = [];
+  const extras = []; // one-off meshes
   const local = new THREE.Object3D();
 
   const makeFrame = (x, z, outX, outZ) =>
@@ -306,9 +307,41 @@ export function createWalls(layout, path) {
         }
       }
       if (style.annex) {
-        // The Casa de les Armes stood against the wall beside the gate
-        place(lists.passages, frame, -9, 4.5, 26, { scale: [16, 9, 34] });
-        place(lists.accents, frame, -9, 9.2, 26, { scale: [16.6, 0.5, 34.6] });
+        // The Casa de les Armes stood against the wall beside the gate, on
+        // the city side: a long plain hall under a tiled roof. Its shape is
+        // a sketch. It is set against the next stretch of wall, not on the
+        // corner's own frame, or it would stand outside.
+        const HALL = { length: 30, depth: 7, height: 8.5, ridge: 2.6 }; // shallow: the houses start 16 m from the wall
+        const reach = Math.hypot(after.midX - vertex.x, after.midZ - vertex.z) || 1;
+        const along = style.size / 2 + 5 + HALL.length / 2;
+        const inward = WALL.thickness / 2 + HALL.depth / 2;
+        const hall = makeFrame(
+          vertex.x + ((after.midX - vertex.x) / reach) * along - after.outX * inward,
+          vertex.z + ((after.midZ - vertex.z) / reach) * along - after.outZ * inward,
+          after.outX,
+          after.outZ,
+        );
+        place(lists.renderedBlocks, hall, 0, HALL.height / 2, 0, { scale: [HALL.depth, HALL.height, HALL.length] });
+        place(lists.accents, hall, 0, HALL.height + 0.15, 0, { scale: [HALL.depth + 0.6, 0.3, HALL.length + 0.6] });
+        // A door and a row of windows on the side of the city.
+        const face = -HALL.depth / 2 - 0.05;
+        place(lists.arches, hall, face, 0.3, 0, { scale: [1, 4.6 / 1.4, 3.2], yaw: Math.PI });
+        for (let k = 0; k < 6; k++) {
+          const z = ((k + 0.5) / 6 - 0.5) * (HALL.length - 4);
+          place(lists.slits, hall, face, HALL.height * 0.68, z, { scale: [1, 1, 2.6], yaw: Math.PI });
+          if (Math.abs(z) > 3) place(lists.slits, hall, face, HALL.height * 0.3, z, { scale: [1, 0.8, 2.6], yaw: Math.PI });
+        }
+        const gable = new THREE.Shape();
+        gable.moveTo(-HALL.depth / 2 - 0.5, 0);
+        gable.lineTo(0, HALL.ridge);
+        gable.lineTo(HALL.depth / 2 + 0.5, 0);
+        gable.closePath();
+        const roof = new THREE.Mesh(
+          new THREE.ExtrudeGeometry(gable, { depth: HALL.length + 0.8, bevelEnabled: false }).translate(0, HALL.height + 0.3, -HALL.length / 2 - 0.4),
+          createSurface('tiles', 3, { color: COLORS.roofs[1] }),
+        );
+        roof.applyMatrix4(hall);
+        extras.push(roof);
       }
       return;
     }
@@ -639,5 +672,6 @@ export function createWalls(layout, path) {
     mesh.matrixAutoUpdate = false;
     group.add(mesh);
   }
+  group.add(...extras);
   return group;
 }

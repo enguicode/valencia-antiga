@@ -356,50 +356,6 @@
       cursor: zoom-out;
     }
 
-    /* History card: only while the boat is in, or just past, a ring. */
-    #card {
-      top: calc(max(10px, env(safe-area-inset-top)) + 40px);
-      left: max(10px, env(safe-area-inset-left));
-      width: min(340px, calc(100% - 114px));
-      padding: 9px 12px;
-      opacity: 0;
-      transform: translateY(-6px);
-      transition: opacity 0.4s ease, transform 0.4s ease;
-    }
-
-    #card.visible {
-      opacity: 1;
-      transform: none;
-    }
-
-    #card h2 {
-      margin: 0 0 3px;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    #card p {
-      margin: 0 0 5px;
-      font-size: 0.84rem;
-      line-height: 1.35;
-    }
-
-    #card a,
-    #card .tally {
-      font-size: 0.74rem;
-      opacity: 0.8;
-    }
-
-    #card a { color: inherit; }
-
-    #card.visible a { pointer-events: auto; }
-
-    #card .tally {
-      float: right;
-      margin: 0;
-      font-style: italic;
-    }
-
     /* Cinema: when a point is found the screen is cleared for the place
        itself. Everything else goes, and the card comes up as a caption along
        the bottom, with the way back to the boat. */
@@ -1263,13 +1219,6 @@
   </button>
 
   <canvas id="minimap" class="panel"></canvas>
-
-  <article id="card" class="panel">
-    <h2></h2>
-    <p class="text"></p>
-    <a target="_blank" rel="noopener" data-i18n="card.source">Fuente: Wikipedia</a>
-    <span class="tally"></span>
-  </article>
 
   <section id="cinema" class="panel">
     <h2></h2>

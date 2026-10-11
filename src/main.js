@@ -100,7 +100,7 @@ totalLabel.textContent = tourMetres;
 const helpPanel = document.getElementById('help');
 const debugPanel = document.getElementById('debug');
 const guide = createGuide(points, layout, path, camera, {
-  card: document.getElementById('card'),
+  card: document.getElementById('cinema'), // the guide writes the caption itself
   counter: document.getElementById('found'),
   pointer: document.getElementById('pointer'),
   // On entering a ring the camera turns to the place it is about.
@@ -536,7 +536,6 @@ const chaseLook = new THREE.Vector3();
 
 let viewShift = 0;
 let viewShifted = false;
-const cardElement = document.getElementById('card');
 
 // Where the camera hovers in front of a place: `drift` runs the arc.
 function hoverSpot(subject, drift, room = 1) {
@@ -567,31 +566,16 @@ const cinema = { pending: false, active: false, shot: 0, time: 0, rounds: 0, fro
 const cinemaPanel = document.getElementById('cinema');
 const stillShots = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function writeCaption() {
-  cinemaPanel.querySelector('h2').textContent = cardElement.querySelector('h2').textContent;
-  cinemaPanel.querySelector('.text').textContent = cardElement.querySelector('.text').textContent;
-  const source = cinemaPanel.querySelector('a');
-  source.href = cardElement.querySelector('a').href;
-  source.textContent = cardElement.querySelector('a').textContent;
-  cinemaPanel.querySelector('.tally').textContent = cardElement.querySelector('.tally').textContent;
-}
-onLanguageChange(() => {
-  if (cinema.active) writeCaption();
-});
-
 // Everything on the screen goes, pins included, from the moment a point is
 // touched until "Continue".
 function clearScreen(on) {
   document.body.classList.toggle('cinema', on);
   if (!on) document.body.classList.remove('caption');
   guide.group.visible = !on;
-  // The card is only ever read as the caption: it never shows over the helm.
-  if (!on) cardElement.classList.remove('visible');
 }
 
 function startCinema(drift) {
   Object.assign(cinema, { pending: false, active: true, shot: 0, time: 0, rounds: 0, from: drift });
-  writeCaption();
   cinemaPanel.scrollTop = 0;
   document.body.classList.add('caption');
 }

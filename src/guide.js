@@ -260,7 +260,6 @@ export function createGuide(points, layout, path, camera, elements) {
   function show(marker, requested = false) {
     const leaving = shown && shown !== marker ? shown : null;
     shown = marker;
-    card.classList.toggle('visible', Boolean(marker));
     if (!marker) {
       if (leaving) onLeave?.();
       return;
@@ -271,10 +270,7 @@ export function createGuide(points, layout, path, camera, elements) {
     // The card and the look at the place are for the first time, or for when
     // the logbook asks. Sailing back through a ring already found brings up
     // nothing. The moon is the exception: its ring is what brings the night.
-    if (!first && !requested && marker.bonus !== 'night') {
-      card.classList.remove('visible');
-      return;
-    }
+    if (!first && !requested && marker.bonus !== 'night') return;
     if (first) {
       found.add(marker.id);
       paint(marker);

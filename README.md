@@ -111,7 +111,7 @@ python3 -m http.server 8080
 Abre `http://localhost:8080`. Hace falta un navegador con WebGL: los módulos se cargan como están, sin empaquetar.
 
 - `?debug` enseña fotogramas, llamadas de dibujo, triángulos y la calidad.
-- `?drone=true` añade un botón, abajo a la derecha, que suelta la cámara de la barca para sobrevolar la ciudad: los mandos de navegar la mueven y los de mirar la giran. Es para desarrollo.
+- `?drone` añade un botón, abajo a la derecha, que suelta la cámara de la barca para sobrevolar la ciudad: los mandos de navegar la mueven y los de mirar la giran. Es para desarrollo.
 - `?touch` enseña los mandos de pantalla en un ordenador.
 
 Al cambiar código, recarga sin caché. Ese servidor no la invalida.

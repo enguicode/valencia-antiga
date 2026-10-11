@@ -555,7 +555,7 @@ function updateOrbit(dt, axes) {
   orbit.lift *= keep;
 }
 
-// The drone, for development: with ?drone=true a button lets the camera
+// The drone, for development: with ?drone a button lets the camera
 // off the boat to fly over the city. The sail controls move it (ahead and
 // sideways, along where it looks) and the look controls turn it.
 const DRONE = { speed: 70, yawPerPixel: 0.004, pitchPerPixel: 0.003, floor: 2 };
@@ -597,7 +597,7 @@ const droneModel = new THREE.Group();
 }
 droneModel.visible = false;
 scene.add(droneModel);
-if (new URLSearchParams(location.search).get('drone') === 'true') {
+if (new URLSearchParams(location.search).has('drone')) {
   droneButton.hidden = false;
   droneButton.addEventListener('click', () => {
     drone.on = !drone.on;

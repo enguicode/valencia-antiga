@@ -96,8 +96,66 @@
 
     /* The top of the screen stays nearly empty: a one-line tally on the left
        and a small map on the right. */
-    #status {
+    /* How far down the tour the boat is: a thin strip along the top, with
+       a mark for each bridge. Edge to edge on a phone. */
+    #progress {
       top: max(10px, env(safe-area-inset-top));
+      left: max(10px, env(safe-area-inset-left));
+      right: max(10px, env(safe-area-inset-right));
+      height: 24px;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.74rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    @media (min-width: 701px) {
+      #progress { right: auto; width: 360px; }
+    }
+
+    #progress .track {
+      position: relative;
+      flex: 1;
+      height: 4px;
+      background: color-mix(in srgb, currentColor 22%, transparent);
+      border-radius: 2px;
+    }
+
+    #progress .track i {
+      position: absolute;
+      top: -4px;
+      width: 2px;
+      height: 12px;
+      margin-left: -1px;
+      background: currentColor;
+      opacity: 0.6;
+    }
+
+    #progress.sea .track i { display: none; }
+
+    #progress .done {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: calc(var(--at, 0) * 100%);
+      background: #b8452f;
+      border-radius: 2px;
+    }
+
+    #progress .done::after {
+      content: '';
+      position: absolute;
+      right: -12px;
+      top: -5px;
+      border: 7px solid transparent;
+      border-left-color: #b8452f;
+    }
+
+    #status {
+      top: calc(max(10px, env(safe-area-inset-top)) + 32px);
       left: max(10px, env(safe-area-inset-left));
       padding: 6px 10px;
       font: inherit;
@@ -340,11 +398,16 @@
     #minimap {
       top: max(10px, env(safe-area-inset-top));
       right: max(10px, env(safe-area-inset-right));
-      width: 84px;
-      height: 84px;
+      width: 130px;
+      height: 130px;
       padding: 0;
       cursor: zoom-in;
       pointer-events: auto;
+    }
+
+    /* On a phone the strip runs right across: the map sits under it. */
+    @media (max-width: 700px) {
+      #minimap { top: calc(max(10px, env(safe-area-inset-top)) + 32px); }
     }
 
     /* Tapped, the map opens out over the top of the screen. */
@@ -456,7 +519,7 @@
       border-radius: 3px;
     }
 
-    /* The menu hangs under the map. Closed, it is a tab the width of the
+    /* The menu hangs under the tally, on the left. Closed, it is a tab the width of the
        map. Open, the tab is the head of one sheet and the actions are rows. */
     #menu-toggle,
     #controls button {
@@ -477,10 +540,10 @@
 
     #menu-toggle {
       position: fixed;
-      top: calc(max(10px, env(safe-area-inset-top)) + 92px);
-      right: max(10px, env(safe-area-inset-right));
+      top: calc(max(10px, env(safe-area-inset-top)) + 70px);
+      left: max(10px, env(safe-area-inset-left));
       justify-content: center;
-      width: 84px;
+      width: 96px;
       height: 34px;
       padding: 0;
       transition: width 0.16s ease;
@@ -488,8 +551,8 @@
 
     #controls {
       position: fixed;
-      top: calc(max(10px, env(safe-area-inset-top)) + 125px);
-      right: max(10px, env(safe-area-inset-right));
+      top: calc(max(10px, env(safe-area-inset-top)) + 103px);
+      left: max(10px, env(safe-area-inset-left));
       display: none;
       flex-direction: column;
       width: min(220px, calc(100vw - 20px));
@@ -1123,8 +1186,8 @@
     #info.plain .save { display: none; }
 
     #debug {
-      top: calc(max(10px, env(safe-area-inset-top)) + 44px);
-      left: max(14px, env(safe-area-inset-left));
+      top: calc(max(10px, env(safe-area-inset-top)) + 112px);
+      left: max(10px, env(safe-area-inset-left));
       font: 12px/1.3 ui-monospace, Menlo, Consolas, monospace;
     }
 
@@ -1229,8 +1292,12 @@
 
   <button id="status" class="panel" type="button" title="Ver los puntos de interés" data-i18n-label="status.title">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-    <span><strong id="found">0 de 15</strong> <span data-i18n="status.points">puntos</span> · <span id="distance">0</span> <span data-i18n="status.of">m de</span> <span id="total">…</span></span>
+    <span><strong id="found">0 de 15</strong> <span data-i18n="status.points">puntos</span></span>
   </button>
+  <div id="progress" class="panel">
+    <div class="track"><b class="done"></b></div>
+    <span><strong id="distance">0</strong> <span data-i18n="status.of">m de</span> <span id="total">…</span></span>
+  </div>
 
   <canvas id="minimap" class="panel"></canvas>
 
@@ -1346,7 +1413,7 @@
       <li data-i18n-html="help.touch"><strong>Pantalla táctil:</strong> el mando de abajo a la izquierda lleva la barca (arriba para avanzar, a los lados para virar) y el de abajo a la derecha, el del ojo, gira la cámara. También puedes arrastrar en cualquier parte de la pantalla.</li>
       <li data-i18n-html="help.points"><strong>Puntos de interés:</strong> junto a cada sitio con historia hay un aro claro sobre el agua, con una señal encima. Entra en el aro con la barca para leer su ficha: la cámara se vuelve unos segundos hacia el sitio, o vuela hasta él si está lejos, y regresa sola (o antes, si mueves tú la cámara). Mientras tanto la barca va despacio. La flecha del borde de la pantalla lleva al más cercano que te falte. Hay dieciocho; toca la cuenta de arriba a la izquierda para repasarlos y, con el ojo de cada ficha, volver a verlos de cerca. Hay uno más: al entrar en su aro anochece, y al alejarte vuelve la hora que había.</li>
       <li data-i18n-html="help.bridges"><strong>Puentes:</strong> al acercarte, la barca se encauza sola hacia el arco más cercano y abate la vela para pasar por debajo.</li>
-      <li data-i18n-html="help.menu"><strong>Menú:</strong> el botón que hay bajo el mapa despliega los ajustes, estos controles, los créditos y el reinicio de los puntos. El botón redondo de la hora, abajo en el centro, pasa por el alba, el mediodía, la tarde y la noche. Al lado está el del sonido.</li>
+      <li data-i18n-html="help.menu"><strong>Menú:</strong> el botón que hay arriba a la izquierda, bajo la cuenta de puntos, despliega los ajustes, estos controles, los créditos y el reinicio de los puntos. El botón redondo de la hora, abajo en el centro, pasa por el alba, el mediodía, la tarde y la noche. Al lado está el del sonido.</li>
       <li data-i18n-html="help.tour"><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez el botón de la brújula, abajo a la izquierda.</li>
       <li data-i18n-html="help.sea"><strong>Hasta el mar:</strong> al acabar el paseo hay una línea clara sobre el agua. Al cruzarla, el mapa y los puntos pasan a lo que viene: la huerta, Natzaret, el Grau y la playa. No cuentan para los dieciocho. Si vuelves aguas arriba, regresan los de la ciudad. Mar adentro, un banco de niebla devuelve al principio.</li>
     </ul>

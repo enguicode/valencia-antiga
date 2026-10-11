@@ -102,6 +102,13 @@ const totalLabel = document.getElementById('total');
 const tourMetres = Math.round(path.end - path.start);
 const seaMetres = Math.round(path.seaEnd - path.end);
 totalLabel.textContent = tourMetres;
+// The strip along the top: a mark where each bridge crosses.
+const progress = document.getElementById('progress');
+for (const bridge of layout.bridges) {
+  const mark = document.createElement('i');
+  mark.style.left = `${((path.project(bridge.x, bridge.z).s - path.start) / (path.end - path.start)) * 100}%`;
+  progress.querySelector('.track').append(mark);
+}
 const helpPanel = document.getElementById('help');
 const debugPanel = document.getElementById('debug');
 const guide = createGuide(points, layout, path, camera, {
@@ -1054,6 +1061,8 @@ function frame() {
     shownTotal = total;
     distanceLabel.textContent = distance;
     totalLabel.textContent = total;
+    progress.style.setProperty('--at', distance / total);
+    progress.classList.toggle('sea', onSea);
   }
   if (axes.used || tour.active) helpPanel.classList.add('dismissed');
 

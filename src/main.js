@@ -9,7 +9,7 @@ import { createCity } from './city.js';
 import { createBridges, createBridgeGuide } from './bridges.js';
 import { createLandmarks, landmarkClearings } from './landmarks.js';
 import { createRiverside } from './riverside.js';
-import { createBoat, DRAW_ORDER } from './boat.js';
+import { createBoat, boatPace, DRAW_ORDER } from './boat.js';
 import { createBoatPicker } from './boatpicker.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
@@ -439,6 +439,20 @@ for (const opener of document.querySelectorAll('[data-open]')) {
     if (settings) openSettings();
   });
 }
+// Past the line the run to the sea is long: a boat that goes at walking
+// pace is offered the catalogue, once a visit.
+let fasterOffered = false;
+function offerFaster() {
+  if (fasterOffered || infoDialog.open || boatPace(boatSelect.value) > 1) return;
+  fasterOffered = true;
+  for (const section of infoDialog.querySelectorAll('section')) section.hidden = section.id !== 'settings-section';
+  infoDialog.classList.remove('plain');
+  infoDialog.classList.add('faster');
+  infoDialog.showModal();
+  infoDialog.scrollTop = 0;
+  openSettings();
+}
+infoDialog.addEventListener('close', () => infoDialog.classList.remove('faster'));
 document.getElementById('close-info').addEventListener('click', () => {
   revertSettings();
   infoDialog.close();
@@ -1050,6 +1064,7 @@ function frame() {
   if (onSea) {
     if (boat.state.s < path.end - 40) onSea = false;
   } else if (boat.state.s > path.end + 8) onSea = true;
+  if (onSea && started && !cinema.active && !cinema.pending) offerFaster();
   guide.setBeyond(onSea);
   if (started) guide.update(time, boat.state);
   minimap.update(boat.state, onSea);

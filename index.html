@@ -1073,6 +1073,11 @@
       font-size: 0.9em;
     }
 
+    /* Past the end of the tour a slow boat is offered a faster one: the
+       settings sheet with nothing on it but the question and the boats. */
+    #info:not(.faster) .faster-only,
+    #info.faster #settings-section > :not(.faster-only):not(.boat-line):not(#boat-picker) { display: none; }
+
     /* Settings only: the help and the credits keep the looser sheet. */
     #settings-section { line-height: 1.3; }
 
@@ -1451,6 +1456,8 @@
     <p data-i18n-html="help.donate">Si te apetece, <a href="https://www.paypal.me/ananen" target="_blank" rel="noopener">donar</a>. El importe lo eliges tú.</p>
     </section>
     <section id="settings-section">
+    <h2 class="faster-only" data-i18n="faster.title">¿Quieres ir más rápido?</h2>
+    <p class="faster-only" data-i18n="faster.lead">El paseo por la ciudad acaba aquí y hasta el mar queda un buen trecho. Puedes seguir con tu barca o cambiar a otra más veloz.</p>
     <h2 data-i18n="settings.title">Ajustes</h2>
     <p class="pair">
       <label><span data-i18n="settings.language">Idioma:</span>
@@ -1484,7 +1491,7 @@
         <option value="23.5" data-i18n="hour.night">Noche</option>
       </select>
     </label></p>
-    <p><span data-i18n="settings.boat">Barca:</span> <span class="hint" data-i18n="boat.hint">desliza para ver las demás</span></p>
+    <p class="boat-line"><span data-i18n="settings.boat">Barca:</span> <span class="hint" data-i18n="boat.hint">desliza para ver las demás</span></p>
     <div id="boat-picker" class="boat-picker" tabindex="0">
       <div class="stage">
         <button type="button" class="prev" data-i18n-label="boat.prev" aria-label="Barca anterior">‹</button>

@@ -25,6 +25,10 @@ const SUBJECTS = {
   bridge: { aim: 4, span: 150, top: 10, near: 0.75, fly: true, standOff: 0.8, above: 8 },
   gate: { aim: 12, span: 52, top: 30 },
   // A stretch of curtain, at the corner where it meets the river.
+  // The small gates with a bridge landing in front of them. The low shot is
+  // taken from well to one side and closer in, on the bank between the wall
+  // and the river: straight out it would be inside the bridge.
+  bridgeGate: { aim: 12, span: 52, top: 20, lowSide: 1.05, near: 0.7 },
   wall: { aim: 5, span: 130, top: 12, standOff: 0.7, above: 10 },
   start: { aim: 2, span: 60, top: 6, standOff: 0.9, above: 8 },
   // Seen from the west, where the cathedral stands behind it and not in front.
@@ -186,7 +190,10 @@ export function createGuide(points, layout, path, camera, elements) {
       const reach = Math.hypot(sample.x - x, sample.z - z) || 1;
       facing = [(sample.x - x) / reach, (sample.z - z) / reach];
     }
-    const preset = type === 'gate' && id === 'quart' ? SUBJECTS.quart : (SUBJECTS[kind] ?? SUBJECTS.convent);
+    const gatePreset = { quart: 'quart', 'sant-josep': 'bridgeGate', trinitat: 'bridgeGate', real: 'bridgeGate' };
+    let preset = SUBJECTS[type === 'gate' ? (gatePreset[id] ?? kind) : kind] ?? SUBJECTS.convent;
+    // The Real is a plain arch in the wall: from that far round it is all wall.
+    if (type === 'gate' && id === 'real') preset = { ...preset, lowSide: 0.72, near: 0.85 };
     return {
       s: Math.max(s + offset, path.start + EARLIEST_RING),
       side: type === 'bridge' ? 0 : Math.sign(lateral) || 1,

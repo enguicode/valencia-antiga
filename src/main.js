@@ -284,6 +284,8 @@ const boatPicker = createBoatPicker(document.getElementById('boat-picker'), boat
 
 function start(withTour) {
   started = true;
+  // The hint on how to steer goes by itself, whether or not it was needed.
+  setTimeout(() => helpPanel.classList.add('dismissed'), 5000);
   document.body.classList.add('started');
   orbit.idle = ORBIT.holdSeconds;
   if (withTour) document.getElementById('tour').click();

@@ -1662,17 +1662,17 @@ function createShore(mouth, path, grau, villageLights) {
       masts.push(aft);
       bobbing.push(aft);
       const cabin = {
-        x: hull.x - bowX * 1.6,
-        y: hull.y + 2.4,
-        z: hull.z - bowZ * 1.6,
+        x: hull.x - bowX * 5.2,
+        y: hull.y + 1.75,
+        z: hull.z - bowZ * 5.2,
         yaw: hull.yaw,
-        sx: 5.4,
-        sy: 2.5,
-        sz: 3.6,
+        sx: 3.4,
+        sy: 1.3,
+        sz: 2.6,
         phase: hull.phase,
         bob: hull.bob,
         heel: 0,
-        color: new THREE.Color(0xc4b49a),
+        color: new THREE.Color(0x6a4f3a), // tarred wood: pale, it read as a block of stone
       };
       cabins.push(cabin);
       bobbing.push(cabin);
@@ -2033,7 +2033,7 @@ function createShore(mouth, path, grau, villageLights) {
   const hullMesh = buildPosed(hullGeo, hullMat, hulls);
   const mastMesh = buildPosed(mastGeo, wood, masts);
   const sailMesh = buildPosed(sailGeo, sailMat, sails);
-  const cabinMesh = buildPosed(new THREE.BoxGeometry(1, 1, 1), lime, cabins);
+  const cabinMesh = buildPosed(new THREE.BoxGeometry(1, 1, 1), wood, cabins);
   for (const mesh of [hullMesh, mastMesh, sailMesh, cabinMesh]) if (mesh) group.add(mesh);
 
   const roofGeometry = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4);

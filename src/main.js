@@ -509,6 +509,42 @@ function updateOrbit(dt, axes) {
   orbit.lift *= keep;
 }
 
+// The drone, for development: with ?drone=true a button lets the camera
+// off the boat to fly over the city. The sail controls move it (ahead and
+// sideways, along where it looks) and the look controls turn it.
+const DRONE = { speed: 70, yawPerPixel: 0.004, pitchPerPixel: 0.003, floor: 2 };
+const drone = { on: false, yaw: 0, pitch: 0 };
+const droneButton = document.getElementById('drone');
+if (new URLSearchParams(location.search).get('drone') === 'true') {
+  droneButton.hidden = false;
+  droneButton.addEventListener('click', () => {
+    drone.on = !drone.on;
+    droneButton.setAttribute('aria-pressed', drone.on);
+    droneButton.classList.toggle('active', drone.on);
+    if (!drone.on) return;
+    camera.getWorldDirection(viewDirection);
+    drone.yaw = Math.atan2(viewDirection.x, viewDirection.z);
+    drone.pitch = Math.asin(viewDirection.y);
+    camera.fov = baseFov;
+    camera.updateProjectionMatrix();
+  });
+}
+
+function updateDrone(dt, axes) {
+  drone.yaw += axes.lookX * DRONE.yawPerPixel;
+  drone.pitch = THREE.MathUtils.clamp(drone.pitch - axes.lookY * DRONE.pitchPerPixel, -1.5, 1.5);
+  viewDirection.set(Math.sin(drone.yaw) * Math.cos(drone.pitch), Math.sin(drone.pitch), Math.cos(drone.yaw) * Math.cos(drone.pitch));
+  // Faster the higher it is: a street wants care, the whole plain does not.
+  const step = DRONE.speed * (1 + camera.position.y / 80) * dt;
+  camera.position.addScaledVector(viewDirection, axes.throttle * step);
+  camera.position.x -= Math.cos(drone.yaw) * axes.steer * step;
+  camera.position.z += Math.sin(drone.yaw) * axes.steer * step;
+  camera.position.y = Math.max(camera.position.y, DRONE.floor);
+  lookAt.copy(camera.position).add(viewDirection);
+  camera.lookAt(lookAt);
+  sky.position.copy(camera.position);
+}
+
 // For a few seconds after entering a ring the camera leaves the stern, steps
 // to one side of the boat and zooms in on the place the card is about.
 const FOCUS = { seconds: 7, back: 13, aside: 8, up: 9, narrowest: 12, speed: 2.2 };
@@ -864,6 +900,10 @@ function frame() {
     orbit.lift = 2;
     orbit.idle = 0;
   }
+  if (drone.on) {
+    updateDrone(dt, axes);
+    Object.assign(axes, { throttle: 0, steer: 0, looking: false, used: false });
+  }
   if (cinema.active || cinema.pending) {
     // The boat waits, and nothing on the screen is there to be steered with.
     Object.assign(axes, { throttle: 0, steer: 0, looking: false, used: false });
@@ -907,7 +947,7 @@ function frame() {
   boat.update(dt, axes, time, focus.left > 0 ? FOCUS.speed : Infinity);
   // On a flight the water is animated and drawn around the camera, not the
   // boat, and the shadows fall where the camera is looking.
-  const flying = focus.left > 0 && focus.flight;
+  const flying = drone.on || (focus.left > 0 && focus.flight);
   const lit = flying ? lookAt : boat.mesh.position;
   sun.target.position.copy(lit);
   sun.position.copy(lit).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
@@ -922,7 +962,7 @@ function frame() {
   if (sea.facades) sea.facades.emissiveIntensity = windowGlow;
   if (started) updateOrbit(dt, axes);
   if (axes.looking) focus.left = 0; // looking around by hand takes the camera back
-  updateCamera(dt, returned);
+  if (!drone.on) updateCamera(dt, returned);
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
   renderer.render(scene, camera);
@@ -974,5 +1014,5 @@ window.__valenciaReady = true;
 
 if (debug) {
   debugPanel.hidden = false;
-  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus, cinema };
+  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus, cinema, drone };
 }

@@ -599,6 +599,20 @@
       bottom: calc(max(22px, env(safe-area-inset-bottom)) + 100px + 2.5vh);
     }
 
+    /* Development only (?drone=true): above the look stick's right corner. */
+    #drone {
+      position: fixed;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(22px, env(safe-area-inset-bottom));
+    }
+
+    body.touch #drone {
+      right: calc(max(4px, env(safe-area-inset-right) - 10px) + 1vw);
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 100px + 2.5vh);
+    }
+
+    #drone[hidden] { display: none; }
+
     /* Nothing of the cockpit shows until the visitor sets off. */
     body:not(.started) .panel,
     body:not(.started) .quick,
@@ -1453,6 +1467,9 @@
   <button id="tour" class="quick" type="button">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2.2 5.4-5.4 2.2 2.2-5.4z"/></svg>
     <span class="label" data-i18n="tour">Recorrido guiado</span>
+  </button>
+  <button id="drone" class="quick" type="button" aria-label="Drone" aria-pressed="false" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8 8l8 8M16 8l-8 8"/></svg>
   </button>
   <div id="quick">
     <button id="sky" class="quick" type="button"></button>

@@ -428,7 +428,21 @@ document.getElementById('close-info').addEventListener('click', () => {
 
 // The settings are tried out as they are changed, and kept only if the sheet
 // is saved: closing it any other way puts back what there was.
-const settingSelects = [languageSelect, document.getElementById('quality'), hourSelect];
+// Looking up and down the other way round, as games offer. Kept between visits.
+const invertSelect = document.getElementById('invert-look');
+try {
+  if (localStorage.getItem('valencia-antiga.invertLook') === 'on') invertSelect.value = 'on';
+} catch {
+  // Private browsing: the choice simply lasts for this visit.
+}
+invertSelect.addEventListener('change', () => {
+  try {
+    localStorage.setItem('valencia-antiga.invertLook', invertSelect.value);
+  } catch {
+    // As above.
+  }
+});
+const settingSelects = [languageSelect, document.getElementById('quality'), hourSelect, invertSelect];
 const hourCards = document.querySelector('#info .hours');
 let settingsBefore = null;
 // The old sheet was a sideways strip: the card left in the middle was the hour.
@@ -498,7 +512,7 @@ const orbit = { yaw: 0, lift: 0, idle: ORBIT.holdSeconds };
 function updateOrbit(dt, axes) {
   if (axes.looking) {
     orbit.yaw += axes.lookX * ORBIT.yawPerPixel;
-    orbit.lift = THREE.MathUtils.clamp(orbit.lift + axes.lookY * ORBIT.liftPerPixel, -4, ORBIT.maxLift);
+    orbit.lift = THREE.MathUtils.clamp(orbit.lift - axes.lookY * ORBIT.liftPerPixel, -4, ORBIT.maxLift);
     orbit.idle = 0;
     return;
   }
@@ -892,6 +906,7 @@ function frame() {
   const time = clock.elapsedTime;
   input.setLookOnly(tour.active);
   const axes = input.update(dt);
+  if (invertSelect.value === 'on') axes.lookY = -axes.lookY;
   if (!started) {
     axes.throttle = 0;
     axes.steer = 0;

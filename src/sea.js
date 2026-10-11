@@ -1025,23 +1025,11 @@ function createGrau(path, grau, mouth, yaw) {
     placed++;
   }
 
-  // The south bank is only a hint that Nazaret was there.
-  const huts = [];
-  const hutRoofs = [];
-  for (let i = 0; i < 3; i++) {
-    const sample = path.pointAt(path.mouth - 200);
-    const lateral = waterHalf(path, path.mouth - 200) + 22 + i * 16;
-    const x = sample.x + sample.rx * lateral;
-    const z = sample.z + sample.rz * lateral;
-    putBox(huts, x, 1.15 + 2.2, z, 5, 4.4, 4, yaw, COLORS.houseWalls[i]);
-    putBox(hutRoofs, x, 1.15 + 4.4 + 0.8, z, 5.4, 1.6, 4.4, yaw, COLORS.roofs[0]);
-  }
-
+  // Nazaret used to be three boxes on this bank. The hamlet is built in
+  // furnishShore, on the same grass, with the shore's lime and thatch.
   group.add(
     createInstances(new THREE.BoxGeometry(1, 1, 1), walls, houses),
     createInstances(roofGeometry, roofs, houseRoofs),
-    createInstances(new THREE.BoxGeometry(1, 1, 1), walls, huts),
-    createInstances(roofGeometry, roofs, hutRoofs),
   );
   return { group, lights };
 }
@@ -2030,6 +2018,13 @@ function createShore(mouth, path, grau, villageLights) {
   const surf = createSurf(mouth, path);
   group.add(surf.mesh);
 
+  // Boats, gear and the Nazaret hamlet. Pushes onto the hull, mast and sail
+  // lists above, and adds its own instanced meshes to the group. Its own
+  // random stream, so nothing already placed moves.
+  furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, {
+    hulls, masts, sails, lime, thatch, wood, cloth, tiles, scrubMat, oxMat,
+  });
+
   const hullMesh = buildPosed(hullGeo, hullMat, hulls);
   const mastMesh = buildPosed(mastGeo, wood, masts);
   const sailMesh = buildPosed(sailGeo, sailMat, sails);
@@ -2167,4 +2162,584 @@ function indexColor(random) {
 
 function iTone(random) {
   return [0xc2ad88, 0xb7a078, 0xd2c2a4, 0xa89070][Math.floor(random() * 4)];
+}
+
+// Barraca proportions follow the surveyed type: about 9 by 5.5 m, walls near
+// 2.5 m, ridge along the long axis, gable (and the door) on the short face.
+// Modelled a little under that so a row of them still reads as a hamlet.
+// Local +X is the gable. yawTowards then points the door.
+const BARRACA = { hx: 4.1, hz: 2.5, wall: 2.02, peak: 6.5 };
+
+function tri(positions, indices, a, b, c) {
+  const base = positions.length / 3;
+  positions.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+  indices.push(base, base + 1, base + 2);
+}
+
+// White walls and the gable triangle. Vertices are not shared, so each face
+// keeps its own normal: FrontSide lime then shows from outside. Winding was
+// checked so the long walls point ±Z and the gables ±X.
+function barracaWallGeometry() {
+  const { hx, hz, wall, peak } = BARRACA;
+  const positions = [];
+  const indices = [];
+  const q = (a, b, c, d) => {
+    tri(positions, indices, a, b, c);
+    tri(positions, indices, a, c, d);
+  };
+  q([hx, 0, -hz], [-hx, 0, -hz], [-hx, wall, -hz], [hx, wall, -hz]);
+  q([-hx, 0, hz], [hx, 0, hz], [hx, wall, hz], [-hx, wall, hz]);
+  q([hx, 0, hz], [hx, 0, -hz], [hx, wall, -hz], [hx, wall, hz]);
+  q([-hx, 0, -hz], [-hx, 0, hz], [-hx, wall, hz], [-hx, wall, -hz]);
+  tri(positions, indices, [hx, wall, hz], [hx, wall, -hz], [hx, peak, 0]);
+  tri(positions, indices, [-hx, wall, -hz], [-hx, wall, hz], [-hx, peak, 0]);
+  return geometryFrom(positions, indices);
+}
+
+// Two slopes. The eave is low enough that, at the wall line, the thatch
+// passes just under the wall top instead of leaving a gap under a steep pitch.
+// Overhang past the gable lets the white triangle show, as on the Palmar
+// barraca. DoubleSide: the sheet has no thickness.
+function gableRoofGeometry() {
+  const { hx, hz } = BARRACA;
+  const overX = hx + 0.45;
+  const overZ = hz + 0.45;
+  const eave = 1.22;
+  const ridge = BARRACA.peak + 0.12;
+  const positions = [];
+  const indices = [];
+  tri(positions, indices, [overX, eave, -overZ], [-overX, eave, -overZ], [-overX, ridge, 0]);
+  tri(positions, indices, [overX, eave, -overZ], [-overX, ridge, 0], [overX, ridge, 0]);
+  tri(positions, indices, [-overX, eave, overZ], [overX, eave, overZ], [overX, ridge, 0]);
+  tri(positions, indices, [-overX, eave, overZ], [overX, ridge, 0], [-overX, ridge, 0]);
+  return geometryFrom(positions, indices);
+}
+
+// PlaneGeometry faces +Z. Tipped onto XZ it stays flat under a yaw, because
+// pose() is an XYZ Euler and a pitched vertical plane would twist.
+function sheetGeometry() {
+  const geometry = new THREE.PlaneGeometry(1, 1);
+  geometry.rotateX(-Math.PI / 2);
+  return geometry;
+}
+
+function anchorGeometry() {
+  const positions = [];
+  const indices = [];
+  appendBox(positions, indices, 0, 0.9, 0, 0.1, 1.45, 0.1);
+  appendBox(positions, indices, 0, 1.55, 0, 0.1, 0.1, 0.85);
+  appendBox(positions, indices, 0.32, 0.2, 0, 0.62, 0.1, 0.1);
+  appendBox(positions, indices, -0.32, 0.2, 0, 0.62, 0.1, 0.1);
+  appendBox(positions, indices, 0.6, 0.36, 0, 0.1, 0.32, 0.2);
+  appendBox(positions, indices, -0.6, 0.36, 0, 0.1, 0.32, 0.2);
+  return geometryFrom(positions, indices);
+}
+
+// rotation.y sends local +X to (cos yaw, 0, -sin yaw) and local +Z to (sin, 0, cos).
+function localOffset(yaw, sx, sy, sz, lx, ly, lz) {
+  const x = lx * sx;
+  const y = ly * sy;
+  const z = lz * sz;
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
+  return { x: x * c + z * s, y, z: -x * s + z * c };
+}
+
+// Boats, gear and the Nazaret hamlet. Pushes hulls, masts and sails onto the
+// lists createShore is about to draw, and adds its own meshes. Random stream
+// 1734, so the gulls and everything already placed stay put. No lamps, no
+// change to the sand. The 1796 hermitage and the 1720 lazaretto are left out:
+// neither stood here at the date the walk uses.
+function furnishShore(group, mouth, path, anchor, grau, alongShore, outToSea, kit) {
+  const { hulls, masts, sails, lime, thatch, wood, cloth, tiles, scrubMat, oxMat } = kit;
+  const detail = createRandom(1734);
+  const houseWalls = [];
+  const thatchRoofs = [];
+  const limeBoxes = [];
+  const woodBoxes = [];
+  const sheets = [];
+  const rounds = [];
+  const anchors = [];
+  const plants = [];
+  const oxen = [];
+  const occupied = [];
+
+  const poseOf = (x, y, z, yaw, sx, sy, sz, color, pitch = 0, heel = 0) => ({
+    x, y, z, yaw, pitch, heel, bob: 0, phase: 0, sx, sy, sz,
+    color: new THREE.Color(color),
+  });
+
+  const occupy = (x, z, r) => occupied.push({ x, z, r });
+  const free = (x, z, r) => !occupied.some((spot) => Math.hypot(spot.x - x, spot.z - z) < spot.r + r);
+
+  // Grass of the south bank, upstream of where the beach mesh starts. The
+  // field ribbon there is at 1.15, which is what the neighbouring ground uses.
+  const grassAt = (sOff, inland) => {
+    const spot = bankPoint(path, mouth, path.mouth + sOff, 1, inland);
+    if (spot.seaward > -168) return null;
+    if (!isDry(path, spot.x, spot.z, 8)) return null;
+    return spot;
+  };
+
+  let jetty = null;
+  if (grau) {
+    const yardS = path.project(grau.yards.x, grau.yards.z).s;
+    const landingS = Math.min(path.mouth + 10, Math.max(path.mouth - 70, yardS));
+    jetty = bankPoint(path, mouth, landingS, -1, 18);
+  }
+  const fortAlong = anchor.along - 155;
+  const fortSea = anchor.seaward + 24;
+
+  const blocked = (along, seaward) => {
+    for (const hole of duneHoles) {
+      const d = Math.hypot((along - hole.along) / hole.ra, (seaward - hole.seaward) / hole.rs);
+      if (d < 1.05) return true;
+    }
+    if (Math.hypot(along - fortAlong, seaward - fortSea) < 24) return true;
+    if (jetty) {
+      const da = along - jetty.along;
+      const ds = seaward - jetty.seaward;
+      if (Math.abs(da) < 14 && ds > -46 && ds < 50) return true;
+    }
+    return false;
+  };
+
+  // On the beach mesh, including the lip createBeach adds near the wash.
+  // Off that mesh (the fields) this is the wrong height; use grassAt there.
+  const beachAt = (along, seaward) => {
+    if (seaward <= -160 || seaward > 24) return null;
+    if (blocked(along, seaward)) return null;
+    const at = frame(mouth, along, seaward);
+    if (!isDry(path, at.x, at.z, 8)) return null;
+    const onRiver = path.project(at.x, at.z);
+    const inland = Math.abs(onRiver.lateral) - (waterHalf(path, onRiver.s) - 6);
+    if (inland < 8) return null;
+    const lip = inland < 22 ? (1 - inland / 22) * 0.42 : 0;
+    const y = groundAt(along, seaward) + lip;
+    if (y < 0.04) return null;
+    return { x: at.x, z: at.z, y, along, seaward };
+  };
+
+  const wallTones = [0xf3efe4, 0xe8e0d0, 0xf7f3e8, 0xddd4c2];
+  const thatches = [THATCH, 0xb89658, 0xd4bc7c, 0xa88b4a];
+  const shirts = [0xe7e1d4, 0x6d7f8c, 0x8a5a44, 0x4f5d48, 0xd9c7a2];
+  const boatColors = [0x4a3c32, 0xc2a67a, 0x8d4d38, 0x5c4636, 0xd4c4a4];
+
+  const putPiece = (list, origin, yaw, hsx, hsy, hsz, lx, ly, lz, sx, sy, sz, color) => {
+    const o = localOffset(yaw, hsx, hsy, hsz, lx, ly, lz);
+    list.push(poseOf(origin.x + o.x, origin.y + o.y, origin.z + o.z, yaw, sx, sy, sz, color));
+  };
+
+  // `roofList` is the thatch or the tile mesh. Farms share the wall geometry
+  // and drop the pitch by scaling Y less than Z, so the gable stays filled.
+  let houses = 0;
+  const placeGable = (at, y, yaw, sx, sy, sz, roofList, roofColor, cross) => {
+    const origin = { x: at.x, y, z: at.z };
+    const tone = wallTones[houses % wallTones.length];
+    houseWalls.push(poseOf(at.x, y, at.z, yaw, sx, sy, sz, tone));
+    roofList.push(poseOf(at.x, y, at.z, yaw, sx, sy, sz, roofColor));
+    const doorH = Math.min(1.68, BARRACA.wall * sy - 0.18);
+    putPiece(woodBoxes, origin, yaw, sx, sy, sz, 4.2, (doorH / 2 + 0.02) / sy, 0.55, 0.1, doorH, 0.78, 0x3a2e24);
+    putPiece(woodBoxes, origin, yaw, sx, sy, sz, 4.2, 3.45, -0.22, 0.08, 0.34, 0.4, 0x2c241c);
+    if (cross) {
+      for (const end of [-1, 1]) {
+        putPiece(woodBoxes, origin, yaw, sx, sy, sz, 4.32 * end, 6.95, 0, 0.07, 0.62, 0.07, 0x6b5340);
+        putPiece(woodBoxes, origin, yaw, sx, sy, sz, 4.32 * end, 7.12, 0, 0.07, 0.07, 0.42, 0x6b5340);
+      }
+    }
+    occupy(at.x, at.z, 6.2 * Math.max(sx, sz));
+    houses += 1;
+  };
+
+  const shade = (origin, yaw, sx, sy, sz) => {
+    putPiece(sheets, origin, yaw, sx, sy, sz, 5.5, 2.35 / sy, -1.65, 2.5, 1, 2.2, 0xc2ae78);
+    for (const [lx, lz] of [[4.6, -2.5], [6.3, -2.5], [6.3, -0.8]]) {
+      const o = localOffset(yaw, sx, sy, sz, lx, 0, lz);
+      woodBoxes.push(poseOf(origin.x + o.x, origin.y + 1.18, origin.z + o.z, yaw, 0.1, 2.36, 0.1, 0x6e5340));
+    }
+  };
+
+  // --- Nazaret: a few fishermen's huts on the grass, doors to the river.
+  // No more than that: the village grew round the lazaretto, from 1720.
+  const barracaSpots = [
+    [-308, 28, 1, 0.08],
+    [-290, 32, 0.96, -0.12],
+    [-272, 26, 1.04, 0.14],
+    [-254, 31, 0.98, -0.05],
+    [-236, 27, 1.02, 0.1],
+    [-218, 33, 0.95, -0.14],
+    [-278, 54, 1.03, -0.16],
+  ];
+  barracaSpots.forEach(([sOff, inland, scale, turn], index) => {
+    const spot = grassAt(sOff, inland);
+    if (!spot) return;
+    const yaw = yawTowards(-spot.sample.rx, -spot.sample.rz) + turn;
+    placeGable(spot, 1.15, yaw, scale, 1, scale, thatchRoofs, thatches[index % thatches.length], true);
+    if (index % 4 === 0) shade({ x: spot.x, y: 1.15, z: spot.z }, yaw, scale, 1, scale);
+  });
+  // Dirt path from the front rank down to the bank, then a short branch.
+  for (let inland = 20; inland >= 10; inland -= 3.4) {
+    const spot = grassAt(-250, inland);
+    if (!spot) continue;
+    const yaw = yawTowards(spot.sample.rx, spot.sample.rz);
+    limeBoxes.push(poseOf(spot.x, 1.19, spot.z, yaw, 3.5, 0.07, 2.3, 0xb29668));
+  }
+  for (const sOff of [-258, -242]) {
+    const spot = grassAt(sOff, 20);
+    if (!spot) continue;
+    limeBoxes.push(poseOf(spot.x, 1.19, spot.z, yawTowards(spot.sample.tx, spot.sample.tz), 4.2, 0.07, 2.2, 0xb29668));
+  }
+
+  // A reed pen on the inland edge of the scatter.
+  const pen = (sOff, inland, dirX, dirZ, length, posts) => {
+    const spot = grassAt(sOff, inland);
+    if (!spot) return;
+    const yaw = yawTowards(dirX, dirZ);
+    for (let i = 0; i < posts; i++) {
+      const o = localOffset(yaw, 1, 1, 1, -length / 2 + (length / (posts - 1)) * i, 0, 0);
+      woodBoxes.push(poseOf(spot.x + o.x, 1.15 + 0.55, spot.z + o.z, yaw, 0.1, 1.1, 0.1, 0x8a7048));
+    }
+    for (const ly of [0.45, 0.9]) {
+      woodBoxes.push(poseOf(spot.x, 1.15 + ly, spot.z, yaw, length, 0.06, 0.06, 0xa08458));
+    }
+  };
+  const hedge = grassAt(-300, 78);
+  if (hedge) pen(-280, 78, hedge.sample.tx, hedge.sample.tz, 18, 6);
+
+  const hauled = grassAt(-268, 13);
+  if (hauled) {
+    const yaw = yawTowards(hauled.sample.tx, hauled.sample.tz);
+    const hull = poseOf(hauled.x, 1.2, hauled.z, yaw, 0.95, 0.95, 0.95, 0x5c4636, 0, 0.14);
+    hulls.push(hull);
+    for (const side of [-1.35, 1.35]) {
+      const o = localOffset(yaw, 1, 1, 1, -0.4, 0, side);
+      masts.push(poseOf(hauled.x + o.x, 1.15 + 0.65, hauled.z + o.z, yaw, 1.5, 1.6, 1.5, COLORS.wood, 0.65, side > 0 ? 0.2 : -0.2));
+    }
+    occupy(hauled.x, hauled.z, 5);
+  }
+  for (const [sOff, inland] of [[-262, 18], [-276, 16], [-248, 22]]) {
+    const spot = grassAt(sOff, inland);
+    if (!spot) continue;
+    const yaw = yawTowards(spot.sample.tx, spot.sample.tz);
+    sheets.push(poseOf(spot.x, 1.22, spot.z, yaw, 3.4, 1, 2.2, iTone(detail)));
+  }
+  for (const [sOff, inland, shirt] of [[-260, 24, shirts[0]], [-246, 30, shirts[2]], [-286, 40, shirts[3]]]) {
+    const spot = grassAt(sOff, inland);
+    if (!spot) continue;
+    const yaw = yawTowards(-spot.sample.rx, -spot.sample.rz);
+    limeBoxes.push(poseOf(spot.x, 1.15 + 0.5, spot.z, yaw, 0.42, 0.95, 0.26, shirt));
+    limeBoxes.push(poseOf(spot.x, 1.15 + 1.12, spot.z, yaw, 0.2, 0.2, 0.2, 0xd7a88a));
+  }
+  const basket = grassAt(-246, 31.2);
+  if (basket) rounds.push(poseOf(basket.x, 1.15 + 0.72, basket.z, 0, 0.42, 0.32, 0.42, 0xc2a56a));
+  for (const [sOff, inland] of [[-274, 20], [-258, 26]]) {
+    const spot = grassAt(sOff, inland);
+    if (!spot) continue;
+    rounds.push(poseOf(spot.x, 1.15 + 0.38, spot.z, 0, 0.5, 0.72, 0.5, 0x6e5340));
+  }
+
+  // --- Beach gear. Bow and oxen point inland, up off the channel.
+  // North bank inland is -along; south bank inland is +along.
+  const addHull = (spot, yaw, scale, color, heel) => {
+    const hull = poseOf(spot.x, spot.y + 0.08, spot.z, yaw, scale, scale, scale, color, 0, heel);
+    hulls.push(hull);
+    occupy(spot.x, spot.z, 4.2 * scale);
+    return hull;
+  };
+  const puntales = (spot, yaw) => {
+    for (const side of [-1.4, 1.4]) {
+      const o = localOffset(yaw, 1, 1, 1, 0.2, 0, side);
+      masts.push(poseOf(spot.x + o.x, spot.y + 0.62, spot.z + o.z, yaw, 1.45, 1.55, 1.45, COLORS.wood, 0.7, side > 0 ? 0.25 : -0.25));
+    }
+  };
+
+  // Oxen stand side by side across the bow. local +Z of the haul yaw is the shore.
+  const yokeTeam = (spot, yaw) => {
+    for (const sign of [-1, 1]) {
+      const o = localOffset(yaw, 1, 1, 1, 0, 0, 1.15 * sign);
+      oxen.push(poseOf(spot.x + o.x, spot.y, spot.z + o.z, yaw, 1, 1, 1, sign < 0 ? 0x6a4a32 : 0x8a6244));
+    }
+    const bar = localOffset(yaw, 1, 1, 1, 0, 1.15, 0);
+    // The bar runs along local Z, which is across the pair.
+    woodBoxes.push(poseOf(spot.x + bar.x, spot.y + bar.y, spot.z + bar.z, yaw, 0.12, 0.12, 2.55, 0x5c4636));
+  };
+
+  const haulYawNorth = yawTowards(-mouth.rx, -mouth.rz);
+  const haulYawSouth = alongShore;
+
+  const placeBoat = (along, seaward, yaw, scale, color, withProps) => {
+    const spot = beachAt(along, seaward);
+    if (!spot || !free(spot.x, spot.z, 4)) return null;
+    addHull(spot, yaw, scale, color, 0.1);
+    puntales(spot, yaw);
+    if (withProps) {
+      const cap = localOffset(yaw, 1, 1, 1, -2.2, 0, 2.4);
+      rounds.push(poseOf(spot.x + cap.x, spot.y + 0.5, spot.z + cap.z, yaw, 1.05, 1, 1.05, 0x5a4638));
+      woodBoxes.push(poseOf(spot.x + cap.x, spot.y + 1.05, spot.z + cap.z, yaw + 0.4, 1.5, 0.08, 0.08, 0x5c4636));
+      const hook = localOffset(yaw, 1, 1, 1, 1.5, 0, -2.2);
+      anchors.push(poseOf(spot.x + hook.x, spot.y + 0.12, spot.z + hook.z, yaw, 1, 1, 1, 0x3a342c, Math.PI / 2, 0.3));
+    }
+    return spot;
+  };
+
+  // The first three sit in the empty sand the mouth camera looks down on
+  // (along about -350..-400, seaward -60..-110). The rest carry the same
+  // gear north of the fort, where that view is already fog.
+  const northBoats = [
+    [-372, -60, 0.98, true],
+    [-356, -80, 1.02, true],
+    [-344, -102, 0.92, false],
+    [-620, -42, 0.96, true],
+    [-786, -16, 1.04, true],
+    [-798, -30, 0.94, false],
+    [-770, -22, 0.9, false],
+  ];
+  northBoats.forEach(([along, seaward, scale, props], index) => {
+    const yaw = haulYawNorth + (index % 2 === 0 ? 0.08 : -0.1);
+    const spot = placeBoat(along, seaward, yaw, scale, boatColors[index % boatColors.length], props);
+    if (!spot || !props) return;
+    // Inland of the bow: more negative along, same stretch of shore.
+    const inland = beachAt(along - 9, seaward);
+    if (inland && free(inland.x, inland.z, 2)) {
+      yokeTeam(inland, yaw);
+      occupy(inland.x, inland.z, 2.4);
+    }
+  });
+
+  const southBoats = [
+    [542, -36, 0.96],
+    [588, -48, 0.9],
+  ];
+  southBoats.forEach(([along, seaward, scale], index) => {
+    const yaw = haulYawSouth + (index === 0 ? 0.12 : -0.08);
+    const spot = placeBoat(along, seaward, yaw, scale, boatColors[(index + 2) % boatColors.length], true);
+    if (!spot) return;
+    const inland = beachAt(along + 9, seaward);
+    if (inland && free(inland.x, inland.z, 2)) {
+      yokeTeam(inland, yaw);
+      occupy(inland.x, inland.z, 2.4);
+    }
+  });
+
+  // Fishermen's row, gable to the water, spaced along the shore.
+  const beachHuts = [
+    [-400, -68],
+    [-386, -90],
+    [-370, -112],
+    [-612, -48],
+    [-748, -30],
+    [-762, -52],
+  ];
+  beachHuts.forEach(([along, seaward], index) => {
+    const spot = beachAt(along, seaward);
+    if (!spot || !free(spot.x, spot.z, 6)) return;
+    const yaw = alongShore + (index % 2 === 0 ? 0.06 : -0.08);
+    const scale = 0.94 + (index % 3) * 0.04;
+    placeGable(spot, spot.y, yaw, scale, 1, scale, thatchRoofs, thatches[index % thatches.length], true);
+    shade({ x: spot.x, y: spot.y, z: spot.z }, yaw, scale, 1, scale);
+  });
+  const southHuts = [
+    [528, -64],
+    [572, -74],
+  ];
+  southHuts.forEach(([along, seaward], index) => {
+    const spot = beachAt(along, seaward);
+    if (!spot || !free(spot.x, spot.z, 6)) return;
+    // South-bank water is -along, so the gable faces the channel.
+    const yaw = haulYawNorth + (index === 0 ? -0.1 : 0.14);
+    placeGable(spot, spot.y, yaw, 0.98, 1, 0.98, thatchRoofs, thatches[(index + 1) % thatches.length], true);
+    shade({ x: spot.x, y: spot.y, z: spot.z }, yaw, 0.98, 1, 0.98);
+  });
+
+  // Nets and sails on frames, barrels, baskets, wood, driftwood, people.
+  const frames = [
+    [-364, -70, haulYawNorth],
+    [-392, -102, haulYawNorth],
+    [-608, -36, haulYawNorth],
+    [-804, -24, haulYawNorth],
+    [555, -52, haulYawSouth],
+    [600, -62, haulYawSouth],
+  ];
+  frames.forEach(([along, seaward, yaw], index) => {
+    const spot = beachAt(along, seaward);
+    if (!spot || !free(spot.x, spot.z, 2)) return;
+    const tall = index % 2 === 0;
+    if (tall) {
+      sheets.push(poseOf(spot.x, spot.y + 1.35, spot.z, yaw, 3.2, 1, 2.4, iTone(detail), Math.PI / 2));
+      for (const sign of [-1, 1]) {
+        const o = localOffset(yaw, 1, 1, 1, 1.5 * sign, 0, 0);
+        woodBoxes.push(poseOf(spot.x + o.x, spot.y + 1.35, spot.z + o.z, yaw, 0.1, 2.7, 0.1, 0x6e5340));
+      }
+    } else {
+      sheets.push(poseOf(spot.x, spot.y + 0.08, spot.z, yaw, 4.2, 1, 2.4, iTone(detail)));
+    }
+    occupy(spot.x, spot.z, 2.2);
+  });
+
+  // A few lateen cloths hung to dry, small enough not to read as a ship under sail.
+  const drying = [
+    [-380, -78],
+    [-766, -40],
+    [560, -58],
+  ];
+  drying.forEach(([along, seaward], index) => {
+    const spot = beachAt(along, seaward);
+    if (!spot) return;
+    sails.push(poseOf(spot.x, spot.y + 0.15, spot.z, haulYawNorth + index, 0.42, 0.38, 1, COLORS.sail));
+    occupy(spot.x, spot.z, 2);
+  });
+
+  const piles = [
+    [-408, -96],
+    [-618, -34],
+    [-808, -36],
+    [548, -58],
+  ];
+  piles.forEach(([along, seaward]) => {
+    const spot = beachAt(along, seaward);
+    if (!spot || !free(spot.x, spot.z, 1.5)) return;
+    const yaw = detail() * Math.PI;
+    for (let i = 0; i < 4; i++) {
+      woodBoxes.push(poseOf(spot.x, spot.y + 0.16 + (i % 2) * 0.14, spot.z, yaw + i * 0.45, 1.6, 0.14, 0.16, 0x6a5038, 0, (i - 1.5) * 0.06));
+    }
+    occupy(spot.x, spot.z, 1.4);
+  });
+
+  const barrels = [
+    [-366, -68],
+    [-348, -88],
+    [-600, -40],
+    [-780, -28],
+    [536, -50],
+    [582, -60],
+  ];
+  barrels.forEach(([along, seaward], index) => {
+    const spot = beachAt(along, seaward);
+    if (!spot) return;
+    const n = 2 + (index % 2);
+    for (let i = 0; i < n; i++) {
+      const o = localOffset(haulYawNorth, 1, 1, 1, (i - 1) * 0.7, 0, (index % 2) * 0.4);
+      const lie = i === n - 1 && index % 2 === 0;
+      rounds.push(poseOf(
+        spot.x + o.x,
+        spot.y + (lie ? 0.4 : 0.42),
+        spot.z + o.z,
+        haulYawNorth,
+        0.85,
+        lie ? 0.85 : 0.78,
+        0.85,
+        0x6e5340,
+        lie ? Math.PI / 2 : 0,
+      ));
+    }
+  });
+
+  const traps = [
+    [-358, -66],
+    [-378, -96],
+    [-604, -30],
+    [-788, -20],
+    [534, -42],
+    [596, -54],
+  ];
+  traps.forEach(([along, seaward], index) => {
+    const spot = beachAt(along, seaward);
+    if (!spot) return;
+    // Cone on its side: pitch π/2 lays the tip along local Z after the yaw.
+    plants.push(poseOf(spot.x, spot.y + 0.32, spot.z, haulYawNorth + index * 0.4, 0.85, 0.9, 0.85, 0xb08958, Math.PI / 2));
+    rounds.push(poseOf(spot.x + 0.9, spot.y + 0.22, spot.z, 0, 0.7, 0.36, 0.7, 0xc2a56a));
+    if (index % 2 === 0) {
+      rounds.push(poseOf(spot.x + 0.9, spot.y + 0.55, spot.z + 0.15, 0.3, 0.62, 0.32, 0.62, 0xd2b56a));
+    }
+  });
+
+  const people = [
+    [-394, -76, shirts[1], false],
+    [-360, -92, shirts[0], true],
+    [-348, -72, shirts[4], false],
+    [-606, -44, shirts[2], false],
+    [-754, -38, shirts[3], true],
+    [550, -56, shirts[0], true],
+    [578, -66, shirts[1], false],
+  ];
+  people.forEach(([along, seaward, shirt, woman]) => {
+    const spot = beachAt(along, seaward);
+    if (!spot || !free(spot.x, spot.z, 0.6)) return;
+    const yaw = haulYawNorth;
+    limeBoxes.push(poseOf(spot.x, spot.y + 0.5, spot.z, yaw, 0.42, woman ? 1.02 : 0.92, 0.26, shirt));
+    limeBoxes.push(poseOf(spot.x, spot.y + (woman ? 1.16 : 1.1), spot.z, yaw, 0.2, 0.2, 0.2, 0xd7a88a));
+    if (woman) {
+      const o = localOffset(yaw, 1, 1, 1, 0.35, 0, 0);
+      rounds.push(poseOf(spot.x + o.x, spot.y + 0.7, spot.z + o.z, yaw, 0.36, 0.28, 0.36, 0xc2a56a));
+    } else {
+      const o = localOffset(yaw, 1, 1, 1, 0.7, 0, 0.2);
+      sheets.push(poseOf(spot.x + o.x, spot.y + 0.06, spot.z + o.z, yaw, 1.8, 1, 1.2, iTone(detail)));
+    }
+    occupy(spot.x, spot.z, 0.7);
+  });
+
+  const drift = [
+    [-340, -52],
+    [-352, -64],
+    [-600, -22],
+    [-820, -12],
+    [520, -28],
+    [610, -32],
+    [800, -20],
+  ];
+  drift.forEach(([along, seaward], index) => {
+    const spot = beachAt(along, seaward);
+    if (!spot) return;
+    woodBoxes.push(poseOf(spot.x, spot.y + 0.08, spot.z, index * 0.7, 1.7 + (index % 3) * 0.4, 0.1, 0.14, 0x7a6248, 0.04, (index % 2) * 0.08));
+  });
+
+  // Barrón on the higher sand, cardo as a lower wider tuft. Kept off the roofs.
+  const sow = (along0, along1, sea0, sea1, count, marram) => {
+    for (let i = 0; i < count; i++) {
+      const along = along0 + detail() * (along1 - along0);
+      const seaward = sea0 + detail() * (sea1 - sea0);
+      const spot = beachAt(along, seaward);
+      if (!spot || !free(spot.x, spot.z, 3.5)) continue;
+      const height = marram ? 0.55 + detail() * 0.7 : 0.28 + detail() * 0.22;
+      plants.push(poseOf(
+        spot.x,
+        spot.y + height * 0.5,
+        spot.z,
+        detail() * Math.PI * 2,
+        marram ? 0.45 + detail() * 0.35 : 0.7 + detail() * 0.3,
+        height,
+        marram ? 0.45 + detail() * 0.35 : 0.7 + detail() * 0.3,
+        marram ? (detail() < 0.5 ? 0x8a8f4a : 0x6d7a3c) : 0x8a8050,
+        0,
+        (detail() - 0.5) * 0.25,
+      ));
+    }
+  };
+  sow(-430, -330, -55, -120, 18, true);
+  sow(-420, -340, -65, -118, 6, false);
+  sow(-460, -400, -40, -70, 6, true);
+  sow(-670, -610, -48, -100, 8, true);
+  sow(-860, -730, -40, -100, 12, true);
+  sow(-860, -730, -60, -110, 5, false);
+  sow(420, 860, -50, -100, 18, true);
+  sow(420, 860, -60, -105, 7, false);
+
+  const thatchMat = thatch.clone();
+  thatchMat.side = THREE.DoubleSide;
+  thatchMat.onBeforeCompile = thatch.onBeforeCompile;
+  thatchMat.customProgramCacheKey = thatch.customProgramCacheKey;
+
+  const add = (geometry, material, items) => {
+    const mesh = buildPosed(geometry, material, items);
+    if (mesh) group.add(mesh);
+  };
+  add(barracaWallGeometry(), lime, houseWalls);
+  add(gableRoofGeometry(), thatchMat, thatchRoofs);
+  add(new THREE.BoxGeometry(1, 1, 1), lime, limeBoxes);
+  add(new THREE.BoxGeometry(1, 1, 1), wood, woodBoxes);
+  add(sheetGeometry(), cloth, sheets);
+  add(new THREE.CylinderGeometry(0.5, 0.5, 1, 6), wood, rounds);
+  add(anchorGeometry(), wood, anchors);
+  add(new THREE.ConeGeometry(0.45, 1, 4), scrubMat, plants);
+  add(oxGeometry(), oxMat, oxen);
 }

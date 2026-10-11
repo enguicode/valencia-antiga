@@ -144,6 +144,7 @@ export function createBridges(layout, path) {
   // rather than straight through it.
   const stone = createSurface('masonry', 4, { color: COLORS.stone, side: THREE.DoubleSide });
   const pale = createSurface('masonry', 3, { color: 0xe8dcc0 });
+  const paving = createSurface('masonry', 2.4, { color: 0xcdbf9f });
   const marble = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 });
   const roof = createSurface('tiles', 1.6, { color: 0x6f8f7a }); // glazed tiles
   const group = new THREE.Group();
@@ -306,6 +307,19 @@ export function createBridges(layout, path) {
       }
     }
     group.add(model);
+
+    // A paved way from the foot of the ramp to the gate the bridge is for.
+    const gate = layout.gates.find((item) => item.id === bridge.id);
+    if (gate) {
+      const [gx, gz] = layout.wall[gate.vertex];
+      const reach = SPAN / 2 + RAMP - 1;
+      const sx = sample.x + sample.rx * reach;
+      const sz = sample.z + sample.rz * reach;
+      const road = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(gx - sx, gz - sz), 0.12, width), paving);
+      road.position.set((sx + gx) / 2, BANK.height + 0.03, (sz + gz) / 2);
+      road.rotation.y = yawTowards(gx - sx, gz - sz);
+      group.add(road);
+    }
   }
 
   group.add(createInstances(new THREE.SphereGeometry(0.42, 12, 9), stone, balls));

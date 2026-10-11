@@ -7,11 +7,13 @@ import { createInstances } from './instancing.js';
 // and shape of arches, width of deck, cutwaters and furniture; what is
 // documented and what is guessed is set out in docs/sources.md. They all
 // cross at right angles to the river and span the same width, which is a
-// simplification: the real ones were between 148 and 171 m long.
+// simplification: the real ones were between 148 and 171 m long. For the
+// same reason four of them sit a little upstream of where they stood, so
+// that each one lands in front of its gate.
 
 const SPAN = RIVER.width + BANK.slopeRun * 2 + 4;
 const DECK_TOP = 8.5;
-const RAMP = 29;
+const RAMP = 14;
 const PIER = 3;
 const ARCH = { spring: 2, rise: 4.5 };
 const PARAPET = { height: 0.9, thickness: 0.5 };

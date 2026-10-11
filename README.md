@@ -48,6 +48,8 @@ La pantalla se deja casi libre. Arriba, una tira fina con el avance por el río,
 
 ## Cómo está hecho
 
+Empezó como una prueba del modelo Claude Opus 5.5. Después se ha usado también Grok 4.7. La idea, el diseño, la elección de las fuentes y cada decisión de qué se hace y qué no son del autor.
+
 Una página estática. [three.js](https://threejs.org/) llega de una CDN. No hay servidor, ni compilación, ni ficheros de imagen o de sonido dentro de la escena: las texturas se pintan al arrancar y el sonido se genera en el navegador. La portada usa Cinzel y Cormorant Garamond; si no cargan, queda la letra con serifa del sistema.
 
 El texto que se lee está en el HTML, no solo en el JavaScript, para que un buscador vea la explicación. Al compartir el enlace, la tarjeta usa `og.jpg`.
@@ -67,8 +69,8 @@ valencia-antiga/
 │   ├── sources.md      de dónde sale cada dato y cuánto fiarse
 │   ├── sea-plan.md     el tramo del río hasta el mar
 │   └── multiplayer-plan.md
-├── AGENTS.md           reglas para quien toque el código, persona o asistente
-└── .claude/skills/     apuntes de la API de three.js (de terceros, MIT)
+├── LICENSE             CC BY-NC-SA 4.0
+└── AGENTS.md           reglas para quien toque el código, persona o asistente
 ```
 
 | Módulo | De qué se ocupa |
@@ -169,3 +171,12 @@ Después, sobre esa base: las dos barcas con su manejo, las texturas, las sombra
 - Bajar de la barca y entrar andando por una puerta.
 - Ver varias épocas: la València musulmana, la de 1700 y la de ahora.
 - La riada de 1957 y el desvío del río.
+
+## Licencia
+
+[CC BY-NC-SA 4.0](LICENSE). Se puede copiar, cambiar y compartir, citando el proyecto, **sin uso comercial** y con esta misma licencia en lo que se derive. Vale para el código, los modelos y los textos de las fichas.
+
+Dos cosas tienen su propia licencia y no esta:
+
+- `data/layout.json` deriva de [OpenStreetMap](https://www.openstreetmap.org/copyright) (© colaboradores de OpenStreetMap) y sigue bajo la ODbL.
+- [three.js](https://threejs.org/), que se carga de una CDN, es MIT.

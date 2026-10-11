@@ -1,6 +1,6 @@
 # Instrucciones para agentes — València Antiga
 
-Paseo 3D en three.js (0.170.0, import map desde CDN) por el Turia y la València de hacia 1700. Publicado en https://valencia-antiga.pages.dev/. Lee antes `README.md` (módulos, controles) y `docs/sources.md` (fiabilidad de cada dato). Referencia de la API de three.js: `.claude/skills/threejs-*` (geometry, materials, lighting, textures, shaders); si chocan con lo de aquí, manda este fichero.
+Paseo 3D en three.js (0.170.0, import map desde CDN) por el Turia y la València de hacia 1700. Publicado en https://valencia-antiga.pages.dev/. Lee antes `README.md` (módulos, controles) y `docs/sources.md` (fiabilidad de cada dato). Si usas apuntes genéricos de three.js y chocan con lo de aquí, manda este fichero.
 
 ## Reglas
 

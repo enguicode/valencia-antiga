@@ -184,7 +184,7 @@
     #journal {
       width: min(480px, calc(100% - 28px));
       max-height: calc(100% - 40px);
-      padding: 20px 22px;
+      padding: 0;
       color: var(--ink);
       font: inherit;
       line-height: 1.45;
@@ -195,15 +195,23 @@
       user-select: text;
     }
 
+    /* The list scrolls between the heading and the way out, which stay put. */
+    #journal[open] {
+      display: flex;
+      flex-direction: column;
+    }
+
     #journal::backdrop { background: rgba(46, 36, 24, 0.5); }
 
     #journal h2 {
       margin: 0;
+      padding: 20px 22px 0;
       font-size: 1.15rem;
     }
 
     #journal .tally {
-      margin: 2px 0 12px;
+      margin: 2px 0 0;
+      padding: 0 22px 12px;
       font-size: 0.85rem;
       font-style: italic;
       opacity: 0.8;
@@ -212,8 +220,12 @@
     #journal ol {
       display: grid;
       gap: 8px;
+      flex: 1;
+      min-height: 0;
       margin: 0;
-      padding: 0;
+      padding: 0 22px 14px;
+      overflow-y: auto;
+      outline: none; /* the dialog hands its first focus to the scroller */
       list-style: none;
     }
 
@@ -240,23 +252,29 @@
       opacity: 0.8;
     }
 
-    #journal li { position: relative; }
-
-    #journal li h3 { padding-right: 40px; }
+    /* Under the text: where it comes from and the way to see it again. */
+    #journal li .foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px solid var(--rule);
+    }
 
     #journal .view {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      display: grid;
-      place-items: center;
-      width: 34px;
-      height: 34px;
-      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 12px 0 9px;
+      font: inherit;
+      font-size: 0.8rem;
       color: var(--ink);
       background: var(--parchment);
       border: 1px solid var(--rule);
-      border-radius: 3px;
+      border-radius: 15px;
       cursor: pointer;
     }
 
@@ -280,13 +298,15 @@
 
     #journal .close {
       display: block;
-      margin: 14px 0 0 auto;
-      padding: 8px 16px;
+      flex: none;
+      margin: 0;
+      padding: 13px 16px;
+      width: 100%;
       font: inherit;
       color: #f4e9d2;
       background: var(--fill);
       border: 0;
-      border-radius: 3px;
+      border-radius: 0 0 3px 3px;
       cursor: pointer;
     }
 

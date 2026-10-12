@@ -9,6 +9,9 @@ import { TEXTURES, createSurface } from './materials.js';
 
 const HOUSE_COUNT = 2600;
 const WALL_CLEARANCE = 16;
+// The great gates stand well inside the line of the wall, with their stairs
+// and halls: each keeps an open square behind it.
+const GATE_SQUARE = { inset: 16, radius: 32 };
 
 function isInside(x, z, polygon) {
   let inside = false;
@@ -49,6 +52,18 @@ export function createCity(layout) {
   const chimneys = [];
 
   const clearings = landmarkClearings(layout);
+  const centreX = xs.reduce((sum, x) => sum + x, 0) / xs.length;
+  const centreZ = zs.reduce((sum, z) => sum + z, 0) / zs.length;
+  const squares = layout.gates
+    .filter((gate) => gate.major)
+    .map((gate) => {
+      const [x, z] = polygon[gate.vertex];
+      const reach = Math.hypot(centreX - x, centreZ - z);
+      return {
+        x: x + ((centreX - x) / reach) * GATE_SQUARE.inset,
+        z: z + ((centreZ - z) / reach) * GATE_SQUARE.inset,
+      };
+    });
   const random = createRandom(1356);
   const pick = (list) => list[Math.floor(random() * list.length)];
   const dummy = new THREE.Object3D();
@@ -58,6 +73,10 @@ export function createCity(layout) {
     const z = minZ + random() * spanZ;
     if (!isInside(x, z, polygon) || distanceToEdges(x, z, polygon) < WALL_CLEARANCE) continue;
     if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
+    // A house that would stand in a gate's square is still drawn from the
+    // random sequence and then dropped, so the rest of the city stays put.
+    const inSquare = squares.some((c) => Math.hypot(x - c.x, z - c.z) < GATE_SQUARE.radius);
+    const kept = [bodies.length, roofs.length, chimneys.length];
 
     const width = 7 + random() * 6;
     const depth = 7 + random() * 8;
@@ -78,6 +97,11 @@ export function createCity(layout) {
 
     if (placed % 45 === 0) chimneys.push({ x, y: BANK.height + height + roofHeight, z });
     placed++;
+    if (inSquare) {
+      bodies.length = kept[0];
+      roofs.length = kept[1];
+      chimneys.length = kept[2];
+    }
   }
 
   // The river banks only reach so far inland, so the city gets its own floor.

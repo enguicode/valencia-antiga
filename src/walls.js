@@ -39,7 +39,9 @@ const GATE_STYLES = {
   // two towers flanking a lower central body with the arch
   // `gallery` is how far up the towers the corbelled wall-walk runs; above it
   // the towers go on, a little narrower. Widths taken off a photograph.
-  serrans: { kind: 'polygonal', radius: 6.6, height: 33, gap: 11.9, centre: 28, gallery: 0.7, squareBack: true, tracery: true, stair: true, moat: true, rear: true },
+  // `walledUp`: a prison from 1586 to 1887, with the great arches towards the
+  // city filled in and small barred windows in their place.
+  serrans: { kind: 'polygonal', radius: 6.6, height: 33, gap: 11.9, centre: 28, gallery: 0.7, squareBack: true, tracery: true, stair: true, moat: true, rear: true, walledUp: true },
   // `step`: the front of the central body stops at a parapet this far up the
   // towers, and the rest stands back behind it to a second one.
   quart: { kind: 'round', radius: 5.3, height: 34, gap: 8.8, centre: 28, step: 0.7, batter: true, squareBack: true, rear: true },
@@ -220,6 +222,7 @@ export function createWalls(layout, path) {
     arches: [],
     lancets: [],
     pointed: [],
+    blind: [],
   };
   const plates = [];
   const extras = []; // one-off meshes
@@ -315,9 +318,13 @@ export function createWalls(layout, path) {
     };
     const arch = (x, width, height) => place(lists.arches, frame, x, 0.5, 0, { scale: [1, height / 1.4, width] });
     // A pointed opening on a face that looks into the city, with a sill.
+    // Walled up, the arch still shows as a patch of rougher masonry with
+    // one small window in it.
     const rearArch = (x, y, tall, z, width) => {
-      place(lists.pointed, frame, x - 0.05, y, z, { yaw: Math.PI, scale: [1, tall / POINTED_HEIGHT, width] });
+      const walled = GATE_STYLES[gate.id].walledUp;
+      place(walled ? lists.blind : lists.pointed, frame, x - 0.05, y, z, { yaw: Math.PI, scale: [1, tall / POINTED_HEIGHT, width] });
       place(lists.passages, frame, x - 0.12, y - 0.2, z, { scale: [0.5, 0.4, width + 1.2] });
+      if (walled) place(lists.slits, frame, x - 0.09, y + tall * 0.5, z, { yaw: Math.PI, scale: [1, 0.75, 2.4] });
     };
 
     if (!gate && towerByVertex.get(i)?.id === 'santa-caterina') {
@@ -866,6 +873,7 @@ export function createWalls(layout, path) {
   // Stone, not the opening colour: the frieze is blind carving on the pale field.
   if (lists.lancets.length) group.add(createInstances(createLancetGeometry(), stone, lists.lancets));
   if (lists.pointed.length) group.add(createInstances(createPointedArchGeometry(), dark, lists.pointed));
+  if (lists.blind.length) group.add(createInstances(createPointedArchGeometry(), render, lists.blind));
   for (const plate of plates) {
     const mesh = new THREE.Mesh(plate.geometry, stone);
     mesh.matrix.copy(plate.frame);

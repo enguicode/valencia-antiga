@@ -190,67 +190,87 @@ const RIDGE_ALONG_X = Math.PI / 2;
 
 const MODELS = {
   // The cathedral's bell tower: an octagonal prism 50.85 m to the terrace,
-  // the same as its perimeter, in four storeys. Around 1700 the pierced
-  // Gothic parapet was still there and the stone bell gable was not yet
-  // finished, so a plain bell frame stands in for it.
+  // the same as its perimeter. Four equal bodies, each twice a face wide
+  // (the perimeter is the height, so a body is a quarter of it): blind base,
+  // the old prison, the ringer's house, and the bell chamber. Around 1700
+  // the pierced Gothic parapet was still up. The stone belfry was not
+  // finished, so a cage on two piers stands in for it, tall enough to reach
+  // the 63 m of the whole tower and wide enough for the hours bell.
   micalet(add) {
     const across = 16.6; // corner to corner
     const height = 50.85;
     const corner = across / 2;
-    const flat = corner * 0.924;
+    const flat = corner * Math.cos(Math.PI / 8);
+    const body = height / 4;
     add('oct', [0, 0, 0], [across, height, across], STONE);
-    // A slim buttress up each of the eight edges
+    // Prismatic buttresses on the eight edges, proud of the corner so the
+    // faces sit back between them.
     for (let k = 0; k < 8; k++) {
       const angle = (k / 8) * Math.PI * 2;
-      add('box', [Math.sin(angle) * (corner - 0.1), 0, Math.cos(angle) * (corner - 0.1)], [1.1, height, 1.1], STONE, yawTowards(Math.sin(angle), Math.cos(angle)));
+      const outX = Math.sin(angle);
+      const outZ = Math.cos(angle);
+      add('box', [outX * (corner + 0.15), 0, outZ * (corner + 0.15)], [1.35, height, 1.35], STONE, yawTowards(outX, outZ));
     }
-    // Mouldings between the storeys: blind, the "prison", the ringer's house, the bells
-    for (const y of [14, 25, 36]) add('oct', [0, y, 0], [across + 0.9, 0.7, across + 0.9], PALE);
-    const window = (face, y, tall) => {
+    // String courses between the four bodies.
+    for (let k = 1; k <= 3; k++) add('oct', [0, body * k, 0], [across + 0.85, 0.5, across + 0.85], PALE);
+    const slit = (face, y) => {
       const angle = ((face + 0.5) / 8) * Math.PI * 2;
-      add('pointed', [Math.sin(angle) * (flat + 0.12), y, Math.cos(angle) * (flat + 0.12)], [0.4, tall, 1.15], DARK, yawTowards(Math.sin(angle), Math.cos(angle)));
+      add('pointed', [Math.sin(angle) * (flat + 0.12), y, Math.cos(angle) * (flat + 0.12)], [0.4, 3.4, 0.85], DARK, yawTowards(Math.sin(angle), Math.cos(angle)));
     };
-    window(1, 18, 3.2);
-    window(2, 29, 3.2);
-    window(6, 29, 3.2);
-    // Bell chamber: a pointed opening on each face, the stone archivolt set
-    // back into the wall, and a wheel where the blind tracery and oculus sit
-    // in the head. The tracery itself is a sketch of the surviving windows.
-    around(add, { sides: 8, radius: flat + 0.02, y: 38.1, solid: 'pointed', height: 8.6, width: 3.15, depth: 0.4, color: STONE });
-    around(add, { sides: 8, radius: flat + 0.28, y: 38.4, solid: 'pointed', height: 6.5, width: 2.3, depth: 0.36, color: DARK });
-    around(add, { sides: 8, radius: flat + 0.32, y: 45.0, solid: 'disk', height: 1.35, width: 1.35, depth: 0.18, color: DARK });
-    around(add, { sides: 8, radius: flat + 0.48, y: 44.92, solid: 'wheel', height: 1.55, width: 1.55, depth: 0.28, color: STONE });
-    add('oct', [0, 48.3, 0], [across + 0.7, 0.6, across + 0.7], PALE);
-    // Terrace. The posts were already here; a rail above and below turns the
-    // gaps into the pierced parapet. Corner posts grow a small pinnacle.
-    add('oct', [0, height, 0], [across + 1.2, 0.5, across + 1.2], PALE);
+    // One slit in the prison, two in the ringer's house.
+    slit(1, body + 4.5);
+    slit(2, body * 2 + 4.7);
+    slit(6, body * 2 + 4.7);
+    // Bell chamber: a plain band, then a pointed window, and above it a gable
+    // across the face. The gable is the stone stand-in for the openwork head;
+    // the wheel is the oculus in that head.
+    const bell = body * 3;
+    const sill = bell + 2.55;
+    around(add, { sides: 8, radius: flat + 0.02, y: sill, solid: 'pointed', height: 6.15, width: 3.35, depth: 0.42, color: STONE });
+    around(add, { sides: 8, radius: flat + 0.28, y: sill + 0.22, solid: 'pointed', height: 4.85, width: 2.15, depth: 0.36, color: DARK });
+    const gableBase = sill + 4.15;
+    for (let face = 0; face < 8; face++) {
+      const angle = ((face + 0.5) / 8) * Math.PI * 2;
+      const outX = Math.sin(angle);
+      const outZ = Math.cos(angle);
+      // Gable width runs along local X. Aim that along the face, so the
+      // thickness (local Z) points out.
+      add('gable', [outX * (flat + 0.2), gableBase, outZ * (flat + 0.2)], [5.05, 4.9, 0.5], STONE, yawTowards(outZ, -outX));
+    }
+    around(add, { sides: 8, radius: flat + 0.52, y: gableBase + 1.85, solid: 'disk', height: 1.45, width: 1.45, depth: 0.16, color: DARK });
+    around(add, { sides: 8, radius: flat + 0.68, y: gableBase + 1.7, solid: 'wheel', height: 1.75, width: 1.75, depth: 0.22, color: STONE });
+    add('oct', [0, height - 1.05, 0], [across + 0.75, 0.5, across + 0.75], PALE);
+    // Terrace. Rails and posts stand in for the pierced parapet; the corner
+    // posts grow a pinnacle.
+    add('oct', [0, height, 0], [across + 1.15, 0.45, across + 1.15], PALE);
     const side = across * Math.sin(Math.PI / 8);
     for (let k = 0; k < 8; k++) {
       const angle = ((k + 0.5) / 8) * Math.PI * 2;
       const outX = Math.sin(angle);
       const outZ = Math.cos(angle);
       const yaw = yawTowards(outX, outZ);
-      add('box', [outX * (flat + 0.28), height + 0.62, outZ * (flat + 0.28)], [0.26, 0.22, side * 0.86], PALE, yaw);
-      add('box', [outX * (flat + 0.28), height + 1.85, outZ * (flat + 0.28)], [0.26, 0.28, side * 0.86], PALE, yaw);
+      add('box', [outX * (flat + 0.32), height + 0.55, outZ * (flat + 0.32)], [0.26, 0.22, side * 0.82], PALE, yaw);
+      add('box', [outX * (flat + 0.32), height + 1.7, outZ * (flat + 0.32)], [0.26, 0.28, side * 0.82], PALE, yaw);
     }
     for (let k = 0; k < 24; k++) {
       const angle = (k / 24) * Math.PI * 2;
-      add('box', [Math.sin(angle) * (flat + 0.3), height + 0.5, Math.cos(angle) * (flat + 0.3)], [0.45, 1.7, 0.45], PALE, yawTowards(Math.sin(angle), Math.cos(angle)));
+      add('box', [Math.sin(angle) * (flat + 0.34), height + 0.45, Math.cos(angle) * (flat + 0.34)], [0.42, 1.6, 0.42], PALE, yawTowards(Math.sin(angle), Math.cos(angle)));
     }
     for (let k = 0; k < 8; k++) {
       const angle = (k / 8) * Math.PI * 2;
-      add('box', [Math.sin(angle) * corner, height + 0.5, Math.cos(angle) * corner], [0.9, 3.2, 0.9], PALE);
-      add('pyramid', [Math.sin(angle) * corner, height + 3.7, Math.cos(angle) * corner], [0.85, 1.5, 0.85], PALE);
+      add('box', [Math.sin(angle) * (corner + 0.12), height + 0.45, Math.cos(angle) * (corner + 0.12)], [0.95, 2.7, 0.95], PALE);
+      add('pyramid', [Math.sin(angle) * (corner + 0.12), height + 3.15, Math.cos(angle) * (corner + 0.12)], [0.85, 1.35, 0.85], PALE);
     }
-    // Bell frame: two piers and a beam. The finished Baroque gable is later;
-    // the opening and the hours bell stand in for the unfinished cage.
-    for (const x of [-2.1, 2.1]) add('box', [x, height + 0.5, 0], [1, 8, 1.3], STONE);
-    add('box', [0, height + 8.5, 0], [5.8, 0.8, 1.5], STONE);
-    add('pointed', [0, height + 1.7, 0], [0.7, 6.3, 2.9], STONE, FACING_Z);
-    add('pointed', [0, height + 2.05, 0], [0.9, 5.2, 2.15], DARK, FACING_Z);
-    // The hours bell sits proud of the dark opening, or a dark ball inside it
-    // disappears. Stone, because the cage is stone and the bronze is not modelled.
-    add('ball', [0, height + 3.6, 0.7], [1.15, 1.15, 1.15], STONE);
+    // Cage for the hours bell, facing the plaza (local −X). Two stone piers,
+    // a beam and an opening. The bell is 2.35 m across; stone, because the
+    // bronze is not modelled. A finial brings the top to 63 m.
+    const base = height + 0.45;
+    for (const z of [-2.15, 2.15]) add('box', [0, base, z], [1.4, 9.7, 1.25], STONE);
+    add('box', [0, base + 9.7, 0], [1.6, 0.7, 5.55], STONE);
+    add('pointed', [0, base + 2.6, 0], [0.65, 6.5, 3.25], STONE);
+    add('pointed', [0, base + 2.95, 0], [0.9, 5.35, 2.4], DARK);
+    add('ball', [-0.65, base + 5.85, 0], [2.35, 2.05, 2.35], STONE);
+    add('pyramid', [0, base + 10.4, 0], [1.05, 1.3, 1.05], STONE);
   },
 
   // The cathedral: 94 m long and 53.65 m across the transept, apse to the

@@ -39,8 +39,10 @@ const GATE_STYLES = {
   // two towers flanking a lower central body with the arch
   // `gallery` is how far up the towers the corbelled wall-walk runs; above it
   // the towers go on, a little narrower. Widths taken off a photograph.
-  serrans: { kind: 'polygonal', radius: 6.6, height: 33, gap: 11.9, centre: 28, gallery: 0.7, squareBack: true, tracery: true, stair: true, moat: true },
-  quart: { kind: 'round', radius: 5.3, height: 34, gap: 8.8, centre: 27, batter: true, squareBack: true },
+  serrans: { kind: 'polygonal', radius: 6.6, height: 33, gap: 11.9, centre: 28, gallery: 0.7, squareBack: true, tracery: true, stair: true, moat: true, rear: true },
+  // `step`: the front of the central body stops at a parapet this far up the
+  // towers, and the rest stands back behind it to a second one.
+  quart: { kind: 'round', radius: 5.3, height: 34, gap: 8.8, centre: 28, step: 0.7, batter: true, squareBack: true, rear: true },
   'sant-josep': { kind: 'round', radius: 4.2, height: 20, gap: 7, centre: 16, batter: true },
   trinitat: { kind: 'square', radius: 3.5, height: 14, gap: 6.5, centre: 11.5 },
   // a single tower with the gate through it
@@ -568,12 +570,16 @@ export function createWalls(layout, path) {
           place(block, frame, towerX - radius * 0.8, (walkY + height) / 2, towerZ, {
             scale: [radius * 1.6, height - walkY, upperR * 2],
           });
+        }
+        if (style.rear) {
           // Towards the city each tower is open in tall pointed arches, one
-          // hall over another. The stair hides the lowest of the western one.
+          // hall over another. At Serrans there is a third at street level,
+          // which the stair hides on the western tower.
           const rear = towerX - radius * 1.6;
-          if (direction > 0) rearArch(rear, 0.4, height * BACK.ground, towerZ, radius * 1.05);
+          const upperW = style.gallery ? upperR : radius;
+          if (style.stair && direction > 0) rearArch(rear, 0.4, height * BACK.ground, towerZ, radius * 1.05);
           rearArch(rear, height * BACK.mid[0], height * BACK.mid[1], towerZ, radius * 2 * 0.64);
-          rearArch(rear, walkY + 0.8, height * BACK.upper, towerZ, upperR * 2 * 0.72);
+          rearArch(rear, style.gallery ? walkY + 0.8 : height * 0.72, height * BACK.upper, towerZ, upperW * 2 * 0.72);
         }
       }
       if (style.batter && style.squareBack) {
@@ -637,6 +643,7 @@ export function createWalls(layout, path) {
     // Behind its front wall the central body stops at a terrace, level with
     // the floor of the upper halls of the towers.
     const terraceY = style.gallery ? walkY - 0.5 : centreH;
+    const frontTop = style.step ? height * style.step : centreH;
     const depth = radius * 1.4;
     const front = 1 + depth / 2;
     const back = 1 - depth / 2;
@@ -713,8 +720,20 @@ export function createWalls(layout, path) {
         scale: [jambDepth, 0.8, passage + 0.2],
       });
     } else {
-      place(block, frame, 1, centreH / 2, 0, { scale: [depth, centreH, gap * 2] });
+      place(block, frame, 1, frontTop / 2, 0, { scale: [depth, frontTop, gap * 2] });
+      if (style.step) {
+        const setBack = 2.6;
+        place(block, frame, 1 - setBack / 2, (frontTop + centreH) / 2, 0, { scale: [depth - setBack, centreH - frontTop, gap * 2] });
+        for (let along = -open / 2 + 0.8; along <= open / 2 - 0.8; along += MERLON.spacing) {
+          place(lists.merlons, frame, front - setBack - MERLON.width / 2, centreH + MERLON.height / 2, along);
+        }
+      }
       arch(front + 0.05, archWidth, archHeight);
+      if (style.rear) {
+        // the way through seen from the city, and the hall over it
+        place(lists.arches, frame, back - 0.05, 0.5, 0, { yaw: Math.PI, scale: [1, archHeight / 1.4, archWidth] });
+        rearArch(back, height * BACK.mid[0], height * BACK.centre, 0, (gap - radius) * 2 * 0.72);
+      }
     }
     place(lists.accents, frame, front + 0.16, archHeight + 1.85, 0, { scale: [0.28, 1.7, 1.5] }); // royal arms
     if (style.tracery) {
@@ -727,9 +746,9 @@ export function createWalls(layout, path) {
     place(block, frame, front + 0.18, courseY, 0, { scale: [0.5, 0.4, open * 0.96] });
     // With a wall-walk the machicolation sits at its level, a little below
     // the towers', and the wall goes on above it to its own parapet.
-    const deckY = style.gallery ? walkY - GALLERY.centreDrop : centreH;
+    const deckY = style.gallery ? walkY - GALLERY.centreDrop : frontTop;
     const corbelH = style.gallery ? GALLERY.corbel : 0.58;
-    const corbelY = style.gallery ? deckY - 0.83 - corbelH / 2 : centreH - 1.28;
+    const corbelY = style.gallery ? deckY - 0.83 - corbelH / 2 : frontTop - 1.28;
     // Four corbels leave three wide arches between the towers, as built.
     const nCorb = style.gallery ? 4 : Math.max(6, Math.round(open / 1.45));
     const corbelSpan = open * 0.92;

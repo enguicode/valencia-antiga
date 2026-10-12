@@ -15,6 +15,10 @@ const RIVER_FRONT = 230; // metres from the river within which the wall has towe
 // The tower of Santa Caterina, begun in 1390 on the corner where the wall
 // reaches the river: round, with a relief of the saint between two shields
 // of the city. Its size is an estimate.
+// The wall-walk of the Serrans towers: how far its lip stands out, how tall
+// its corbels are, how much narrower the tower is above it, and how far below
+// it the walk of the central body runs. Read off a photograph, not measured.
+const GALLERY = { lip: 1.2, corbel: 2.3, setBack: 0.94, centreDrop: 2 };
 const SANTA_CATERINA = { radius: 5.6, height: WALL.height + 7 };
 
 // Gates as they stood around 1700, as far as the sources go (docs/sources.md).
@@ -22,7 +26,9 @@ const SANTA_CATERINA = { radius: 5.6, height: WALL.height + 7 };
 // descriptions, and their sizes here are estimates.
 const GATE_STYLES = {
   // two towers flanking a lower central body with the arch
-  serrans: { kind: 'polygonal', radius: 6, height: 33, gap: 11, centre: 28, squareBack: true, tracery: true, stair: true },
+  // `gallery` is how far up the towers the corbelled wall-walk runs; above it
+  // the towers go on, a little narrower. Widths taken off a photograph.
+  serrans: { kind: 'polygonal', radius: 6.6, height: 33, gap: 11.9, centre: 28, gallery: 0.7, squareBack: true, tracery: true, stair: true },
   quart: { kind: 'round', radius: 5.3, height: 34, gap: 8.8, centre: 27, batter: true, squareBack: true },
   'sant-josep': { kind: 'round', radius: 4.2, height: 20, gap: 7, centre: 16, batter: true },
   trinitat: { kind: 'square', radius: 3.5, height: 14, gap: 6.5, centre: 11.5 },
@@ -221,6 +227,20 @@ export function createWalls(layout, path) {
         place(lists.merlons, frame, x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius, { yaw: -angle });
       }
     };
+    const merlonPolygon = (x, z, radius, y, sides) => {
+      const faceR = radius * Math.cos(Math.PI / sides) - MERLON.width / 2;
+      const faceW = 2 * radius * Math.sin(Math.PI / sides);
+      const perSide = Math.round(faceW / 2);
+      for (let f = 0; f < sides; f++) {
+        const theta = (f + 0.5) * ((2 * Math.PI) / sides);
+        const nx = Math.sin(theta);
+        const nz = Math.cos(theta);
+        for (let k = 0; k < perSide; k++) {
+          const along = ((k + 0.5) / perSide - 0.5) * faceW * 0.9;
+          place(lists.merlons, frame, x + nx * faceR + nz * along, y, z + nz * faceR - nx * along, { yaw: -Math.atan2(nz, nx) });
+        }
+      }
+    };
     const merlonSquare = (x, z, half, y) => {
       const rim = half - MERLON.width / 2;
       const steps = Math.max(1, Math.floor(rim / 1.3));
@@ -358,10 +378,14 @@ export function createWalls(layout, path) {
     // outer circle, with the arches just below the overhang. `sides` is 6
     // for a hexagon and 0 for a round tower. CylinderGeometry puts a vertex
     // at theta 0 on +Z, so a face normal is (sin theta, cos theta).
-    const corbelCourse = (x, z, wallR, lipBottom, sides) => {
-      const corbelH = 0.64;
-      const y = lipBottom - corbelH / 2 - 0.38;
-      const archH = 0.62;
+    // `tall` is the height of the corbels of a wall-walk that stands well
+    // proud of the shaft: stepped, carrying a lip of `lip` radii, with the
+    // arches between them reaching up to it.
+    const corbelCourse = (x, z, wallR, lipBottom, sides, { tall = 0, lip = 1.1 } = {}) => {
+      const corbelH = tall || 0.64;
+      const y = tall ? lipBottom - corbelH / 2 : lipBottom - corbelH / 2 - 0.38;
+      const archH = tall ? tall * 0.78 : 0.62;
+      const archY = tall ? lipBottom - archH : lipBottom - archH - 0.22;
       const basis = (theta) => {
         const nx = Math.sin(theta);
         const nz = Math.cos(theta);
@@ -374,16 +398,16 @@ export function createWalls(layout, path) {
           yaw: Math.atan2(-nz, nx),
         };
       };
-      const corbel = (theta, along, reach, radial, width) => {
+      const corbel = (theta, along, reach, radial, width, cy = y, h = corbelH) => {
         const { nx, nz, tx, tz, yaw } = basis(theta);
-        place(block, frame, x + nx * radial + tx * along, y, z + nz * radial + tz * along, {
+        place(block, frame, x + nx * radial + tx * along, cy, z + nz * radial + tz * along, {
           yaw,
-          scale: [reach, corbelH, width],
+          scale: [reach, h, width],
         });
       };
       const arch = (theta, along, surfaceR, archWidth) => {
         const { nx, nz, tx, tz, yaw } = basis(theta);
-        place(lists.arches, frame, x + nx * surfaceR + tx * along, lipBottom - archH - 0.22, z + nz * surfaceR + tz * along, {
+        place(lists.arches, frame, x + nx * surfaceR + tx * along, archY, z + nz * surfaceR + tz * along, {
           yaw,
           scale: [1, archH / 1.4, archWidth],
         });
@@ -403,20 +427,32 @@ export function createWalls(layout, path) {
       const perFace = 4;
       const faceR = wallR * Math.cos(Math.PI / sides);
       const embed = 0.14;
-      const reach = Math.max(0.6, wallR * 1.06 - faceR + embed);
+      // A tall corbel stops just short of the flat of the lip it carries.
+      const reach = tall
+        ? wallR * lip * Math.cos(Math.PI / sides) - faceR + embed - 0.06
+        : Math.max(0.6, wallR * 1.06 - faceR + embed);
       const radial = faceR - embed + reach / 2;
       const faceW = 2 * wallR * Math.sin(Math.PI / sides) * 0.88;
       for (let f = 0; f < sides; f++) {
         const theta = (f + 0.5) * ((2 * Math.PI) / sides);
         for (let i = 0; i < perFace; i++) {
           const along = ((i + 0.5) / perFace - 0.5) * faceW;
-          corbel(theta, along, reach, radial, Math.min(0.52, (faceW / perFace) * 0.36));
+          const width = Math.min(0.52, (faceW / perFace) * 0.36);
+          if (tall) {
+            // two steps, the lower one half as deep
+            corbel(theta, along, reach, radial, width, lipBottom - tall / 4, tall / 2);
+            corbel(theta, along, reach / 2, faceR - embed + reach / 4, width, lipBottom - tall * 0.75, tall / 2);
+          } else {
+            corbel(theta, along, reach, radial, width);
+          }
           if (i < perFace - 1) {
-            arch(theta, along + faceW / perFace / 2, faceR + 0.06, Math.min(0.85, (faceW / perFace) * 0.5));
+            arch(theta, along + faceW / perFace / 2, faceR + 0.06, tall ? (faceW / perFace) * 0.62 : Math.min(0.85, (faceW / perFace) * 0.5));
           }
         }
       }
     };
+    const walkY = height * (style.gallery ?? 1);
+    const upperR = radius * GALLERY.setBack;
     for (const direction of [-1, 1]) {
       const towerZ = direction * gap;
       if (style.kind === 'square') {
@@ -433,11 +469,22 @@ export function createWalls(layout, path) {
         }
         continue;
       }
-      place(solid, frame, towerX, height / 2, towerZ, { scale: [radius, height, radius] });
-      merlonRing(towerX, towerZ, radius * 1.1 - MERLON.width / 2, height + MERLON.height / 2, Math.round(radius * 2.2));
-      // Parapet lip. The corbels sit just under it; the shaft below stays plain.
-      place(solid, frame, towerX, height - 0.5, towerZ, { scale: [radius * 1.1, 1, radius * 1.1] });
-      corbelCourse(towerX, towerZ, radius, height - 1, style.kind === 'polygonal' ? 6 : 0);
+      if (style.gallery) {
+        // Shaft up to the wall-walk, which stands out on tall corbels; the
+        // tower goes on above it, set back, to a plain parapet of its own.
+        place(solid, frame, towerX, walkY / 2, towerZ, { scale: [radius, walkY, radius] });
+        place(solid, frame, towerX, (walkY + height) / 2, towerZ, { scale: [upperR, height - walkY, upperR] });
+        place(solid, frame, towerX, walkY - 0.5, towerZ, { scale: [radius * GALLERY.lip, 1, radius * GALLERY.lip] });
+        corbelCourse(towerX, towerZ, radius, walkY - 1, 6, { tall: GALLERY.corbel, lip: GALLERY.lip });
+        merlonPolygon(towerX, towerZ, radius * GALLERY.lip, walkY + MERLON.height / 2, 6);
+        merlonPolygon(towerX, towerZ, upperR, height + MERLON.height / 2, 6);
+      } else {
+        place(solid, frame, towerX, height / 2, towerZ, { scale: [radius, height, radius] });
+        merlonRing(towerX, towerZ, radius * 1.1 - MERLON.width / 2, height + MERLON.height / 2, Math.round(radius * 2.2));
+        // Parapet lip. The corbels sit just under it; the shaft below stays plain.
+        place(solid, frame, towerX, height - 0.5, towerZ, { scale: [radius * 1.1, 1, radius * 1.1] });
+        corbelCourse(towerX, towerZ, radius, height - 1, style.kind === 'polygonal' ? 6 : 0);
+      }
       if (style.tracery) {
         // String course a third of the way up, under the blind tracery.
         place(solid, frame, towerX, height / 3, towerZ, { scale: [radius * 1.04, 0.45, radius * 1.04] });
@@ -449,9 +496,15 @@ export function createWalls(layout, path) {
       }
       if (style.squareBack) {
         // Towards the city the towers are flat-backed
-        place(block, frame, towerX - radius * 0.8, height / 2, towerZ, {
-          scale: [radius * 1.6, height, radius * 2],
+        const backH = style.gallery ? walkY : height;
+        place(block, frame, towerX - radius * 0.8, backH / 2, towerZ, {
+          scale: [radius * 1.6, backH, radius * 2],
         });
+        if (style.gallery) {
+          place(block, frame, towerX - radius * 0.8, (walkY + height) / 2, towerZ, {
+            scale: [radius * 1.6, height - walkY, upperR * 2],
+          });
+        }
       }
       if (style.batter && style.squareBack) {
         // Ashlar only at the arrises, against the rendered wall.
@@ -462,8 +515,12 @@ export function createWalls(layout, path) {
         }
       }
       const face = towerX + radius * (style.kind === 'round' ? 1 : 0.866) + 0.04;
-      for (const level of [0.2, 0.45, 0.62]) {
+      // With a wall-walk the third slit goes above it, on the narrower body.
+      for (const level of style.gallery ? [0.2, 0.45] : [0.2, 0.45, 0.62]) {
         place(lists.slits, frame, face, height * level, towerZ, { scale: [1, height / 17, 1.4] });
+      }
+      if (style.gallery) {
+        place(lists.slits, frame, towerX + upperR * 0.866 + 0.04, height * 0.87, towerZ, { scale: [1, height / 17, 1.4] });
       }
     }
 
@@ -555,36 +612,45 @@ export function createWalls(layout, path) {
         place(lists.accents, frame, front + 0.12, archHeight + 1.45, dir * 2.3, { scale: [0.2, 1.05, 0.95] });
       }
     }
-    const courseY = Math.max(centreH / 3, archHeight + 0.85);
+    // The string course runs on from the towers where they have one.
+    const courseY = style.gallery ? height / 3 : Math.max(centreH / 3, archHeight + 0.85);
     place(block, frame, front + 0.18, courseY, 0, { scale: [0.5, 0.4, open * 0.96] });
-    const corbelY = centreH - 1.28;
-    const nCorb = Math.max(6, Math.round(open / 1.45));
+    // With a wall-walk the machicolation sits at its level, a little below
+    // the towers', and the wall goes on above it to its own parapet.
+    const deckY = style.gallery ? walkY - GALLERY.centreDrop : centreH;
+    const corbelH = style.gallery ? GALLERY.corbel : 0.58;
+    const corbelY = style.gallery ? deckY - 0.83 - corbelH / 2 : centreH - 1.28;
+    // Four corbels leave three wide arches between the towers, as built.
+    const nCorb = style.gallery ? 4 : Math.max(6, Math.round(open / 1.45));
     const corbelSpan = open * 0.92;
     for (let i = 0; i < nCorb; i++) {
       const z = -corbelSpan / 2 + ((i + 0.5) / nCorb) * corbelSpan;
-      place(block, frame, front + 0.62, corbelY, z, { scale: [0.9, 0.58, 0.42] });
+      place(block, frame, front + 0.62, corbelY, z, { scale: [0.9, corbelH, style.gallery ? 0.55 : 0.42] });
       if (i < nCorb - 1) {
         const z2 = -corbelSpan / 2 + ((i + 1.5) / nCorb) * corbelSpan;
-        place(lists.arches, frame, front + 0.22, corbelY - 0.18, (z + z2) / 2, {
-          scale: [1, 0.46 / 1.4, Math.max(0.4, (corbelSpan / nCorb) * 0.55)],
+        place(lists.arches, frame, front + 0.22, style.gallery ? corbelY - corbelH / 2 : corbelY - 0.18, (z + z2) / 2, {
+          scale: [1, (style.gallery ? corbelH : 0.46) / 1.4, Math.max(0.4, (corbelSpan / nCorb) * (style.gallery ? 0.72 : 0.55))],
         });
       }
     }
-    place(block, frame, front - 0.1, centreH - 0.55, 0, { scale: [1.2, 0.55, open] });
+    place(block, frame, front - 0.1, deckY - 0.55, 0, { scale: [1.2, 0.55, open] });
     for (let along = -open / 2 + 0.8; along <= open / 2 - 0.8; along += MERLON.spacing) {
-      place(lists.merlons, frame, front + 0.2, centreH + MERLON.height / 2, along);
+      place(lists.merlons, frame, front + 0.2, deckY + MERLON.height / 2, along);
+      if (style.gallery) place(lists.merlons, frame, front - 0.6, centreH + MERLON.height / 2, along);
+    }
+    if (style.gallery) {
+      // the one small window of the room over the gate
+      place(lists.arches, frame, front + 0.05, deckY + 1.9, 0, { scale: [1, 1.7 / 1.4, 1.1] });
     }
     if (style.tracery) {
-      // Blind tracery between the string course and the gallery. The real
+      // Blind tracery between the string course and the corbels. The real
       // field is cusped ogees over tall shallow bays; a pale panel, stone
       // mullions and one short row of lancets stand in for it. The lancets
       // stay small so they read as carving and not as windows.
       const panelW = Math.min(open * 0.62, 8.8);
       const panelBottom = courseY + 0.65;
-      const galH = 4.3;
-      const galBottom = corbelY - 0.4 - galH;
       const friezeH = 1.7;
-      const panelTop = galBottom - 0.4;
+      const panelTop = corbelY - corbelH / 2 - 0.45;
       const fieldH = panelTop - panelBottom;
       const bayH = fieldH - friezeH;
       place(lists.accents, frame, front + 0.07, panelBottom + bayH / 2, 0, { scale: [0.14, bayH, panelW] });
@@ -607,12 +673,6 @@ export function createWalls(layout, path) {
           scale: [1, (friezeH * 0.7) / 1.4, cell * 0.4],
         });
       }
-      for (const dir of [-1, 1]) {
-        place(lists.arches, frame, front + 0.2, galBottom, dir * panelW * 0.23, {
-          scale: [1, galH / 1.4, panelW * 0.36],
-        });
-      }
-      place(lists.passages, frame, front + 0.24, galBottom + galH * 0.42, 0, { scale: [0.32, galH * 0.7, 0.55] });
     }
     if (style.stair) {
       // The great stair up the back of the western tower, inside the old run.

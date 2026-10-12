@@ -652,9 +652,42 @@ const MODELS = {
     add('dome', [4, 18.6, 0], [10, 10, 10], TILE_BLUE);
   },
 
+  // The basilica of the Desemparats (1652-1667) is not a nave: a nearly
+  // square block under tiled roofs, with a great oval dome on its drum rising
+  // out of the middle. Local -Z looks at the square. Sizes are read off an
+  // aerial view.
+  desemparats(add) {
+    const BLOCK = { length: 32, width: 29, height: 14 };
+    const DOME = { length: 19, width: 14.5 };
+    add('box', [0, 0, 0], [BLOCK.length, BLOCK.height, BLOCK.width], PALE);
+    add('box', [0, BLOCK.height, 0], [BLOCK.length + 0.7, 0.5, BLOCK.width + 0.7], STONE);
+    add('pyramid', [0, BLOCK.height + 0.5, 0], [BLOCK.length, 4.2, BLOCK.width], ROOF);
+    add('oct', [0, BLOCK.height, 0], [DOME.length + 1.6, 9, DOME.width + 1.6], PALE);
+    add('oct', [0, BLOCK.height + 9, 0], [DOME.length + 2.4, 0.6, DOME.width + 2.4], STONE);
+    add('dome', [0, BLOCK.height + 9.6, 0], [DOME.length, 13, DOME.width], TILE_BLUE);
+    add('oct', [0, BLOCK.height + 15.6, 0], [2.6, 2.6, 2.6], PALE);
+    add('cone', [0, BLOCK.height + 18.2, 0], [2.9, 1.8, 2.9], TILE_BLUE);
+    // windows round the drum, on the faces that clear the roof
+    around(add, { sides: 8, radius: (DOME.width + 1.6) / 2 - 0.2, y: BLOCK.height + 5, solid: 'arch', height: 2.8, width: 1.5, depth: 0.4, color: DARK, skip: (outX) => Math.abs(outX) > 0.5 });
+    // towards the square: three doors and a row of windows over them
+    const face = -BLOCK.width / 2 - 0.05;
+    for (const x of [-8, 0, 8]) {
+      add('arch', [x, 0, face - 0.1], [0.4, 6, 3.4], STONE, -FACING_Z);
+      add('arch', [x, 0.1, face - 0.3], [0.38, 5.1, 2.5], DARK, -FACING_Z);
+    }
+    for (let x = -12; x <= 12.01; x += 4.8) add('box', [x, 8.6, face], [0.35, 2.6, 1.3], DARK, -FACING_Z);
+    for (const side of [-1, 1]) {
+      for (let z = -9; z <= 9.01; z += 6) add('box', [side * (BLOCK.length / 2 + 0.05), 8.6, z], [0.35, 2.6, 1.3], DARK);
+    }
+  },
+
   church(add, landmark) {
     if (landmark.id === 'corpus-christi') {
       MODELS.corpusChristi(add);
+      return;
+    }
+    if (landmark.id === 'desemparats') {
+      MODELS.desemparats(add);
       return;
     }
     const { length, width, dome = false, tower = true, towerHeight = 32, towerSides = 4 } = landmark;

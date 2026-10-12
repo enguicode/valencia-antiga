@@ -138,6 +138,12 @@ Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de
 - **Estimado:** las alturas (17 m la sala, 27 la torre, 16 el Consolat), el tamaño del Consolat (19 × 11 m, leído de la vista cenital), la tapia del patio y el número y tamaño de puertas, ventanas y arquillos de la galería. Las gárgolas, la tracería y los medallones no se han hecho.
 - **Dudoso para 1700:** las almenas y los tejados se ven así hoy; no se ha comprobado cuánto deben a las restauraciones. El eje del edificio viene de `layout.json` y queda girado unos 25° respecto al real.
 
+### Basílica dels Desemparats
+
+- **Rehecha el 12-oct-2026 sobre vistas aéreas actuales:** era la iglesia genérica, una nave larga con una media naranja. La basílica (1652-1667) es un bloque casi cuadrado bajo tejados de teja, con una gran cúpula ovalada sobre tambor en el centro y tres puertas hacia la plaza.
+- **Estimado:** las medidas (bloque de 32 × 29 m y 14 de alto, cúpula de 19 × 14,5 m), la linterna y el número de puertas y ventanas. El tejado a cuatro aguas resume las varias cubiertas que rodean el tambor.
+- **Dudoso para 1700:** el revestimiento de teja azul de la cúpula y el aspecto de la fachada a la plaza, que no se han contrastado con vistas antiguas. Las casas de relleno llegan hasta la puerta: la plaza no está despejada.
+
 ### Micalet y Seu
 
 - **Con fuente:** Micalet, prisma octogonal de 50,85 m hasta la terraza, igual que su perímetro, con contrafuertes en las ocho aristas y cuatro cuerpos (macizo, «presó», casa del campanero y sala de campanas con ocho ventanales); la crestería gótica calada no se derribó hasta el XVIII; la espadaña de piedra es de 1660-1736. Seu, 94 m de largo y 53,65 m en el crucero; cimborrio octogonal de dos cuerpos con ocho ventanas de alabastro cada uno; Obra Nova de tres pisos de arcos (1566); puerta de los Apóstoles con rosetón de 6,45 m; Aula Capitular de 13 m de lado y 16 de alto. ([Wikipedia: El Miguelete](https://es.wikipedia.org/wiki/El_Miguelete), [Catedral](https://es.wikipedia.org/wiki/Catedral_de_Santa_María_de_Valencia))

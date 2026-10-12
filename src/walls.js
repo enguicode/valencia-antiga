@@ -17,8 +17,19 @@ const RIVER_FRONT = 230; // metres from the river within which the wall has towe
 // of the city. Its size is an estimate.
 // The wall-walk of the Serrans towers: how far its lip stands out, how tall
 // its corbels are, how much narrower the tower is above it, and how far below
-// it the walk of the central body runs. Read off a photograph, not measured.
-const GALLERY = { lip: 1.2, corbel: 2.3, setBack: 0.94, centreDrop: 2 };
+// it the walk of the central body runs. Read off photographs and aerial
+// views, not measured.
+const GALLERY = { lip: 1.2, corbel: 2.3, setBack: 0.87, centreDrop: 2 };
+// The dry moat at the foot of the Serrans towers: a trench that follows the
+// polygon of each tower round its front and outer flank, with the way in
+// between the two. It is documented (filled in 1871, dug out again in 1893);
+// the outline is read off an aerial photograph and the depth is a guess.
+const MOAT = { depth: 3.2, width: 4.5, causeway: 7.5 };
+// The city side of Serrans, as fractions of the height of the towers: how
+// tall the lowest arch is, where the middle hall starts and how tall its arch
+// is, how tall the upper one is, and how tall the arch of the central body
+// is. Read off a photograph.
+const BACK = { ground: 0.26, mid: [0.42, 0.26], upper: 0.2, centre: 0.22 };
 const SANTA_CATERINA = { radius: 5.6, height: WALL.height + 7 };
 
 // Gates as they stood around 1700, as far as the sources go (docs/sources.md).
@@ -28,7 +39,7 @@ const GATE_STYLES = {
   // two towers flanking a lower central body with the arch
   // `gallery` is how far up the towers the corbelled wall-walk runs; above it
   // the towers go on, a little narrower. Widths taken off a photograph.
-  serrans: { kind: 'polygonal', radius: 6.6, height: 33, gap: 11.9, centre: 28, gallery: 0.7, squareBack: true, tracery: true, stair: true },
+  serrans: { kind: 'polygonal', radius: 6.6, height: 33, gap: 11.9, centre: 28, gallery: 0.7, squareBack: true, tracery: true, stair: true, moat: true },
   quart: { kind: 'round', radius: 5.3, height: 34, gap: 8.8, centre: 27, batter: true, squareBack: true },
   'sant-josep': { kind: 'round', radius: 4.2, height: 20, gap: 7, centre: 16, batter: true },
   trinitat: { kind: 'square', radius: 3.5, height: 14, gap: 6.5, centre: 11.5 },
@@ -78,6 +89,7 @@ function createLancetGeometry() {
 // Slightly pointed, for the Portal del Real ("arco algo apuntado").
 // Two centres sit just inside the jambs, so the crown peaks a little above
 // a semicircle of the same span. A single quadratic pulled into a triangle.
+const POINTED_HEIGHT = 0.9 + Math.sqrt(0.6 * 0.6 - 0.1 * 0.1); // spring plus rise, below
 function createPointedArchGeometry() {
   const spring = 0.9;
   const offset = 0.1;
@@ -125,6 +137,32 @@ function createPlateGeometry(width, height, thickness, holes, outerX) {
   return geometry;
 }
 
+// A stone band standing on arches that are open at the foot: the front of a
+// machicolation, seen from outside. One outline and no holes, so the wall
+// behind shows through the arches as stone in shadow, not as a dark opening.
+function createArcadeGeometry(width, height, thickness, centres, span, outerX, y) {
+  const half = width / 2;
+  const a = span / 2;
+  const spring = height * 0.3;
+  const rise = height * 0.58;
+  const shape = new THREE.Shape();
+  shape.moveTo(-half, 0);
+  shape.lineTo(-half, height);
+  shape.lineTo(half, height);
+  shape.lineTo(half, 0);
+  for (const z of [...centres].sort((p, q) => q - p)) {
+    shape.lineTo(z + a, 0);
+    shape.lineTo(z + a, spring);
+    shape.absellipse(z, spring, a, rise, 0, Math.PI, false);
+    shape.lineTo(z - a, 0);
+  }
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 8 });
+  geometry.rotateY(Math.PI / 2); // thickness runs along +X
+  geometry.translate(outerX - thickness, y, 0);
+  return geometry;
+}
+
 // Gives a solid hard edges again: without it the six sides of a polygonal
 // tower would be shaded as if it were round.
 function faceted(geometry) {
@@ -136,6 +174,21 @@ function faceted(geometry) {
 export function createWalls(layout, path) {
   const stone = stoneSurface();
   const dark = new THREE.MeshBasicMaterial({ color: COLORS.stoneDark });
+  const shaded = stone.clone();
+  shaded.color.multiplyScalar(0.62);
+  const gloom = stone.clone();
+  gloom.color.multiplyScalar(0.36);
+  // The ground is one flat sheet with no holes. A pit is drawn first, then an
+  // invisible lid that only writes depth, so the ground drawn after them
+  // fails the depth test over the opening and the pit shows through.
+  const pitWalls = shaded.clone();
+  pitWalls.side = THREE.BackSide;
+  const pitFloor = createSurface('mottle', 4, { color: 0x6f8048 }); // grass
+  const pitLid = new THREE.MeshBasicMaterial({ colorWrite: false });
+  const pit = (frame, geometry, material, x, y, z, order = -2) => {
+    shade(frame, geometry, material, x, y, z);
+    extras[extras.length - 1].renderOrder = order;
+  };
   // Away from the river the curtain was rammed earth. Four lifts cover 3.4 m,
   // so each pour is about 85 cm. The river front stays dressed stone.
   const earth = createSurface('tapial', 3.4, { color: 0xc4956a });
@@ -167,11 +220,17 @@ export function createWalls(layout, path) {
     pointed: [],
   };
   const plates = [];
-  // A dark wall set back inside an open hall, so a rear arch reads as an
-  // opening with depth. Same material the arrow slits and the arches use.
-  const halls = [];
   const extras = []; // one-off meshes
   const local = new THREE.Object3D();
+
+  // A flat patch of darker stone, for surfaces that never see the sun.
+  const shade = (frame, geometry, material, x, y, z) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    mesh.updateMatrix();
+    mesh.applyMatrix4(frame);
+    extras.push(mesh);
+  };
 
   const makeFrame = (x, z, outX, outZ) =>
     new THREE.Matrix4().makeRotationY(yawTowards(outX, outZ)).setPosition(x, BASE_Y, z);
@@ -253,6 +312,11 @@ export function createWalls(layout, path) {
       }
     };
     const arch = (x, width, height) => place(lists.arches, frame, x, 0.5, 0, { scale: [1, height / 1.4, width] });
+    // A pointed opening on a face that looks into the city, with a sill.
+    const rearArch = (x, y, tall, z, width) => {
+      place(lists.pointed, frame, x - 0.05, y, z, { yaw: Math.PI, scale: [1, tall / POINTED_HEIGHT, width] });
+      place(lists.passages, frame, x - 0.12, y - 0.2, z, { scale: [0.5, 0.4, width + 1.2] });
+    };
 
     if (!gate && towerByVertex.get(i)?.id === 'santa-caterina') {
       const { radius, height } = SANTA_CATERINA;
@@ -504,6 +568,12 @@ export function createWalls(layout, path) {
           place(block, frame, towerX - radius * 0.8, (walkY + height) / 2, towerZ, {
             scale: [radius * 1.6, height - walkY, upperR * 2],
           });
+          // Towards the city each tower is open in tall pointed arches, one
+          // hall over another. The stair hides the lowest of the western one.
+          const rear = towerX - radius * 1.6;
+          if (direction > 0) rearArch(rear, 0.4, height * BACK.ground, towerZ, radius * 1.05);
+          rearArch(rear, height * BACK.mid[0], height * BACK.mid[1], towerZ, radius * 2 * 0.64);
+          rearArch(rear, walkY + 0.8, height * BACK.upper, towerZ, upperR * 2 * 0.72);
         }
       }
       if (style.batter && style.squareBack) {
@@ -524,7 +594,49 @@ export function createWalls(layout, path) {
       }
     }
 
+    if (style.moat) {
+      const street = BANK.height - BASE_Y; // ground level in this frame
+      const floor = street - MOAT.depth;
+      const lid = street + 0.08;
+      const x0 = WALL.thickness / 2 + 0.2;
+      // The trench keeps a constant width from the faces of the tower.
+      const outerR = radius + MOAT.width / Math.cos(Math.PI / 6);
+      const kerb = { height: 0.9, thickness: 0.4 };
+      for (const dir of [-1, 1]) {
+        // Outline in plan, from the wall round the outer flank and the front
+        // to the causeway: [x, distance along the wall from the gate's axis].
+        const outline = [
+          [x0, gap + outerR],
+          [towerX, gap + outerR],
+          [towerX + outerR * 0.866, gap + outerR / 2],
+          [towerX + outerR * 0.866, MOAT.causeway],
+          [x0, MOAT.causeway],
+        ].map(([x, along]) => [x, dir * along]);
+        // rotateX(-90°) lays the shape flat facing up, with its Y on -Z.
+        const plan = new THREE.Shape(outline.map(([x, z]) => new THREE.Vector2(x, -z)));
+        const flat = () => new THREE.ShapeGeometry(plan).rotateX(-Math.PI / 2);
+        pit(frame, new THREE.ExtrudeGeometry(plan, { depth: MOAT.depth, bevelEnabled: false }).rotateX(-Math.PI / 2), pitWalls, 0, floor, 0);
+        pit(frame, flat(), pitFloor, 0, floor + 0.03, 0);
+        // the foot of the tower, down to the bottom: the polygon and its flat back
+        pit(frame, faceted(new THREE.CylinderGeometry(radius, radius, lid - floor, 6)), stone, towerX, (floor + lid) / 2, dir * gap);
+        pit(frame, new THREE.BoxGeometry(towerX - x0 + 1, lid - floor, radius * 2), stone, (towerX + x0 - 1) / 2, (floor + lid) / 2, dir * gap);
+        pit(frame, flat(), pitLid, 0, lid, 0, -1);
+        // a low parapet along the open sides
+        for (let k = 0; k < outline.length - 1; k++) {
+          const [ax, az] = outline[k];
+          const [bx, bz] = outline[k + 1];
+          place(lists.passages, frame, (ax + bx) / 2, street + kerb.height / 2, (az + bz) / 2, {
+            yaw: Math.atan2(-(bz - az), bx - ax),
+            scale: [Math.hypot(bx - ax, bz - az) + kerb.thickness, kerb.height, kerb.thickness],
+          });
+        }
+      }
+    }
+
     const centreH = style.centre;
+    // Behind its front wall the central body stops at a terrace, level with
+    // the floor of the upper halls of the towers.
+    const terraceY = style.gallery ? walkY - 0.5 : centreH;
     const depth = radius * 1.4;
     const front = 1 + depth / 2;
     const back = 1 - depth / 2;
@@ -552,8 +664,8 @@ export function createWalls(layout, path) {
       const jambZ = passage / 2 + jambW / 2;
       const jambDepth = innerFront - cityX;
       for (const dir of [-1, 1]) {
-        place(lists.passages, frame, cityX + jambDepth / 2, centreH / 2, dir * jambZ, {
-          scale: [jambDepth, centreH, jambW],
+        place(lists.passages, frame, cityX + jambDepth / 2, terraceY / 2, dir * jambZ, {
+          scale: [jambDepth, terraceY, jambW],
         });
       }
       const backLeaf = 1.15;
@@ -565,41 +677,39 @@ export function createWalls(layout, path) {
         ], cityX + backLeaf),
       });
       const hallDepth = innerFront - cityX - backLeaf;
+      // Inside the passage it is dark: both walls and the ceiling, so the
+      // gateway stands out from the sunlit front.
+      const through = front - cityX;
+      for (const dir of [-1, 1]) {
+        shade(frame, new THREE.PlaneGeometry(through, archHeight).rotateY(dir > 0 ? Math.PI : 0), gloom, cityX + through / 2, archHeight / 2, dir * (passage / 2 - 0.03));
+      }
+      shade(frame, new THREE.PlaneGeometry(hallDepth, passage - 0.2).rotateX(Math.PI / 2), gloom, cityX + backLeaf + hallDepth / 2, backH - 0.2, 0);
+      // The curtain runs on through the gate and would show in the arch as a
+      // sunlit wall: a dark face on each side of it reads as the way through.
+      for (const dir of [-1, 1]) {
+        shade(frame, new THREE.PlaneGeometry(passage, archHeight).rotateY((dir * Math.PI) / 2), gloom, dir * (WALL.thickness / 2 + 0.35), archHeight / 2, 0);
+      }
       place(lists.passages, frame, cityX + backLeaf + hallDepth / 2, backH, 0, {
         scale: [hallDepth, 0.35, passage - 0.15],
       });
-      const pierW = 0.62;
-      const logTop = centreH - 1.35;
-      place(lists.passages, frame, cityX - 0.15, (backH + logTop) / 2, 0, {
-        scale: [0.7, logTop - backH, pierW],
+      // Above the gate the back is one tall hall open to the city through a
+      // great pointed arch, wider than the passage below.
+      place(lists.passages, frame, cityX + 0.35, (backH + terraceY) / 2, 0, {
+        scale: [0.7, terraceY - backH, passage + 0.4],
       });
-      const bay = (passage - pierW) / 2;
-      const levels = 3;
-      const lintel = 0.5;
-      const band = (logTop - backH - lintel * (levels - 1)) / levels;
-      for (let level = 0; level < levels; level++) {
-        const y0 = backH + level * (band + lintel);
-        for (const dir of [-1, 1]) {
-          place(lists.arches, frame, cityX - 0.08, y0, dir * (pierW / 2 + bay / 2), {
-            yaw: Math.PI,
-            scale: [1, (band * 0.92) / 1.4, bay * 0.86],
-          });
-        }
-        if (level < levels - 1) {
-          place(lists.passages, frame, cityX - 0.18, y0 + band * 0.92 + lintel / 2, 0, {
-            scale: [0.5, lintel, passage + 0.3],
-          });
-        }
+      const hallFloor = height * BACK.mid[0];
+      rearArch(cityX, hallFloor, height * BACK.centre, 0, (gap - radius) * 2 * 0.72);
+      // A flight on the terrace, against the back of the front wall, up to
+      // its parapet walk.
+      const flight = { steps: 9, width: 1.4 };
+      const span = (gap - upperR) * 2 - 1;
+      for (let step = 0; step < flight.steps; step++) {
+        const top = terraceY + ((centreH - 1 - terraceY) * (step + 1)) / flight.steps;
+        place(lists.passages, frame, innerFront - flight.width / 2, (terraceY + top) / 2, -span / 2 + ((step + 0.5) * span) / flight.steps, {
+          scale: [flight.width, top - terraceY, span / flight.steps],
+        });
       }
-      halls.push({
-        frame,
-        w: passage - 0.25,
-        h: logTop - backH,
-        x: innerFront - 0.2,
-        y: (backH + logTop) / 2,
-        z: 0,
-      });
-      place(lists.passages, frame, cityX + jambDepth / 2, centreH - 0.4, 0, {
+      place(lists.passages, frame, cityX + jambDepth / 2, terraceY - 0.4, 0, {
         scale: [jambDepth, 0.8, passage + 0.2],
       });
     } else {
@@ -623,19 +733,37 @@ export function createWalls(layout, path) {
     // Four corbels leave three wide arches between the towers, as built.
     const nCorb = style.gallery ? 4 : Math.max(6, Math.round(open / 1.45));
     const corbelSpan = open * 0.92;
+    const corbelW = style.gallery ? 0.55 : 0.42;
+    const pitch = corbelSpan / nCorb;
+    const bays = [];
     for (let i = 0; i < nCorb; i++) {
-      const z = -corbelSpan / 2 + ((i + 0.5) / nCorb) * corbelSpan;
-      place(block, frame, front + 0.62, corbelY, z, { scale: [0.9, corbelH, style.gallery ? 0.55 : 0.42] });
-      if (i < nCorb - 1) {
-        const z2 = -corbelSpan / 2 + ((i + 1.5) / nCorb) * corbelSpan;
-        place(lists.arches, frame, front + 0.22, style.gallery ? corbelY - corbelH / 2 : corbelY - 0.18, (z + z2) / 2, {
-          scale: [1, (style.gallery ? corbelH : 0.46) / 1.4, Math.max(0.4, (corbelSpan / nCorb) * (style.gallery ? 0.72 : 0.55))],
+      const z = -corbelSpan / 2 + (i + 0.5) * pitch;
+      place(block, frame, front + 0.62, corbelY, z, { scale: [0.9, corbelH, corbelW] });
+      if (i === nCorb - 1) continue;
+      if (style.gallery) {
+        bays.push(z + pitch / 2);
+      } else {
+        place(lists.arches, frame, front + 0.22, corbelY - 0.18, z + pitch / 2, {
+          scale: [1, 0.46 / 1.4, Math.max(0.4, pitch * 0.55)],
         });
       }
     }
-    place(block, frame, front - 0.1, deckY - 0.55, 0, { scale: [1.2, 0.55, open] });
+    if (style.gallery) {
+      // The arches between the corbels are stone, with the wall behind them.
+      plates.push({
+        frame,
+        geometry: createArcadeGeometry(corbelSpan - pitch + corbelW, corbelH, 0.45, bays, pitch - corbelW, front + 1.07, corbelY - corbelH / 2),
+      });
+      // Under the walk the wall is always in shade; without shadows nothing
+      // else would say so, and the arches would vanish from the river.
+      shade(frame, new THREE.PlaneGeometry(corbelSpan - pitch, corbelH).rotateY(Math.PI / 2), shaded, front + 0.03, corbelY, 0);
+    }
+    // The walk reaches the front of the arcade where there is one.
+    const walkDepth = style.gallery ? 1.8 : 1.2;
+    const walkX = style.gallery ? front + 0.2 : front - 0.1;
+    place(block, frame, walkX, deckY - 0.55, 0, { scale: [walkDepth, 0.55, open] });
     for (let along = -open / 2 + 0.8; along <= open / 2 - 0.8; along += MERLON.spacing) {
-      place(lists.merlons, frame, front + 0.2, deckY + MERLON.height / 2, along);
+      place(lists.merlons, frame, style.gallery ? front + 0.75 : front + 0.2, deckY + MERLON.height / 2, along);
       if (style.gallery) place(lists.merlons, frame, front - 0.6, centreH + MERLON.height / 2, along);
     }
     if (style.gallery) {
@@ -675,26 +803,28 @@ export function createWalls(layout, path) {
       }
     }
     if (style.stair) {
-      // The great stair up the back of the western tower, inside the old run.
-      const steps = 16;
-      const xTop = towerX - radius * 1.6 - 1;
-      const run = 6 * 1.6;
-      const topRise = 11.9;
-      const tread = radius * 1.5;
-      for (let step = 0; step < steps; step++) {
-        const t = step / (steps - 1);
-        const rise = topRise + (1.7 - topRise) * t;
-        place(lists.passages, frame, xTop - t * run, rise / 2, -gap, {
-          scale: [(run / (steps - 1)) * 1.08, rise, tread],
-        });
+      // The great stair runs along the back of the western tower, not out
+      // into the city: it starts beyond the tower's outer corner and climbs
+      // towards the gate, landing level with the floor of the middle halls.
+      const STAIR = { steps: 22, run: 18, width: 3.2 };
+      const rear = towerX - radius * 1.6;
+      const x = rear - STAIR.width / 2;
+      const top = height * BACK.mid[0];
+      const topZ = -(gap - radius); // the corner of the tower nearest the gate
+      const going = STAIR.run / STAIR.steps;
+      for (let step = 0; step < STAIR.steps; step++) {
+        const rise = (top * (STAIR.steps - step)) / STAIR.steps;
+        const z = topZ - (step + 0.5) * going;
+        place(lists.passages, frame, x, rise / 2, z, { scale: [STAIR.width, rise, going * 1.04] });
+        // a parapet on the open side, stepped with the flight
+        place(lists.passages, frame, rear - STAIR.width + 0.16, rise + 0.45, z, { scale: [0.32, 0.9, going * 1.04] });
       }
-      for (let step = 0; step < steps; step += 2) {
-        const t = step / (steps - 1);
-        const rise = topRise + (1.7 - topRise) * t;
-        place(lists.passages, frame, xTop - t * run, rise + 0.4, -gap - tread / 2 + 0.18, {
-          scale: [0.65, 0.8, 0.32],
-        });
-      }
+      // the landing, in front of the hall over the gate
+      const landing = gap - radius - archWidth / 2;
+      // it reaches in to the back of the central body, which stands further out
+      const outer = rear - STAIR.width;
+      place(lists.passages, frame, (outer + back) / 2, top / 2, topZ + landing / 2, { scale: [back - outer, top, landing] });
+      place(lists.passages, frame, rear - STAIR.width + 0.16, top + 0.45, topZ + landing / 2, { scale: [0.32, 0.9, landing] });
     }
   });
 
@@ -720,15 +850,6 @@ export function createWalls(layout, path) {
   for (const plate of plates) {
     const mesh = new THREE.Mesh(plate.geometry, stone);
     mesh.matrix.copy(plate.frame);
-    mesh.matrixAutoUpdate = false;
-    group.add(mesh);
-  }
-  for (const hall of halls) {
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(hall.w, hall.h), dark);
-    // Plane faces +Z. rotation.y of -π/2 sends that normal to -X, the city.
-    const localM = new THREE.Matrix4().makeRotationY(-Math.PI / 2);
-    localM.setPosition(hall.x, hall.y, hall.z);
-    mesh.matrix.copy(hall.frame).multiply(localM);
     mesh.matrixAutoUpdate = false;
     group.add(mesh);
   }

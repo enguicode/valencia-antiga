@@ -132,6 +132,12 @@ Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de
 - **Corregido:** el Pont del Real tenía nueve arcos en 1700, no diez.
 - **Estimado:** la forma de los casalicios (planta triangular y columnas constan; la cubierta en pirámide es lectura propia), el sitio exacto de las escaleras y de las bolas. Todos los puentes miden lo mismo en la escena; los reales iban de 148 a 171 m.
 
+### Llotja de la Seda
+
+- **Planta rehecha el 12-oct-2026 sobre vistas aéreas actuales:** antes eran tres bloques en fila con cubierta plana. Ahora la sala de contratación (35,6 × 21,4 m, medida conocida) entra hacia atrás desde la plaza, la torre va en su esquina, el Consolat de Mar continúa la fachada desde la torre y el patio de los naranjos queda detrás, cerrado por una tapia. Tejados de teja tras las almenas.
+- **Estimado:** las alturas (17 m la sala, 27 la torre, 16 el Consolat), el tamaño del Consolat (19 × 11 m, leído de la vista cenital), la tapia del patio y el número y tamaño de puertas, ventanas y arquillos de la galería. Las gárgolas, la tracería y los medallones no se han hecho.
+- **Dudoso para 1700:** las almenas y los tejados se ven así hoy; no se ha comprobado cuánto deben a las restauraciones. El eje del edificio viene de `layout.json` y queda girado unos 25° respecto al real.
+
 ### Micalet y Seu
 
 - **Con fuente:** Micalet, prisma octogonal de 50,85 m hasta la terraza, igual que su perímetro, con contrafuertes en las ocho aristas y cuatro cuerpos (macizo, «presó», casa del campanero y sala de campanas con ocho ventanales); la crestería gótica calada no se derribó hasta el XVIII; la espadaña de piedra es de 1660-1736. Seu, 94 m de largo y 53,65 m en el crucero; cimborrio octogonal de dos cuerpos con ocho ventanas de alabastro cada uno; Obra Nova de tres pisos de arcos (1566); puerta de los Apóstoles con rosetón de 6,45 m; Aula Capitular de 13 m de lado y 16 de alto. ([Wikipedia: El Miguelete](https://es.wikipedia.org/wiki/El_Miguelete), [Catedral](https://es.wikipedia.org/wiki/Catedral_de_Santa_María_de_Valencia))

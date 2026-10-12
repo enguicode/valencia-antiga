@@ -367,36 +367,71 @@ const MODELS = {
   },
 
   llotja(add) {
-    add('box', [8, 0, 0], [36, 17, 21], STONE);
-    // The coping is thinner than before and the merlons reach the same top
-    // (18.2 m on the hall, 28.2 m on the tower), so the height does not grow.
-    add('box', [8, 17, 0], [36.8, 0.45, 21.8], PALE);
-    add('box', [-14.5, 0, 0], [9, 27, 9], STONE);
-    add('box', [-14.5, 27, 0], [9.8, 0.45, 9.8], PALE);
-    add('box', [-30, 0, 0], [22, 16, 19], STONE);
-    add('box', [-30, 16, 0], [22.6, 0.45, 19.6], PALE);
+    // In plan, as it stands: the trading hall runs back from the square
+    // (local -X is the front), the tower stands on its corner, and the
+    // Consolat de Mar carries the front on from the tower, with the walled
+    // court of the orange trees behind it. Tiled roofs behind the merlons.
+    const HALL = { x: 0, z: 8, length: 36, width: 21, height: 17 };
+    const TOWER = { x: -13.5, z: -7, size: 9, height: 27 };
+    const CONSOLAT = { x: -12.5, z: -21, depth: 11, length: 19, height: 16 };
+    const front = -HALL.length / 2;
     const merlon = (x, z, y) => add('box', [x, y, z], [1.25, 1.05, 1.05], STONE);
-    for (let x = -7; x <= 23.01; x += 4.4) {
-      merlon(x, 10.85, 17.15);
-      merlon(x, -10.85, 17.15);
+    const crown = (cx, cz, sx, sz, y) => {
+      add('box', [cx, y, cz], [sx + 0.8, 0.45, sz + 0.8], PALE);
+      const rim = (half, n, put) => {
+        for (let k = 0; k < n; k++) put(((k + 0.5) / n - 0.5) * half * 2);
+      };
+      rim(sx / 2, Math.round(sx / 4.4), (d) => {
+        merlon(cx + d, cz + sz / 2 + 0.35, y + 0.15);
+        merlon(cx + d, cz - sz / 2 - 0.35, y + 0.15);
+      });
+      rim(sz / 2, Math.round(sz / 4.4), (d) => {
+        merlon(cx + sx / 2 + 0.35, cz + d, y + 0.15);
+        merlon(cx - sx / 2 - 0.35, cz + d, y + 0.15);
+      });
+    };
+
+    add('box', [HALL.x, 0, HALL.z], [HALL.length, HALL.height, HALL.width], STONE);
+    crown(HALL.x, HALL.z, HALL.length, HALL.width, HALL.height);
+    add('gable', [HALL.x, HALL.height + 0.45, HALL.z], [HALL.width - 3, 3.2, HALL.length - 3], ROOF, RIDGE_ALONG_X);
+
+    add('box', [TOWER.x, 0, TOWER.z], [TOWER.size, TOWER.height, TOWER.size], STONE);
+    crown(TOWER.x, TOWER.z, TOWER.size, TOWER.size, TOWER.height);
+
+    add('box', [CONSOLAT.x, 0, CONSOLAT.z], [CONSOLAT.depth, CONSOLAT.height, CONSOLAT.length], STONE);
+    crown(CONSOLAT.x, CONSOLAT.z, CONSOLAT.depth, CONSOLAT.length, CONSOLAT.height);
+    add('gable', [CONSOLAT.x, CONSOLAT.height + 0.45, CONSOLAT.z], [CONSOLAT.depth - 3, 2.4, CONSOLAT.length - 3], ROOF);
+
+    // The court: a wall along the two sides the buildings leave open.
+    const court = { x0: CONSOLAT.x + CONSOLAT.depth / 2, x1: HALL.length / 2, z0: CONSOLAT.z - CONSOLAT.length / 2, height: 5 };
+    add('box', [(court.x0 + court.x1) / 2, 0, court.z0 + 0.4], [court.x1 - court.x0, court.height, 0.8], STONE);
+    add('box', [court.x1 - 0.4, 0, (court.z0 + HALL.z - HALL.width / 2) / 2], [0.8, court.height, HALL.z - HALL.width / 2 - court.z0], STONE);
+
+    // The front on the square: the door of the hall between two windows...
+    add('pointed', [front - 0.02, 0, HALL.z], [0.42, 8.2, 3.3], STONE, Math.PI);
+    add('pointed', [front - 0.25, 0.2, HALL.z], [0.38, 6.8, 2.3], DARK, Math.PI);
+    for (const dz of [-6.2, 6.2]) add('pointed', [front - 0.05, 2.2, HALL.z + dz], [0.4, 7.4, 2.2], DARK, Math.PI);
+    // ...and the Consolat, with its gallery of small arches under the eaves.
+    const consolatFront = CONSOLAT.x - CONSOLAT.depth / 2 - 0.05;
+    for (let k = 0; k < 4; k++) {
+      const z = CONSOLAT.z + ((k + 0.5) / 4 - 0.5) * (CONSOLAT.length - 3);
+      add('box', [consolatFront, 2.2, z], [0.35, 3.2, 1.6], DARK);
+      add('box', [consolatFront, 7.2, z], [0.35, 3.4, 1.7], DARK);
     }
-    for (let z = -6.5; z <= 6.51; z += 4.4) {
-      merlon(-9.7, z, 17.15);
-      merlon(25.7, z, 17.15);
+    for (let k = 0; k < 9; k++) {
+      const z = CONSOLAT.z + ((k + 0.5) / 9 - 0.5) * (CONSOLAT.length - 2);
+      add('arch', [consolatFront, 12.2, z], [0.36, 2.5, 1.3], DARK, Math.PI);
     }
-    for (const [dx, dz] of [[-3.6, -3.6], [3.6, -3.6], [-3.6, 3.6], [3.6, 3.6], [0, -3.8], [0, 3.8], [-3.8, 0], [3.8, 0]]) {
-      merlon(-14.5 + dx, dz, 27.15);
+    // The long sides of the hall: a door between four windows on the street,
+    // windows only towards the court.
+    const side = HALL.z + HALL.width / 2 + 0.05;
+    add('pointed', [HALL.x, 0.2, side], [0.38, 6.8, 2.3], DARK, FACING_Z);
+    for (const dx of [-12.5, -6.5, 6.5, 12.5]) {
+      add('pointed', [HALL.x + dx, 2.2, side], [0.4, 7.4, 2.2], DARK, FACING_Z);
+      add('pointed', [HALL.x + dx, 2.2, HALL.z - HALL.width / 2 - 0.05], [0.4, 7.4, 2.2], DARK, -FACING_Z);
     }
-    for (const z of [10.75, -10.75]) {
-      for (const y of [1.6, 9.0]) {
-        for (let x = -4; x <= 20.01; x += 4.8) add('pointed', [x, y, z], [0.4, 6.4, 1.7], DARK, FACING_Z);
-      }
-    }
-    add('pointed', [6, 0, 10.7], [0.42, 8.2, 3.3], STONE, FACING_Z);
-    add('pointed', [6, 0.2, 10.95], [0.38, 6.8, 2.3], DARK, FACING_Z);
-    around(add, { x: -14.5, sides: 4, radius: 4.7, y: 8, solid: 'pointed', height: 6.2, width: 1.7, depth: 0.36, color: DARK });
-    around(add, { x: -14.5, sides: 4, radius: 4.7, y: 18.5, solid: 'pointed', height: 5.4, width: 1.6, depth: 0.36, color: DARK });
-    for (let x = -38; x <= -22.01; x += 4) add('pointed', [x, 3.4, 9.7], [0.36, 6.0, 1.45], DARK, FACING_Z);
+    around(add, { x: TOWER.x, z: TOWER.z, sides: 4, radius: TOWER.size / 2 + 0.2, y: 8, solid: 'pointed', height: 5.2, width: 1.6, depth: 0.36, color: DARK });
+    around(add, { x: TOWER.x, z: TOWER.z, sides: 4, radius: TOWER.size / 2 + 0.2, y: 19, solid: 'pointed', height: 5, width: 1.6, depth: 0.36, color: DARK });
   },
 
   // The Palau del Real, pulled down in 1810, as it stood around 1700. From

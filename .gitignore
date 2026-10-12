@@ -8,3 +8,6 @@ __pycache__/
 
 # agent tooling, kept local
 .claude/
+
+# local reference models, not part of the site
+assets-test/

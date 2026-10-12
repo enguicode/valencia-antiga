@@ -25,10 +25,12 @@ python3 -m http.server <puerto> --bind 127.0.0.1
 
 ## Publicar (en cada cambio, salvo que se pida lo contrario)
 
-1. Commit semántico y push.
-2. Etiqueta anotada `vX.Y.Z` (`feat` sube el menor y pone parche a 0; `fix`/`style`/`docs`/`chore` suben el parche; parte de `git describe --tags`) y `git push origin --tags`.
-3. `bash scripts/deploy.sh`.
-4. Comprueba la URL pública.
+Desde el 12-oct-2026 los cambios van a la **preview**, no a producción, mientras se rehacen los monumentos:
+
+1. Commit semántico en la rama `preview` y push.
+2. `bash scripts/deploy.sh preview` y comprueba https://preview.valencia-antiga.pages.dev/.
+
+A producción solo cuando el usuario lo pida: fusionar `preview` en `main`, etiqueta anotada `vX.Y.Z` (`feat` sube el menor y pone parche a 0; `fix`/`style`/`docs`/`chore` suben el parche; parte de `git describe --tags`), `git push origin main --tags`, `bash scripts/deploy.sh` y comprobar la URL pública.
 
 **Trampa de wrangler:** `wrangler pages project create` crea un Worker; para un proyecto de Pages hay que pasar `--force`. Ejecuta wrangler siempre desde este repo con `--project-name` explícito.
 

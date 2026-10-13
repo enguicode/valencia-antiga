@@ -3,7 +3,7 @@
 // city sits on its right-hand bank.
 
 export const RIVER = {
-  width: 108,
+  width: 134, // with the banks, 150 m from parapet to parapet: the bed measures 141 to 175 m today
   margin: 2.5, // how close the boat may get to a bank
   sampleSpacing: 5,
   // Navigable water before the first historic bridge: far enough upstream to

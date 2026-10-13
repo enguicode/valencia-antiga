@@ -27,6 +27,7 @@ QUERY = """
   nwr["name"~"Micalet|Catedral de València|Llotja de la Seda|Palau del Real|Santíssima Trinitat|Belles Arts|Sant Doménec|Portal de Saïdia"](39.462,-0.400,39.490,-0.355);
   nwr["amenity"="place_of_worship"](39.464,-0.390,39.486,-0.360);
   way["highway"]["name"="Carrer de Sant Vicent Màrtir"](39.462,-0.392,39.475,-0.370);
+  nwr["leisure"="park"]["name"~"^Jardí del Túria"](39.455,-0.410,39.492,-0.345);
 );
 out geom tags;
 """
@@ -141,6 +142,9 @@ GRAU_YARDS = (39.46133, -0.33355)  # Drassanes del Grau
 ORIGIN_NAME = "Torres dels Serrans"
 TOWER_SPACING = 70  # metres between wall vertices, which is where towers go
 ANGLE_BINS = 90
+BED_SPACING = 150  # metres between the points where the river line is centred in its bed
+BED_WIDTHS = (135, 175)  # parapet to parapet; anything else is a break in the outline
+WALL_FROM_RIVER = 85  # metres from the river line: half the bed of the scene (75) and a road
 
 
 def fetch(cache):
@@ -249,6 +253,51 @@ def main():
         if bridge_id:
             bridges.append({"id": bridge_id, "name": name, "x": centre[0], "z": centre[1]})
 
+    # Between the bridges the bed does not run straight. Today's Jardí del
+    # Túria fills it from one parapet to the other, so its outline gives the
+    # two banks: every BED_SPACING metres the line is moved to the middle of
+    # them. Where the outline is broken by a ramp or a side garden the width
+    # comes out wrong and the point is left out.
+    banks = []
+    for element in elements:
+        tags = element.get("tags", {})
+        if tags.get("leisure") != "park" or not tags.get("name", "").startswith("Jardí del Túria"):
+            continue
+        rings = [element["geometry"]] if "geometry" in element else [m["geometry"] for m in element.get("members", []) if "geometry" in m]
+        for geometry in rings:
+            line = [to_local((p["lat"], p["lon"])) for p in geometry]
+            banks += list(zip(line, line[1:]))
+
+    def first_bank(point, direction):
+        best = None
+        for a, b in banks:
+            ex, ez = b[0] - a[0], b[1] - a[1]
+            cross = direction[0] * ez - direction[1] * ex
+            if abs(cross) < 1e-9:
+                continue
+            wx, wz = a[0] - point[0], a[1] - point[1]
+            along = (wx * ez - wz * ex) / cross
+            if 0 < along < 200 and 0 <= (wx * direction[1] - wz * direction[0]) / cross <= 1 and (best is None or along < best):
+                best = along
+        return best
+
+    widths = []
+    if banks:
+        centred = [river[0]]
+        for a, b in zip(river, river[1:]):
+            length = math.dist(a, b)
+            tx, tz = (b[0] - a[0]) / length, (b[1] - a[1]) / length
+            for k in range(1, round(length / BED_SPACING)):
+                t = k / round(length / BED_SPACING)
+                point = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+                right, left = first_bank(point, (-tz, tx)), first_bank(point, (tz, -tx))
+                if right and left and BED_WIDTHS[0] <= right + left <= BED_WIDTHS[1]:
+                    shift = (right - left) / 2
+                    centred.append((point[0] - tz * shift, point[1] + tx * shift))
+                    widths.append(right + left)
+            centred.append(b)
+        river = centred
+
     ring = [to_local(p) for name in RING_STREETS for p in points_named(name, lambda tags: "highway" in tags)]
     xs, zs = [p[0] for p in ring], [p[1] for p in ring]
     centre = ((min(xs) + max(xs)) / 2, (min(zs) + max(zs)) / 2)
@@ -275,6 +324,24 @@ def main():
         angle = (i + 0.5) / ANGLE_BINS * 2 * math.pi
         outline.append((centre[0] + math.cos(angle) * radius, centre[1] + math.sin(angle) * radius))
     wall, perimeter = resample_closed(outline, TOWER_SPACING)
+
+    # The ring comes from today's streets, smoothed, and in places it falls
+    # nearer the river than the parapet itself. A road ran between the two:
+    # a vertex closer to the river line than WALL_FROM_RIVER is moved straight
+    # back from it.
+    pushed = []
+    for i, vertex in enumerate(wall):
+        gap, foot = min(
+            (math.dist(vertex, q), q)
+            for a, b in zip(river, river[1:])
+            for q in [(
+                a[0] + (b[0] - a[0]) * max(0, min(1, ((vertex[0] - a[0]) * (b[0] - a[0]) + (vertex[1] - a[1]) * (b[1] - a[1])) / math.dist(a, b) ** 2)),
+                a[1] + (b[1] - a[1]) * max(0, min(1, ((vertex[0] - a[0]) * (b[0] - a[0]) + (vertex[1] - a[1]) * (b[1] - a[1])) / math.dist(a, b) ** 2)),
+            )]
+        )
+        if gap < WALL_FROM_RIVER:
+            wall[i] = (foot[0] + (vertex[0] - foot[0]) / gap * WALL_FROM_RIVER, foot[1] + (vertex[1] - foot[1]) / gap * WALL_FROM_RIVER)
+            pushed.append(round(WALL_FROM_RIVER - gap, 1))
 
     def nearest_wall_vertex(point):
         return min(range(len(wall)), key=lambda i: math.dist(wall[i], point))
@@ -416,6 +483,9 @@ def main():
     print(f"wrote {target.relative_to(ROOT)}")
     print(f"ring points: {len(ring)}, empty bins: {ANGLE_BINS - len(known)}")
     print(f"wall: {len(wall)} vertices, perimeter {perimeter:.0f} m")
+    if widths:
+        print(f"bed, parapet to parapet: {len(widths)} sections, median {statistics.median(widths):.0f} m, {min(widths):.0f} to {max(widths):.0f} m")
+    print(f"wall vertices moved back from the river: {len(pushed)}, by {pushed} m")
     print(f"wall to river centreline: closest {gaps[0]:.0f} m, 5 closest {[round(g) for g in gaps[:5]]}")
     for gate in gates:
         x, z = wall[gate["vertex"]]

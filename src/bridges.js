@@ -13,7 +13,7 @@ import { createInstances } from './instancing.js';
 // that each one lands in front of its gate.
 
 const SPAN = RIVER.width + BANK.slopeRun * 2 + 4;
-const DECK_TOP = 8.5;
+const DECK_TOP = 7.75;
 const RAMP = 14;
 const PIER = 3;
 const ARCH = { spring: 2, rise: 4.5 };
@@ -21,9 +21,7 @@ const PARAPET = { height: 0.9, thickness: 0.5 };
 const FOOT = -3;
 const CUTWATER = { reach: 3.2, top: 4.6 };
 
-// `shrinePier` and `stairPiers` count piers from the city bank. `cityRamp`
-// is the length of the ramp on the city side where the gate stands close to
-// the river: the road falls gently all the way from the deck to its door.
+// `shrinePier` and `stairPiers` count piers from the city bank.
 const BRIDGES = {
   // Thirteen small arches and a deck barely six metres wide; two marble
   // statues on bare pedestals by the third pier.
@@ -33,10 +31,10 @@ const BRIDGES = {
   serrans: { arches: 9, width: 10.9, arch: 'segmental', refuges: true, shrinePier: 1 },
   // Slightly pointed arches, stepped caps on the cutwaters and two stairs
   // down to the river bed on the downstream side.
-  trinitat: { arches: 10, width: 10.4, arch: 'pointed', caps: true, stairPiers: [3, 7], cityRamp: 17 },
+  trinitat: { arches: 10, width: 10.4, arch: 'pointed', caps: true, stairPiers: [3, 7] },
   // Nine arches in 1700 (ten today), a level deck, the shrines of the two
   // Vicents and stone balls on the parapet.
-  real: { arches: 9, width: 10.5, arch: 'segmental', shrinePier: 2, stairPiers: [6], balls: true, cityRamp: 24 },
+  real: { arches: 9, width: 10.5, arch: 'segmental', shrinePier: 2, stairPiers: [6], balls: true },
   // Very flat pointed arches under a humped deck, big cutwaters, balls, and
   // the shrines of the Cross and of Sant Pasqual.
   mar: { arches: 10, width: 8.35, arch: 'flatPointed', hump: 1.6, shrinePier: 3, balls: true },
@@ -50,7 +48,9 @@ const archCentre = (arches, i) => -SPAN / 2 + PIER + openingOf(arches) / 2 + i *
 const pierFromCity = (arches, n) => SPAN / 2 - PIER / 2 - n * (openingOf(arches) + PIER);
 const deckHeight = (spec, x) => DECK_TOP + (spec.hump ?? 0) * (1 - Math.abs(x) / (SPAN / 2));
 
-function createBridgeGeometry(spec) {
+// `cityRamp` is the run of the ramp on the city side, which is short where
+// the gate stands close to the end of the bridge.
+function createBridgeGeometry(spec, cityRamp) {
   const half = SPAN / 2;
   const outline = new THREE.Shape();
   outline.moveTo(-half - RAMP, FOOT);
@@ -58,8 +58,8 @@ function createBridgeGeometry(spec) {
   outline.lineTo(-half, DECK_TOP);
   if (spec.hump) outline.lineTo(0, DECK_TOP + spec.hump);
   outline.lineTo(half, DECK_TOP);
-  outline.lineTo(half + (spec.cityRamp ?? RAMP), BANK.height - 0.2);
-  outline.lineTo(half + (spec.cityRamp ?? RAMP), FOOT);
+  outline.lineTo(half + cityRamp, BANK.height - 0.2);
+  outline.lineTo(half + cityRamp, FOOT);
   outline.closePath();
 
   const opening = openingOf(spec.arches);
@@ -211,7 +211,12 @@ export function createBridges(layout, path) {
       return mesh;
     };
 
-    model.add(new THREE.Mesh(createBridgeGeometry(spec), stone));
+    // The ramp on the city side stops short of the gate the bridge is for.
+    const gate = layout.gates.find((item) => item.id === bridge.id);
+    const [gx, gz] = gate ? layout.wall[gate.vertex] : [Infinity, Infinity];
+    const toGate = (gx - sample.x) * sample.rx + (gz - sample.z) * sample.rz;
+    const cityRamp = THREE.MathUtils.clamp(toGate - SPAN / 2 - 3, 4, RAMP);
+    model.add(new THREE.Mesh(createBridgeGeometry(spec, cityRamp), stone));
     if (!spec.hump) piece(new THREE.BoxGeometry(SPAN, 0.35, width + 0.5), stone, 0, DECK_TOP - 1, 0);
 
     // Parapets: one straight run, or two sloping halves over a humped deck
@@ -359,10 +364,8 @@ export function createBridges(layout, path) {
     // A beaten track from the foot of the ramp to the gate the bridge is
     // for. It leaves along the bridge and reaches the gate square on, so it
     // bends where the two do not face each other.
-    const gate = layout.gates.find((item) => item.id === bridge.id);
     if (gate) {
       const count = layout.wall.length;
-      const [gx, gz] = layout.wall[gate.vertex];
       const [ax, az] = layout.wall[(gate.vertex + count - 1) % count];
       const [bx, bz] = layout.wall[(gate.vertex + 1) % count];
       // Out from the gate: across the wall, on the river's side of it.
@@ -372,7 +375,7 @@ export function createBridges(layout, path) {
       const outward = Math.sign(nx * (sample.x - gx) + nz * (sample.z - gz)) || 1;
       nx *= outward / length;
       nz *= outward / length;
-      const reach = SPAN / 2 + (spec.cityRamp ?? RAMP) - 2;
+      const reach = SPAN / 2 + cityRamp - 2;
       const sx = sample.x + sample.rx * reach;
       const sz = sample.z + sample.rz * reach;
       const lead = Math.min(30, Math.hypot(gx - sx, gz - sz) * 0.3);

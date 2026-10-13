@@ -33,7 +33,7 @@ export function createNightLights(layout, path) {
       for (const side of [-1, 1]) {
         add(
           sample.x + sample.rx * lateral + sample.tx * side * 4.2,
-          10.2,
+          9.45,
           sample.z + sample.rz * lateral + sample.tz * side * 4.2,
           LAMP,
           1,

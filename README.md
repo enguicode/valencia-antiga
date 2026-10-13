@@ -143,7 +143,7 @@ Colocar cada cosa donde estaba cuesta más que el 3D. Las reglas:
 | Las iglesias | Un cuerpo gótico común, que es un tipo y no un levantamiento. De cada una, solo la orientación, la torre y las capillas con cúpula, leídas de vistas aéreas; casi todas las fechas, de memoria. Sants Joans y el Carme llevan fachada propia, sacada de una fotografía. La Companyia es conjetura: la iglesia de entonces se derribó en 1868. |
 | Los claustros de la Trinitat, Sant Doménec y la Saïdia | Patio abierto con arcadas, como en las vistas aéreas de los dos primeros. Medidas estimadas; de la Saïdia no queda nada. |
 | Navegar el Turia | Licencia. Hacia 1700 el río no era navegable. |
-| Las manzanas y las calles | Calcadas del plano de Tosca (1704) en su grabado de 1738: la forma de cada manzana, y entre ellas las calles y plazas con su ancho. El dibujo es el suyo; la posición falla unos 20 m y el calco es automático, sin repasar. |
+| Las manzanas y las calles | Calcadas del plano de Tosca (1704) en su grabado de 1738: la forma de cada manzana, y entre ellas las calles y plazas con su ancho. El dibujo es el suyo; la posición se ajusta a diez monumentos y a la muralla, y entre ellos puede fallar; el calco es automático, sin repasar. |
 | Texturas, casas, luces | Esbozo. El tapial y la sillería de la muralla siguen a las fuentes; el dibujo, no. |
 | Valenciano e inglés | Sin revisión de un hablante nativo. |
 

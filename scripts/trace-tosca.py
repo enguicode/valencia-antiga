@@ -32,6 +32,11 @@ CONTROL = {  # scene (x, z) -> engraving pixel
  'carme': ((-217.6, -21), (5650, 3450)), 'sant-domenec': ((602, 564.1), (2650, 3200)), 'russafa': ((106.9, 1326.4), (2960, 595)),
  'torre-sta-caterina': ((-546.1, -155.4), (6600, 3380)),
 }
+# Points read off the engraved wall, in pixels, all round the city. Where
+# along the wall each one falls is not known, only that it is on it.
+WALL = [(2376, 2143), (2517, 1666), (2700, 1202), (2895, 743), (3301, 519), (3799, 434), (4297, 362), (4796, 397),
+        (5298, 571), (5581, 853), (5817, 1269), (6049, 1695), (6252, 2145), (6514, 3496), (6134, 3847), (5625, 3922),
+        (5127, 3822), (4622, 3848), (4117, 3857), (3640, 3827), (3139, 3610)]
 rows = np.array([(x, z, 1) for (x, z), _ in CONTROL.values()], float)
 A = np.linalg.lstsq(rows, np.array([p for _, p in CONTROL.values()], float), rcond=None)[0].T  # scene (x, z, 1) -> pixel
 PPM = math.sqrt(abs(np.linalg.det(A[:, :2])))
@@ -48,7 +53,27 @@ white = white[: white.shape[0] // 2 * 2, : white.shape[1] // 2 * 2]
 white = white.reshape(white.shape[0] // 2, 2, white.shape[1] // 2, 2).all(axis=(1, 3))   # half resolution
 K = PPM / 2                                # half-resolution pixels per metre
 wall = np.array(json.loads((ROOT / 'data' / 'layout.json').read_text())['wall'])
-wp = (np.c_[wall, np.ones(len(wall))] @ A.T) / 2
+# The affine fit misses by some 20 m and leaves the engraved wall inside the
+# scene's. A thin-plate warp takes up the rest: through the control points,
+# and with each wall point drawn to the nearest point of the scene's wall.
+from scipy.interpolate import RBFInterpolator
+def on_wall(p):
+    a, b = wall, np.roll(wall, -1, 0)
+    t = np.clip(((p - a) * (b - a)).sum(1) / ((b - a) ** 2).sum(1), 0, 1)[:, None]
+    q = a + (b - a) * t
+    return q[np.hypot(*(q - p).T).argmin()]
+pixels = np.array([p for _, p in CONTROL.values()] + WALL, float)
+places = rows[:, :2]
+for _ in range(6):
+    to_scene = RBFInterpolator(pixels[: len(places)], places, kernel='thin_plate_spline', smoothing=1e4)
+    places = np.vstack([rows[:, :2], [on_wall(p) for p in to_scene(pixels[len(rows):])]])
+# the way back, scene to pixel, is the same warp read the other way round off a grid
+grid = np.stack(np.meshgrid(np.linspace(500, 7100, 45), np.linspace(0, 4700, 32)), -1).reshape(-1, 2)
+to_pixel = RBFInterpolator(to_scene(grid), grid, kernel='thin_plate_spline')
+back = np.hypot(*(to_scene(to_pixel(wall)) - wall).T)
+assert back.max() < 2, back.max()  # metres lost going there and back
+print('wall points moved', np.hypot(*(to_scene(np.array(WALL, float)) - (np.array(WALL, float) - A[:, 2]) @ np.linalg.inv(A[:, :2]).T).T).round(0).tolist(), 'm; there and back', back.max().round(1), 'm')
+wp = to_pixel(wall) / 2
 inside = np.zeros(white.shape, bool)
 rr, cc = fill_polygon(wp[:, 1], wp[:, 0], white.shape); inside[rr, cc] = True
 inside = ndi.distance_transform_edt(inside) > EDGE * K
@@ -91,7 +116,7 @@ def scene(l):
     if len(px) > 8:  # the skeleton wanders a pixel either way: run a mean along it, ends held
         pad = np.vstack([np.repeat(px[:1], 4, 0), px, np.repeat(px[-1:], 4, 0)])
         px = np.stack([np.convolve(pad[:, k], np.ones(9) / 9, 'valid') for k in (0, 1)], 1)
-    return (px - A[:, 2]) @ inv.T
+    return to_scene(px)
 def simplify(pts, tol=1.6):
     if len(pts) < 3: return pts
     a, b = pts[0], pts[-1]; d = b - a; n = np.hypot(*d) or 1
@@ -125,7 +150,7 @@ for i, where in enumerate(ndi.find_objects(parts), 1):
     for contour in find_contours(mask.astype(float), 0.5):
         # 2.5 m of tolerance: straight runs for the rows of houses
         ring = approximate_polygon(contour, 2.5 * K)[:-1] + (where[0].start - 1, where[1].start - 1)
-        ring = (np.c_[ring[:, 1] * 2 + 1, ring[:, 0] * 2 + 1] - A[:, 2]) @ inv.T
+        ring = to_scene(np.c_[ring[:, 1] * 2 + 1, ring[:, 0] * 2 + 1])
         if len(ring) > 2 and area(ring) > 25: rings.append(ring)
     rings.sort(key=area, reverse=True)
     if rings and area(rings[0]) > 60: blocks.append([np.round(ring, 1).tolist() for ring in rings])

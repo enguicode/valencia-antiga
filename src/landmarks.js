@@ -189,10 +189,13 @@ function createSolids() {
 const RIDGE_ALONG_X = Math.PI / 2;
 
 // What each parish church changes in the shared body. Local +X is the layout
-// axis and +Z its right-hand side; `apse` is the end the apse closes and
-// `towerAt` the [end, side] corner the tower stands at.
+// axis and +Z its right-hand side; `apse` is the end the apse closes,
+// `towerAt` the [end, side] corner the tower stands at and `chapelDome` the
+// [fraction of the length, side] of a domed chapel against the flank. `turn`
+// lays the nave across the layout axis, where the footprint is nearly square.
 const CHURCHES = {
   'santa-caterina': { apse: 1, towerAt: [1, 1] },
+  'sants-joans': { apse: 1, towerAt: [-1, 1], chapelDome: [0.15, -1] },
 };
 
 const MODELS = {
@@ -700,7 +703,12 @@ const MODELS = {
     // A Valencian Gothic parish: one tall nave, chapels between the buttresses
     // under a lean-to roof, a polygonal apse and the door at the other end.
     const { length, width, dome = false, tower = true, towerHeight = 32, towerSides = 4 } = landmark;
-    const { apse = -1, towerAt = [-1, 1] } = CHURCHES[landmark.id] ?? {};
+    const spec = CHURCHES[landmark.id] ?? {};
+    const { apse = -1, towerAt = [-1, 1], chapelDome } = spec;
+    if (spec.turn) {
+      const place = add;
+      add = (solid, [x, y, z], scale, color, yaw = 0) => place(solid, [z, y, -x], scale, color, yaw + Math.PI / 2);
+    }
     const naveLength = clamp(length ?? 40, 30, 50);
     const naveWidth = clamp(width ?? 18, 14, 20) - 4;
     const NAVE = 17;
@@ -727,7 +735,7 @@ const MODELS = {
     add('pointed', [front, 0, 0], [0.5, 7, 3.8], DARK);
     add('disk', [front, 10.2, 0], [0.3, 4.2, 4.2], DARK);
     add('wheel', [front - apse * 0.12, 10.2, 0], [0.3, 4.2, 4.2], STONE);
-    if (tower) {
+    if (spec.tower ?? tower) {
       const x = towerAt[0] * (naveLength / 2 - 3);
       const z = towerAt[1] * (flank + 3);
       if (towerSides === 6) {
@@ -748,6 +756,15 @@ const MODELS = {
         add('box', [x, towerHeight * 0.7, z], [6.6, 0.5, 6.6], PALE);
         ringOfOpenings(add, { x, y: towerHeight * 0.74, z, sides: 4, apothem: 3.05, width: 1.7, height: 4.5 });
       }
+    }
+    if (chapelDome) {
+      const x = chapelDome[0] * naveLength;
+      const z = chapelDome[1] * (flank + 3.5);
+      add('box', [x, 0, z], [9, 11, 9], PALE);
+      add('pyramid', [x, 11, z], [9.4, 1.6, 9.4], ROOF);
+      add('oct', [x, 11, z], [7.6, 3.4, 7.6], PALE);
+      add('dome', [x, 14.4, z], [7.4, 7.4, 7.4], TILE_BLUE);
+      add('ball', [x, 18, z], [0.9, 1.4, 0.9], PALE);
     }
     if (dome) {
       const diameter = naveWidth * 0.9;

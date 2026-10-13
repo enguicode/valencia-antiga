@@ -196,6 +196,7 @@ const RIDGE_ALONG_X = Math.PI / 2;
 const CHURCHES = {
   'santa-caterina': { apse: 1, towerAt: [1, 1] },
   'sants-joans': { apse: 1, towerAt: [-1, 1], chapelDome: [0.15, -1] },
+  'sant-marti': { apse: 1, towerAt: [-1, -1], chapelDome: [0.15, -1] },
 };
 
 const MODELS = {

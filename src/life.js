@@ -143,6 +143,7 @@ function createCrossings(decks, random) {
       movers.push({ deck, parts, speed, aside, u: (random() * 2 - 1) * (deck.half - 6), direction: random() < 0.5 ? -1 : 1 });
     for (let i = 0; i < 7; i++) add(walker(), 0.9 + random() * 0.5, (random() * 2 - 1) * lane);
     add(cart(), 1.3 + random() * 0.4, (random() * 2 - 1) * (lane - 0.9));
+    movers.at(-1).cart = true;
     // idlers leaning on the parapet, where the boat can see them
     for (let i = 0; i < 5; i++) add(random() < 0.4 ? [...walker(), ...walker(0.75)] : walker(), 0, (random() < 0.5 ? -1 : 1) * (deck.width / 2 - 0.35));
   }
@@ -181,7 +182,18 @@ function createCrossings(decks, random) {
     mesh.instanceMatrix.needsUpdate = true;
   }
 
-  return { mesh, update };
+  // Starts the cart of the bridge nearest to a place on a run over to the
+  // city bank, which is at +half, with deck ahead of it for a whole shot.
+  function sendCart(x, z) {
+    const carts = movers.filter((mover) => mover.cart);
+    const distance = (mover) => Math.hypot(mover.deck.x - x, mover.deck.z - z);
+    const cart = carts.reduce((best, mover) => (distance(mover) < distance(best) ? mover : best));
+    cart.direction = 1;
+    cart.u = Math.min(cart.u, cart.deck.half - 24);
+    return cart;
+  }
+
+  return { mesh, update, sendCart };
 }
 
 function createSmoke(chimneys, random) {
@@ -331,5 +343,5 @@ export function createLife(layout, path, chimneys, bridgeGuide) {
     extras = value;
   };
 
-  return { group, update, setExtras };
+  return { group, update, setExtras, sendCart: crossings.sendCart };
 }

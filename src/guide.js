@@ -22,7 +22,8 @@ const PIN_SIZE = 0.05; // of the viewport's height
 // height is for the cinema's shots and is rounded, not surveyed.
 const SUBJECTS = {
   // A bridge is always shown whole, from upstream and a little above its deck.
-  bridge: { aim: 4, span: 150, top: 10, near: 0.75, fly: true, standOff: 0.8, above: 8 },
+  // `cart` adds a fourth shot to the cinema, from behind its mule cart.
+  bridge: { aim: 4, span: 150, top: 10, near: 0.75, fly: true, standOff: 0.8, above: 8, cart: true },
   gate: { aim: 12, span: 52, top: 30 },
   // A stretch of curtain, at the corner where it meets the river.
   // The small gates with a bridge landing in front of them. The low shot is

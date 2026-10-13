@@ -685,12 +685,15 @@ function hoverSpot(subject, drift, room = 1) {
 
 // The cinema. A point found, or asked for from the logbook, is not a card
 // over the helm: the screen is cleared there and then, the camera flies
-// over with nothing in the way and the place is shown in three shots, cut one to the next and round again,
+// over with nothing in the way and the place is shown in three shots, cut one to the next and round again
+// (four at a bridge: the last one rides behind its mule cart),
 // with its card as a caption along the bottom. The boat waits. "Continue"
 // brings the camera back and the helm with it. On the guided tour it goes on
 // by itself after one round.
 const CINEMA = { shot: 6.5, shots: 3 };
-const cinema = { pending: false, active: false, shot: 0, time: 0, rounds: 0, from: 0 };
+const CART_VIEW = { back: 7.5, up: 3.3, ahead: 16, aim: 1.8 };
+const cinema = { pending: false, active: false, shot: 0, time: 0, rounds: 0, from: 0, cart: null };
+const shotsOf = (subject) => CINEMA.shots + (subject.cart ? 1 : 0);
 const cinemaPanel = document.getElementById('cinema');
 const stillShots = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -741,14 +744,14 @@ function overRoofs(position) {
   if (inside) position.y = Math.max(position.y, ROOFS);
 }
 
-// One of the three shots, `u` of the way through it.
+// One of the shots, `u` of the way through it.
 function frameShot(subject, shot, u, room) {
   const ground = subject.ground ?? 0;
   const top = subject.top ?? (subject.y - ground) * 2;
   if (subject.moon) {
     // Nothing to walk round: the camera stays by the boat, closes in slowly
     // and lets the disc drift. No cuts.
-    const t = stillShots ? 0 : (cinema.rounds * CINEMA.shots + cinema.shot) * CINEMA.shot + cinema.time;
+    const t = stillShots ? 0 : (cinema.rounds * shotsOf(subject) + cinema.shot) * CINEMA.shot + cinema.time;
     cameraGoal.copy(chasePosition);
     lookGoal.set(subject.x + Math.sin(t * 0.17) * 8, subject.y + Math.sin(t * 0.11) * 6, subject.z);
     const fitting = THREE.MathUtils.radToDeg(2 * Math.atan(subject.span / 2 / 700));
@@ -761,6 +764,18 @@ function frameShot(subject, shot, u, room) {
     cameraGoal.copy(flightSpot);
     lookGoal.set(subject.x, subject.y, subject.z);
     return baseFov * FLIGHT.lens;
+  }
+  if (shot === 3) {
+    // Over the shoulder of the carter, on the way across to the city bank.
+    const { deck, u: along, aside } = cinema.cart;
+    const at = (ahead, up) => [
+      deck.x + deck.rx * (along + ahead) - deck.rz * aside,
+      deck.heightAt(along + ahead) + up,
+      deck.z + deck.rz * (along + ahead) + deck.rx * aside,
+    ];
+    cameraGoal.set(...at(-CART_VIEW.back, CART_VIEW.up));
+    lookGoal.set(...at(CART_VIEW.ahead, CART_VIEW.aim));
+    return baseFov;
   }
   let [fx, fz] = subject.facing ?? [boat.mesh.position.x - subject.x, boat.mesh.position.z - subject.z];
   const length = Math.hypot(fx, fz) || 1;
@@ -805,7 +820,8 @@ function updateCamera(dt, snap = false) {
     cinema.time += dt;
     if (cinema.time >= CINEMA.shot) {
       cinema.time -= CINEMA.shot;
-      cinema.shot = (cinema.shot + 1) % CINEMA.shots;
+      cinema.shot = (cinema.shot + 1) % shotsOf(focus.subject);
+      if (cinema.shot === 3) cinema.cart = life.sendCart(focus.subject.x, focus.subject.z);
       if (cinema.shot === 0) cinema.rounds++;
       if (cinema.rounds > 0 && tour.active) endCinema();
     }

@@ -155,32 +155,6 @@ export function createCity(layout, streets) {
   }
   if (new URLSearchParams(location.search).has('debug')) console.info(`houses: ${placed}`);
 
-  // The streets themselves, as strips of slightly paler beaten earth, so the
-  // blocks read from above. One mitred ribbon per street.
-  const strip = [];
-  const HALF = STREET_HALF - 0.4;
-  for (const street of streets) {
-    const edges = street.map(([x, z], i) => {
-      const [bx, bz] = street[Math.max(0, i - 1)];
-      const [ax, az] = street[Math.min(street.length - 1, i + 1)];
-      const run = Math.hypot(ax - bx, az - bz) || 1;
-      const nx = (-(az - bz) / run) * HALF;
-      const nz = ((ax - bx) / run) * HALF;
-      return [x + nx, z + nz, x - nx, z - nz];
-    });
-    for (let i = 1; i < edges.length; i++) {
-      const [x, z] = street[i];
-      // the plan is some 20 m out of place: no street is drawn across a monument
-      if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius - 8)) continue;
-      const [a, b] = [edges[i - 1], edges[i]];
-      for (const [px, pz] of [[a[0], a[1]], [a[2], a[3]], [b[0], b[1]], [b[0], b[1]], [a[2], a[3]], [b[2], b[3]]]) strip.push(px, BANK.height + 0.07, pz);
-    }
-  }
-  const paving = new THREE.BufferGeometry();
-  paving.setAttribute('position', new THREE.Float32BufferAttribute(strip, 3));
-  paving.computeVertexNormals();
-  const streetsMesh = new THREE.Mesh(paving, createSurface('mottle', 9, { color: 0xd0c198, side: THREE.DoubleSide }));
-
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
@@ -201,7 +175,6 @@ export function createCity(layout, streets) {
   const group = new THREE.Group();
   group.add(
     floor,
-    streetsMesh,
     createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
     createInstances(roofGeometry, createSurface('tiles', 3), roofs),
   );

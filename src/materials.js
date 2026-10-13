@@ -179,64 +179,72 @@ function paintCloth(context) {
   blotches(context, random, 18, 50, 0.1);
 }
 
-// A house front: three floors of shuttered windows and a door, on plaster.
+// Packed earth with grit and small stones, for the streets seen on foot.
+function paintEarth(context) {
+  const random = createRandom(19);
+  context.fillStyle = grey(205);
+  context.fillRect(0, 0, SIZE, SIZE);
+  blotches(context, random, 70, 34, 0.26);
+  speckle(context, random, 16000, 0.3);
+  for (let i = 0; i < 420; i++) {
+    context.fillStyle = grey(random() < 0.6 ? 90 : 245, 0.25 + random() * 0.35);
+    context.beginPath();
+    context.ellipse(random() * SIZE, random() * SIZE, 1.5 + random() * 2.5, 1 + random() * 2, random() * 3, 0, Math.PI * 2);
+    context.fill();
+  }
+}
+
+// A house front, two bays by two floors, on plaster: a door and a window
+// below, two shuttered windows above. The city repeats it along each front
+// and repeats the upper floor up it (city.js); a farmhouse takes it whole.
+const HALF = SIZE / 2;
+const BAYS = [HALF / 2, HALF * 1.5];
 function paintFacade(context) {
   const random = createRandom(16);
   context.fillStyle = grey(232);
   context.fillRect(0, 0, SIZE, SIZE);
   blotches(context, random, 30, 40, 0.1);
-  const grime = context.createLinearGradient(0, SIZE * 0.72, 0, SIZE);
+  const grime = context.createLinearGradient(0, SIZE * 0.8, 0, SIZE);
   grime.addColorStop(0, grey(0, 0));
   grime.addColorStop(1, grey(0, 0.22));
   context.fillStyle = grime;
   context.fillRect(0, 0, SIZE, SIZE);
 
-  const columns = [0.2, 0.5, 0.8];
-  [0.14, 0.42].forEach((top) => {
-    for (const centre of columns) {
-      const x = centre * SIZE - 15;
-      const y = top * SIZE;
-      context.fillStyle = grey(120);
-      context.fillRect(x - 3, y - 3, 36, 50);
-      context.fillStyle = 'rgb(46, 40, 36)';
-      context.fillRect(x, y, 30, 44);
-      context.fillStyle = 'rgb(92, 104, 84)';
-      context.fillRect(x, y, 9, 44);
-      context.fillRect(x + 21, y, 9, 44);
-      context.fillStyle = grey(110);
-      context.fillRect(x - 6, y + 46, 42, 4);
-    }
-  });
-  for (const centre of columns) {
-    const isDoor = centre === 0.5;
-    const width = isDoor ? 38 : 26;
-    const height = isDoor ? 62 : 34;
-    const x = centre * SIZE - width / 2;
-    const y = SIZE - height - (isDoor ? 0 : 22);
+  for (const centre of BAYS) {
+    const x = centre - 20;
+    const y = 34;
+    context.fillStyle = grey(120);
+    context.fillRect(x - 3, y - 3, 46, 64);
+    context.fillStyle = 'rgb(46, 40, 36)';
+    context.fillRect(x, y, 40, 58);
+    context.fillStyle = 'rgb(92, 104, 84)';
+    context.fillRect(x, y, 12, 58);
+    context.fillRect(x + 28, y, 12, 58);
+    context.fillStyle = grey(110);
+    context.fillRect(x - 7, y + 60, 54, 5);
+  }
+  BAYS.forEach((centre, bay) => {
+    const isDoor = bay === 0;
+    const width = isDoor ? 54 : 36;
+    const height = isDoor ? 92 : 40;
+    const x = centre - width / 2;
+    const y = SIZE - height - (isDoor ? 0 : 44);
     context.fillStyle = grey(115);
     context.fillRect(x - 3, y - 3, width + 6, height + 3);
     context.fillStyle = isDoor ? 'rgb(74, 52, 36)' : 'rgb(46, 40, 36)';
     context.fillRect(x, y, width, height);
-  }
+  });
   speckle(context, random, 3500, 0.08);
 }
 
-// The same house front after dark: black everywhere except the windows that
-// have a light on. It must line up with paintFacade.
+// The same house front after dark: black everywhere except the windows,
+// all lit. It must line up with paintFacade; the city puts most of them out.
 function paintFacadeGlow(context) {
-  const random = createRandom(18);
   context.fillStyle = '#000';
   context.fillRect(0, 0, SIZE, SIZE);
-  for (const top of [0.14, 0.42]) {
-    for (const centre of [0.2, 0.5, 0.8]) {
-      if (random() < 0.45) continue;
-      const warmth = 150 + Math.floor(random() * 60);
-      context.fillStyle = `rgb(255, ${warmth}, 70)`;
-      context.fillRect(centre * SIZE - 6, top * SIZE, 12, 44);
-    }
-  }
-  context.fillStyle = 'rgb(255, 170, 70)';
-  context.fillRect(0.2 * SIZE - 13, SIZE - 56, 26, 34);
+  context.fillStyle = 'rgb(255, 180, 70)';
+  for (const centre of BAYS) context.fillRect(centre - 8, 34, 16, 58);
+  context.fillRect(BAYS[1] - 18, SIZE - 84, 36, 40);
 }
 
 // Tileable ripples as a normal map: a sum of waves with whole-number
@@ -281,10 +289,11 @@ export const TEXTURES = {
   tiles: paint(paintTiles),
   tapial: paint(paintTapial),
   mottle: paint(paintMottle),
+  earth: paint(paintEarth),
   planks: paint(paintPlanks),
   cloth: paint(paintCloth),
-  facade: paint(paintFacade, { repeat: false }),
-  facadeGlow: paint(paintFacadeGlow, { repeat: false }),
+  facade: paint(paintFacade),
+  facadeGlow: paint(paintFacadeGlow),
   ripples: createRippleNormals(),
 };
 

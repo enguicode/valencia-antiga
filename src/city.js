@@ -153,7 +153,7 @@ export function createCity(layout, blocks) {
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
-    createSurface('mottle', 5, { color: 0xd0c4a4, side: THREE.DoubleSide }),
+    createSurface('earth', 3, { color: 0xd0c4a4, side: THREE.DoubleSide }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = BANK.height + 0.04; // just over the river bank's ground, which it overlaps
@@ -166,12 +166,11 @@ export function createCity(layout, blocks) {
     shape.holes = squares.map((square) => new THREE.Path(ring(square)));
     return shape;
   });
-  const ground = new THREE.Mesh(new THREE.ShapeGeometry(shapes), createSurface('mottle', 9, { color: 0x9a8862, side: THREE.DoubleSide }));
+  const ground = new THREE.Mesh(new THREE.ShapeGeometry(shapes), createSurface('earth', 3, { color: 0xa5946e, side: THREE.DoubleSide }));
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = BANK.height + 0.1;
 
-  // House fronts use ordinary UVs: one drawing of windows and a door per wall.
-  // A second drawing lights some of those windows; it is faded in at night.
+  // A second drawing lights the windows; it is faded in at night.
   const facades = new THREE.MeshStandardMaterial({
     map: TEXTURES.facade,
     emissive: 0xffffff,
@@ -179,6 +178,34 @@ export function createCity(layout, blocks) {
     emissiveIntensity: 0,
     roughness: 0.95,
   });
+  // Doors and windows keep their size whatever the house: the drawing, two
+  // bays by two floors, is repeated along the front and its upper floor up
+  // it. The side walls stay blank, and at night each window has its own luck.
+  facades.onBeforeCompile = (shader) => {
+    const varyings = '#include <common>\nvarying vec3 vFront;\nvarying vec2 vHouse;';
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', varyings).replace(
+      '#include <uv_vertex>',
+      `#include <uv_vertex>
+      vec2 bays = max(vec2(2.0), floor(vec2(length(instanceMatrix[0].xyz) / 3.0, length(instanceMatrix[1].xyz) / 3.2) + 0.5));
+      vFront = vec3(uv * vec2(bays.x / 2.0, bays.y), abs(normal.z));
+      vHouse = fract(instanceMatrix[3].xz * 0.37);`,
+    );
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', varyings)
+      .replace(
+        '#include <map_fragment>',
+        `vec2 houseUv = vec2(vFront.x, vFront.y < 1.0 ? vFront.y * 0.5 : 0.5 + fract(vFront.y) * 0.5);
+        vec2 houseDx = dFdx(vFront.xy) * vec2(1.0, 0.5);
+        vec2 houseDy = dFdy(vFront.xy) * vec2(1.0, 0.5);
+        float isFront = step(0.5, vFront.z);
+        diffuseColor *= mix(vec4(0.8, 0.8, 0.8, 1.0), textureGrad(map, houseUv, houseDx, houseDy), isFront);`,
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        `float lit = step(0.6, fract(sin(dot(floor(vec2(vFront.x * 2.0, vFront.y)) + vHouse, vec2(12.9898, 78.233))) * 43758.5453));
+        totalEmissiveRadiance *= textureGrad(emissiveMap, houseUv, houseDx, houseDy).rgb * lit * isFront;`,
+      );
+  };
   const group = new THREE.Group();
   group.add(
     floor,

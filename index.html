@@ -454,64 +454,113 @@
     body.cinema #menu-toggle,
     body.cinema #pointer { visibility: hidden; }
 
+    /* The caption of the cinema: no box, light text on a shade that rises
+       from the bottom edge, the same by day and by night. */
     #cinema {
-      left: 50%;
-      bottom: max(14px, env(safe-area-inset-bottom));
-      width: min(720px, calc(100% - 20px));
-      max-height: 46vh;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      max-height: 70vh;
       overflow-y: auto;
-      padding: 14px 18px 12px;
+      padding: 72px max(22px, calc((100% - 720px) / 2)) max(22px, env(safe-area-inset-bottom));
+      color: #f4e9d2;
+      background: linear-gradient(to top, rgba(20, 14, 8, 0.94) 0%, rgba(20, 14, 8, 0.8) 62%, rgba(20, 14, 8, 0) 100%);
+      border: 0;
+      border-radius: 0;
       opacity: 0;
       visibility: hidden;
-      transform: translate(-50%, 14px);
+      transform: translateY(14px);
       transition: opacity 0.6s ease, transform 0.6s ease, visibility 0s 0.6s;
     }
 
     body.caption #cinema {
       opacity: 1;
       visibility: visible;
-      transform: translate(-50%, 0);
+      transform: none;
       pointer-events: auto;
       transition: opacity 0.6s ease, transform 0.6s ease;
     }
 
+    #cinema .tally {
+      display: block;
+      margin-bottom: 8px;
+      font: 600 0.68rem/1.3 system-ui, sans-serif;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #d9b36a;
+    }
+
     #cinema h2 {
-      margin: 0 0 4px;
-      font-size: 1.15rem;
-      font-weight: 600;
+      margin: 0 0 8px;
+      font-family: Cinzel, "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+      font-size: 1.45rem;
+      letter-spacing: 0.02em;
+      color: #fff8e8;
+    }
+
+    #cinema h2::after {
+      content: "";
+      display: block;
+      width: 44px;
+      height: 2px;
+      margin-top: 10px;
+      background: #d9b36a;
     }
 
     #cinema .text {
-      margin: 0 0 10px;
-      font-size: 0.95rem;
-      line-height: 1.45;
+      margin: 0 0 16px;
+      font-size: 0.98rem;
+      line-height: 1.5;
+      color: #efe3cc;
     }
 
     #cinema .foot {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
-      gap: 6px 14px;
+      gap: 14px;
     }
 
-    #cinema a,
-    #cinema .tally {
-      font-size: 0.78rem;
-      color: inherit;
-      opacity: 0.8;
+    /* The source: a book in a ring, and its name beside it. */
+    #cinema a {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-size: 0.82rem;
+      line-height: 1.3;
+      color: #d8c9ae;
+      text-underline-offset: 3px;
     }
 
-    #cinema .tally { font-style: italic; }
+    #cinema a::before {
+      content: "";
+      flex: none;
+      width: 38px;
+      height: 38px;
+      border: 1.5px solid rgba(217, 179, 106, 0.6);
+      border-radius: 50%;
+      background: center / 18px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d9b36a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z'/%3E%3Cpath d='M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5'/%3E%3Cpath d='M9 8h7M9 12h5'/%3E%3C/svg%3E");
+    }
 
     #cinema button {
-      margin-left: auto;
-      padding: 9px 20px;
+      flex: none;
+      padding: 11px 26px;
       font: inherit;
-      color: #f4e9d2;
-      background: var(--fill);
+      font-weight: 600;
+      color: #1c140a;
+      background: #d9b36a;
       border: 0;
-      border-radius: 3px;
+      border-radius: 999px;
       cursor: pointer;
+    }
+
+    #cinema button:active { background: #c49d55; }
+
+    #cinema a:focus-visible,
+    #cinema button:focus-visible {
+      outline: 2px solid #fff8e8;
+      outline-offset: 3px;
     }
 
     /* Arrow at the edge of the screen towards the nearest point still to find. */
@@ -1338,11 +1387,11 @@
   <canvas id="minimap" class="panel"></canvas>
 
   <section id="cinema" class="panel">
+    <span class="tally"></span>
     <h2></h2>
     <p class="text"></p>
     <div class="foot">
       <a target="_blank" rel="noopener"></a>
-      <span class="tally"></span>
       <button id="cinema-continue" type="button" data-i18n="cinema.continue">Continuar</button>
     </div>
   </section>

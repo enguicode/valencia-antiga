@@ -16,6 +16,9 @@ const DARK = new THREE.Color(0x2f2720); // openings: windows, doors, belfries
 const ALABASTER = new THREE.Color(0xf6ecd2); // the cathedral lantern's translucent windows
 const RENDER = new THREE.Color(0xe9dcbc); // limewashed walls
 const BRICK = new THREE.Color(0xb98562);
+const SOIL = new THREE.Color(0x9c8a62); // tilled beds of a kitchen garden
+const LEAF = new THREE.Color(0x5f7d45);
+const CYPRESS = new THREE.Color(0x2f4a35);
 
 // Openings set into a wall are thin dark slabs standing just proud of it.
 // These helpers lay them out; `yaw` turns a slab to face out of a side wall.
@@ -778,6 +781,27 @@ const MODELS = {
     add('ball', [face + 0.7, 20.85, 0], [0.5, 0.5, 0.5], STONE);
     add('oct', [4, 17.7, 0], [7.4, 1.05, 7.4], PALE);
     add('dome', [4, 18.6, 0], [10, 10, 10], TILE_BLUE);
+    // What Tosca's plan of 1704 draws round the church (no. 31, outside the
+    // Corona gate, which the door at +X looks at): a cloister beside the
+    // nave, a walled enclosure and, on the side away from the city, a
+    // kitchen garden in square beds with a fruit tree in each and cypresses
+    // along the paths. Sizes are read off the engraving by eye.
+    cloister(add, { x: -6, z: -24, width: 28, depth: 26, height: 8, color: RENDER });
+    const YARD = { west: -68, east: 27, north: -40, south: 30, height: 3.4 };
+    const deep = YARD.south - YARD.north;
+    const long = YARD.east - YARD.west;
+    for (const z of [YARD.north, YARD.south]) add('box', [(YARD.west + YARD.east) / 2, 0, z], [long, YARD.height, 0.8], RENDER);
+    add('box', [YARD.west, 0, (YARD.north + YARD.south) / 2], [0.8, YARD.height, deep], RENDER);
+    // the wall towards the city opens before the church door
+    for (const [from, to] of [[YARD.north, -4], [4, YARD.south]]) add('box', [YARD.east, 0, (from + to) / 2], [0.8, YARD.height, to - from], RENDER);
+    for (let x = -57; x <= -33; x += 12) {
+      for (let z = -31; z <= 21.01; z += 13) {
+        add('box', [x, 0, z], [9.5, 0.25, 10.5], SOIL);
+        add('box', [x, 0, z], [0.35, 1.5, 0.35], DARK);
+        add('ball', [x, 2.6, z], [3.2, 2.8, 3.2], LEAF);
+        add('pyramid', [x + 6, 0, z + 6.5], [1.5, 6.5, 1.5], CYPRESS);
+      }
+    }
   },
 
   // The basilica of the Desemparats (1652-1667) is not a nave: a nearly

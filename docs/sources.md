@@ -153,6 +153,7 @@ Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de
 - **Sant Nicolau (13-oct-2026):** ábside a levante y torre cuadrada en la esquina suroeste, como en las vistas aéreas. No se pone la cupulita azul de junto a la torre: es de la capilla de la Comunió, que creo del XVIII. La fecha de la torre no está contrastada.
 - **Sant Esteve (13-oct-2026):** ábside a levante, torre a los pies y capilla octogonal con cúpula contra el flanco sur, como en las vistas aéreas. Ni la fecha de la torre ni la de la capilla están contrastadas: pueden ser posteriores a 1700.
 - **Sant Llorenç (13-oct-2026):** se le quita la torre. El campanario antiguo se cayó a finales del XVII y el actual, hexagonal, lo contrató la parroquia con José Mínguez en 1743 y estaba acabado hacia 1746; entre tanto era la única parroquia sin campanario ([campaners.com](https://www.campaners.com/php/torrepdf.php?numer=484), [cultural.valencia.es](https://cultural.valencia.es/en/?p=143135)). No consta el año exacto de la caída: se da por caído en 1700.
+- **El Salvador (13-oct-2026):** ábside al norte y torre a su lado de levante, como en las vistas aéreas (la torre se lee mal entre los bloques vecinos: es lo más dudoso). La iglesia se reformó en neoclásico en el XIX; el cuerpo gótico es el tipo común.
 
 ### Micalet y Seu
 

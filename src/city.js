@@ -97,6 +97,7 @@ export function createCity(layout, streets) {
     return found;
   };
 
+  const plots = [];
   let placed = 0;
   for (const street of streets) {
     // Houses follow the whole street, not each stretch of it: the bends are
@@ -137,7 +138,9 @@ export function createCity(layout, streets) {
         if (neighbours(x, z).some((h) => Math.hypot(x - h.x, z - h.z) < radius + h.radius)) continue;
         const key = cellOf(x, z);
         if (!houseCells.has(key)) houseCells.set(key, []);
-        houseCells.get(key).push({ x, z, radius });
+        const self = { x, z, radius };
+        houseCells.get(key).push(self);
+        plots.push({ x, z, tx, tz, width, depth, side, self });
 
         dummy.rotation.set(0, yawTowards(tx, tz), 0);
         dummy.position.set(x, BANK.height + height / 2, z);
@@ -156,56 +159,85 @@ export function createCity(layout, streets) {
   }
   if (new URLSearchParams(location.search).has('debug')) console.info(`houses: ${placed}`);
 
-  // The streets, worn paler into the floor: soft strokes on one transparent
-  // drawing laid over it, and only where houses line them. The plan's open
-  // yards and orchards trace as tangles of alleys that must not show.
+  // Nothing inside the walls is left over: the floor is the street, every
+  // house closes its block with a walled yard behind it (bare soil or kitchen
+  // garden, as far back as it can go without stepping on another street or
+  // house), and the open ground is orchard. All of it is one drawing laid on
+  // the floor; only the yard walls are geometry.
   const SCALE = 2048 / Math.max(spanX, spanZ); // pixels per metre
   const canvas = document.createElement('canvas');
   canvas.width = Math.ceil(spanX * SCALE);
   canvas.height = Math.ceil(spanZ * SCALE);
   const ctx = canvas.getContext('2d');
-  ctx.lineCap = ctx.lineJoin = 'round';
-  ctx.strokeStyle = 'rgba(228, 210, 168, 0.24)';
-  const lined = (x, z) =>
-    neighbours(x, z).filter((h) => Math.hypot(x - h.x, z - h.z) < 13).length > 1 &&
-    !clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius - 8);
-  for (const width of [8, 6, 4.4, 3]) {
-    // a wide faint pass under narrower ones: the edge fades instead of cutting
-    ctx.lineWidth = width * SCALE;
-    ctx.beginPath();
-    for (const street of streets) {
-      let drawing = false;
-      // a point every 5 m or less, so a long straight stops where its houses do
-      const points = street.flatMap(([x, z], i) => {
-        if (!i) return [[x, z]];
-        const [px, pz] = street[i - 1];
-        const steps = Math.ceil(Math.hypot(x - px, z - pz) / 5);
-        return Array.from({ length: steps }, (_, k) => [px + ((x - px) * (k + 1)) / steps, pz + ((z - pz) * (k + 1)) / steps]);
-      });
-      for (const [x, z] of points) {
-        if (!lined(x, z)) drawing = false;
-        else if (drawing) ctx.lineTo((x - minX) * SCALE, (z - minZ) * SCALE);
-        else {
-          ctx.moveTo((x - minX) * SCALE, (z - minZ) * SCALE);
-          drawing = true;
-        }
-      }
+  const px = (x) => (x - minX) * SCALE;
+  const pz = (z) => (z - minZ) * SCALE;
+  // Orchards and tilled plots where no house stands, as Tosca's plan has
+  // them, clear of the squares and of the way round inside the wall.
+  const open = (x, z) =>
+    isInside(x, z, polygon) &&
+    distanceToEdges(x, z, polygon) > WALL_CLEARANCE + CELL / 2 &&
+    ![...clearings, ...squares].some((c) => Math.hypot(x - c.x, z - c.z) < c.radius + CELL * 0.7);
+  for (let x = Math.floor(minX / CELL) * CELL; x < minX + spanX; x += CELL) {
+    for (let z = Math.floor(minZ / CELL) * CELL; z < minZ + spanZ; z += CELL) {
+      if (houseCells.get(cellOf(x, z))?.length || !open(x + CELL / 2, z + CELL / 2)) continue;
+      ctx.save();
+      ctx.translate(px(x + CELL / 2), pz(z + CELL / 2));
+      ctx.rotate((random() - 0.5) * 0.5);
+      ctx.fillStyle = pick(['rgb(112, 126, 76)', 'rgb(126, 132, 84)', 'rgb(142, 124, 86)']);
+      ctx.fillRect((-CELL / 2 - 1) * SCALE, (-CELL / 2 - 1) * SCALE, (CELL + 2) * SCALE, (CELL + 2) * SCALE);
+      ctx.restore();
     }
-    ctx.stroke();
   }
-  const worn = new THREE.CanvasTexture(canvas);
-  worn.colorSpace = THREE.SRGBColorSpace;
-  const streetsMesh = new THREE.Mesh(
+  const free = (x, z, self) =>
+    isInside(x, z, polygon) &&
+    distanceToEdges(x, z, polygon) > WALL_CLEARANCE - 4 &&
+    !clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius) &&
+    !squares.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius) &&
+    ![...(streetCells.get(cellOf(x, z)) ?? [])].some((st) => distanceToSegment(x, z, ...st) < STREET_HALF + 0.5) &&
+    !neighbours(x, z).some((h) => h !== self && Math.hypot(x - h.x, z - h.z) < h.radius);
+  const yards = [];
+  for (const { x, z, tx, tz, width, depth, side, self } of plots) {
+    const back = [14, 10, 6].find((reach) =>
+      [0.5, 1].every((part) =>
+        [-0.45, 0, 0.45].every((across) => {
+          const out = side * (depth / 2 + reach * part);
+          return free(x - tz * out + tx * width * across, z + tx * out + tz * width * across, self);
+        }),
+      ),
+    );
+    if (!back) continue;
+    const garden = random() < 0.35;
+    ctx.save();
+    ctx.translate(px(x), pz(z));
+    ctx.rotate(Math.atan2(tz, tx));
+    ctx.fillStyle = garden ? 'rgb(106, 120, 72)' : 'rgb(138, 122, 88)';
+    ctx.fillRect((-width / 2) * SCALE, Math.min(0, side * (depth / 2 + back)) * SCALE, width * SCALE, (depth / 2 + back) * SCALE);
+    ctx.restore();
+
+    const out = side * (depth / 2 + back / 2);
+    dummy.rotation.set(0, yawTowards(tx, tz), 0);
+    dummy.position.set(x - tz * out, BANK.height, z + tx * out);
+    dummy.scale.set(width, 2 + random() * 0.8, back);
+    dummy.updateMatrix();
+    yards.push({ matrix: dummy.matrix.clone() });
+  }
+  const ground = new THREE.CanvasTexture(canvas);
+  ground.colorSpace = THREE.SRGBColorSpace;
+  const yardsMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(spanX, spanZ),
-    new THREE.MeshStandardMaterial({ map: worn, transparent: true, depthWrite: false, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ map: ground, transparent: true, depthWrite: false, roughness: 1 }),
   );
-  streetsMesh.rotation.x = -Math.PI / 2;
-  streetsMesh.position.set(minX + spanX / 2, BANK.height + 0.07, minZ + spanZ / 2);
+  yardsMesh.rotation.x = -Math.PI / 2;
+  yardsMesh.position.set(minX + spanX / 2, BANK.height + 0.07, minZ + spanZ / 2);
+  // the yard wall: a box without top or bottom
+  const fence = new THREE.BoxGeometry(1, 1, 1);
+  fence.setIndex([...fence.index.array].filter((_, i) => i < 12 || i >= 24));
+  fence.translate(0, 0.5, 0);
 
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
-    createSurface('mottle', 9, { color: 0xb8a67e, side: THREE.DoubleSide }),
+    createSurface('mottle', 6, { color: 0xd2c29c, side: THREE.DoubleSide }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = BANK.height + 0.04; // just over the river bank's ground, which it overlaps
@@ -222,7 +254,8 @@ export function createCity(layout, streets) {
   const group = new THREE.Group();
   group.add(
     floor,
-    streetsMesh,
+    yardsMesh,
+    createInstances(fence, createSurface('tapial', 3, { color: 0xdccdaa, side: THREE.DoubleSide }), yards),
     createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
     createInstances(roofGeometry, createSurface('tiles', 3), roofs),
   );

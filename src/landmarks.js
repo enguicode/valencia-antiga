@@ -201,6 +201,7 @@ const CHURCHES = {
   'sant-esteve': { apse: 1, towerAt: [-1, 1], chapelDome: [-0.2, 1] },
   'sant-llorenc': { tower: false },
   salvador: { apse: 1, towerAt: [1, 1] },
+  'sant-joan-hospital': { apse: 1, tower: false, chapelDome: [0.4, 1] },
 };
 
 const MODELS = {

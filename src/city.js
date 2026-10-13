@@ -4,11 +4,11 @@ import { createInstances } from './instancing.js';
 import { landmarkClearings } from './landmarks.js';
 import { TEXTURES, createSurface } from './materials.js';
 
-// Generic houses filling the walled city, in rows along both sides of every
-// street. The streets are traced from Tosca's plan of 1704 (data/streets.json,
-// scripts/trace-tosca.py); the houses are placeholders for volume.
+// Generic houses filling the walled city, in rows round every block. The
+// blocks, and so the streets and squares between them, are those of Tosca's
+// plan of 1704 (data/blocks.json, scripts/trace-tosca.py); the houses are
+// placeholders for volume.
 
-const STREET_HALF = 2.2; // from the middle of a street to the house fronts
 const WALL_CLEARANCE = 14;
 const CELL = 24;
 // The great gates stand well inside the line of the wall, with their stairs
@@ -43,7 +43,7 @@ function distanceToEdges(x, z, polygon) {
 
 const cellOf = (x, z) => `${Math.floor(x / CELL)},${Math.floor(z / CELL)}`;
 
-export function createCity(layout, streets) {
+export function createCity(layout, blocks) {
   const polygon = layout.wall;
   const xs = polygon.map(([x]) => x);
   const zs = polygon.map(([, z]) => z);
@@ -75,21 +75,6 @@ export function createCity(layout, streets) {
   const pick = (list) => list[Math.floor(random() * list.length)];
   const dummy = new THREE.Object3D();
 
-  // Every stretch of street, indexed by the cells it comes within reach of,
-  // so a house can tell whether it would stand on one.
-  const REACH = 12;
-  const stretches = streets.flatMap((street) => street.slice(1).map((end, i) => [...street[i], ...end]));
-  const streetCells = new Map();
-  for (const stretch of stretches) {
-    const [ax, az, bx, bz] = stretch;
-    for (let x = Math.min(ax, bx) - REACH; x <= Math.max(ax, bx) + REACH + CELL; x += CELL) {
-      for (let z = Math.min(az, bz) - REACH; z <= Math.max(az, bz) + REACH + CELL; z += CELL) {
-        const key = cellOf(x, z);
-        if (!streetCells.has(key)) streetCells.set(key, new Set());
-        streetCells.get(key).add(stretch);
-      }
-    }
-  }
   const houseCells = new Map();
   const neighbours = (x, z) => {
     const found = [];
@@ -97,50 +82,57 @@ export function createCity(layout, streets) {
     return found;
   };
 
-  const plots = [];
   let placed = 0;
-  for (const street of streets) {
-    // Houses follow the whole street, not each stretch of it: the bends are
-    // short and a row must carry on round them.
-    const marks = [0];
-    for (let i = 1; i < street.length; i++) marks.push(marks[i - 1] + Math.hypot(street[i][0] - street[i - 1][0], street[i][1] - street[i - 1][1]));
-    const length = marks.at(-1);
-    const at = (d) => {
-      let i = 1;
-      while (i < street.length - 1 && marks[i] < d) i++;
-      const [ax, az] = street[i - 1];
-      const [bx, bz] = street[i];
-      const run = marks[i] - marks[i - 1] || 1;
-      const t = (d - marks[i - 1]) / run;
-      return [ax + (bx - ax) * t, az + (bz - az) * t, (bx - ax) / run, (bz - az) / run];
-    };
-    for (const side of [-1, 1]) {
+  for (const [outline, ...enclosed] of blocks) {
+    const within = (x, z) => isInside(x, z, outline) && !enclosed.some((square) => isInside(x, z, square));
+    // Houses stand shoulder to shoulder along every edge of the block, the
+    // outline and the squares inside it, facing the street.
+    for (const ring of [outline, ...enclosed]) {
+      const edge = [...ring, ring[0]];
+      const marks = [0];
+      for (let i = 1; i < edge.length; i++) marks.push(marks[i - 1] + Math.hypot(edge[i][0] - edge[i - 1][0], edge[i][1] - edge[i - 1][1]));
+      const length = marks.at(-1);
+      const at = (d) => {
+        let i = 1;
+        while (i < edge.length - 1 && marks[i] < d) i++;
+        const t = (Math.max(0, Math.min(length, d)) - marks[i - 1]) / (marks[i] - marks[i - 1] || 1);
+        return [edge[i - 1][0] + (edge[i][0] - edge[i - 1][0]) * t, edge[i - 1][1] + (edge[i][1] - edge[i - 1][1]) * t];
+      };
       for (let along = random() * 2; along < length; ) {
         const width = 6.5 + random() * 6;
-        const depth = 8 + random() * 6;
         const height = 7 + random() * 8;
         const roofHeight = 2 + random() * 1.5;
-        const from = along;
-        along += width + (random() < 0.12 ? random() * 3 : 0);
-        if (from + width > length + 1) break;
+        const middle = along + width / 2;
+        along += width;
+        if (middle + width / 2 > length + 1) break;
 
-        const [px, pz, tx, tz] = at(from + width / 2);
-        const off = side * (STREET_HALF + depth / 2);
-        const x = px - tz * off;
-        const z = pz + tx * off;
+        // the outline is traced from pixels and jitters: take the run of the
+        // edge over the width of the house, not the stretch it stands on
+        const [px, pz] = at(middle);
+        const [ax, az] = at(middle - width / 2);
+        const [bx, bz] = at(middle + width / 2);
+        const run = Math.hypot(bx - ax, bz - az);
+        if (run < width * 0.7) continue; // a corner
+        const tx = (bx - ax) / run;
+        const tz = (bz - az) / run;
+        // as deep as the block allows, on whichever side of the edge is block
+        let spot;
+        for (const depth of [8 + random() * 6, 6]) {
+          for (const side of [-1, 1]) {
+            const [x, z] = [px - tz * side * (depth / 2 + 0.2), pz + tx * side * (depth / 2 + 0.2)];
+            if (!spot && within(x, z) && within(px - tz * side * depth, pz + tx * side * depth)) spot = { x, z, depth };
+          }
+        }
+        if (!spot) continue;
+        const { x, z, depth } = spot;
         const radius = Math.min(width, depth) * 0.48;
         if (!isInside(x, z, polygon) || distanceToEdges(x, z, polygon) < WALL_CLEARANCE) continue;
         if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
         if (squares.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
-        // not on another street, nor into a house already standing
-        const clear = STREET_HALF + depth / 2 - 0.3;
-        if ([...(streetCells.get(cellOf(x, z)) ?? [])].some((s) => distanceToSegment(x, z, ...s) < clear)) continue;
         if (neighbours(x, z).some((h) => Math.hypot(x - h.x, z - h.z) < radius + h.radius)) continue;
         const key = cellOf(x, z);
         if (!houseCells.has(key)) houseCells.set(key, []);
-        const self = { x, z, radius };
-        houseCells.get(key).push(self);
-        plots.push({ x, z, tx, tz, width, depth, side, self });
+        houseCells.get(key).push({ x, z, radius });
 
         dummy.rotation.set(0, yawTowards(tx, tz), 0);
         dummy.position.set(x, BANK.height + height / 2, z);
@@ -159,101 +151,25 @@ export function createCity(layout, streets) {
   }
   if (new URLSearchParams(location.search).has('debug')) console.info(`houses: ${placed}`);
 
-  // Streets as in the old city builders: a paved piece with its own texture
-  // and a hard edge, laid from house front to house front, and a walled yard
-  // behind every house (bare soil or kitchen garden, as far back as it can go
-  // without stepping on another street or house). Yards and their gardens are
-  // invented. A street is paved only where houses line it: the plan's open
-  // yards and orchards trace as tangles of alleys that must not show.
-  const lined = (x, z) => neighbours(x, z).filter((h) => Math.hypot(x - h.x, z - h.z) < 13).length > 1;
-  const strip = [];
-  for (const street of streets) {
-    // a point every 5 m or less, so a long straight stops where its houses do
-    const points = street.flatMap(([x, z], i) => {
-      if (!i) return [[x, z]];
-      const [bx, bz] = street[i - 1];
-      const steps = Math.ceil(Math.hypot(x - bx, z - bz) / 5);
-      return Array.from({ length: steps }, (_, k) => [bx + ((x - bx) * (k + 1)) / steps, bz + ((z - bz) * (k + 1)) / steps]);
-    });
-    const edges = points.map(([x, z], i) => {
-      const [bx, bz] = points[Math.max(0, i - 1)];
-      const [ax, az] = points[Math.min(points.length - 1, i + 1)];
-      const run = Math.hypot(ax - bx, az - bz) || 1;
-      const nx = (-(az - bz) / run) * STREET_HALF;
-      const nz = ((ax - bx) / run) * STREET_HALF;
-      return lined(x, z) && [x + nx, z + nz, x - nx, z - nz];
-    });
-    for (let i = 1; i < edges.length; i++) {
-      const [a, b] = [edges[i - 1], edges[i]];
-      if (!a || !b) continue;
-      for (const [x, z] of [[a[0], a[1]], [a[2], a[3]], [b[0], b[1]], [b[0], b[1]], [a[2], a[3]], [b[2], b[3]]]) strip.push(x, BANK.height + 0.1, z);
-    }
-  }
-  const paving = new THREE.BufferGeometry();
-  paving.setAttribute('position', new THREE.Float32BufferAttribute(strip, 3));
-  paving.computeVertexNormals();
-  const streetsMesh = new THREE.Mesh(paving, createSurface('masonry', 2.4, { color: 0xb9b2a2, side: THREE.DoubleSide }));
-
-  const SCALE = 2048 / Math.max(spanX, spanZ); // pixels per metre
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.ceil(spanX * SCALE);
-  canvas.height = Math.ceil(spanZ * SCALE);
-  const ctx = canvas.getContext('2d');
-  const px = (x) => (x - minX) * SCALE;
-  const pz = (z) => (z - minZ) * SCALE;
-  const free = (x, z, self) =>
-    isInside(x, z, polygon) &&
-    distanceToEdges(x, z, polygon) > WALL_CLEARANCE - 4 &&
-    !clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius) &&
-    !squares.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius) &&
-    ![...(streetCells.get(cellOf(x, z)) ?? [])].some((st) => distanceToSegment(x, z, ...st) < STREET_HALF + 0.5) &&
-    !neighbours(x, z).some((h) => h !== self && Math.hypot(x - h.x, z - h.z) < h.radius);
-  const yards = [];
-  for (const { x, z, tx, tz, width, depth, side, self } of plots) {
-    const back = [14, 10, 6].find((reach) =>
-      [0.5, 1].every((part) =>
-        [-0.45, 0, 0.45].every((across) => {
-          const out = side * (depth / 2 + reach * part);
-          return free(x - tz * out + tx * width * across, z + tx * out + tz * width * across, self);
-        }),
-      ),
-    );
-    if (!back) continue;
-    const garden = random() < 0.35;
-    ctx.save();
-    ctx.translate(px(x), pz(z));
-    ctx.rotate(Math.atan2(tz, tx));
-    ctx.fillStyle = garden ? 'rgb(106, 120, 72)' : 'rgb(138, 122, 88)';
-    ctx.fillRect((-width / 2) * SCALE, Math.min(0, side * (depth / 2 + back)) * SCALE, width * SCALE, (depth / 2 + back) * SCALE);
-    ctx.restore();
-
-    const out = side * (depth / 2 + back / 2);
-    dummy.rotation.set(0, yawTowards(tx, tz), 0);
-    dummy.position.set(x - tz * out, BANK.height, z + tx * out);
-    dummy.scale.set(width, 2 + random() * 0.8, back);
-    dummy.updateMatrix();
-    yards.push({ matrix: dummy.matrix.clone() });
-  }
-  const ground = new THREE.CanvasTexture(canvas);
-  ground.colorSpace = THREE.SRGBColorSpace;
-  const yardsMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(spanX, spanZ),
-    new THREE.MeshStandardMaterial({ map: ground, transparent: true, depthWrite: false, roughness: 1 }),
-  );
-  yardsMesh.rotation.x = -Math.PI / 2;
-  yardsMesh.position.set(minX + spanX / 2, BANK.height + 0.07, minZ + spanZ / 2);
-  // the yard wall: a box without top or bottom
-  const fence = new THREE.BoxGeometry(1, 1, 1);
-  fence.setIndex([...fence.index.array].filter((_, i) => i < 12 || i >= 24));
-  fence.translate(0, 0.5, 0);
-
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
-    createSurface('mottle', 9, { color: 0xb8a67e, side: THREE.DoubleSide }),
+    createSurface('mottle', 5, { color: 0xd0c4a4, side: THREE.DoubleSide }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = BANK.height + 0.04; // just over the river bank's ground, which it overlaps
+
+  // The blocks of Tosca's plan (data/blocks.json), laid on the floor: what is
+  // left between them is street and square, at the width the plan gives.
+  const ring = (points) => points.map(([x, z]) => new THREE.Vector2(x, -z));
+  const shapes = blocks.map(([outline, ...squares]) => {
+    const shape = new THREE.Shape(ring(outline));
+    shape.holes = squares.map((square) => new THREE.Path(ring(square)));
+    return shape;
+  });
+  const ground = new THREE.Mesh(new THREE.ShapeGeometry(shapes), createSurface('mottle', 9, { color: 0x9a8862, side: THREE.DoubleSide }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = BANK.height + 0.1;
 
   // House fronts use ordinary UVs: one drawing of windows and a door per wall.
   // A second drawing lights some of those windows; it is faded in at night.
@@ -267,9 +183,7 @@ export function createCity(layout, streets) {
   const group = new THREE.Group();
   group.add(
     floor,
-    yardsMesh,
-    streetsMesh,
-    createInstances(fence, createSurface('tapial', 3, { color: 0xdccdaa, side: THREE.DoubleSide }), yards),
+    ground,
     createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
     createInstances(roofGeometry, createSurface('tiles', 3), roofs),
   );

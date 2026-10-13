@@ -106,3 +106,30 @@ assert 800 < len(streets) < 4000 and 30 < km < 55, (len(streets), km)
 target = ROOT / 'data' / 'streets.json'
 target.write_text(json.dumps(streets, separators=(',', ':')) + '\n')
 print(f'{len(streets)} streets, {km:.1f} km, {target.stat().st_size / 1024:.0f} KB')
+
+# The blocks: what the streets leave within the walls, each as its outline
+# followed by any squares enclosed in it. Street is the white that hangs from
+# the traced runs or from the middle of a square: the dotted orchards of the
+# engraving are white specks off both, and so stay inside their block.
+from skimage.measure import approximate_polygon, find_contours
+spine = sk | (skeletonize(net) & (half >= WIDE))
+away, (near_r, near_c) = ndi.distance_transform_edt(~spine, return_indices=True)
+street = net & (away / K <= half[near_r, near_c] + 1)
+block = ndi.binary_opening(inside & ~street, iterations=1)
+parts, m = ndi.label(block)
+area = lambda ring: abs(sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(ring, np.roll(ring, -1, 0)))) / 2
+blocks = []
+for i, where in enumerate(ndi.find_objects(parts), 1):
+    mask = np.pad(parts[where] == i, 1)
+    rings = []
+    for contour in find_contours(mask.astype(float), 0.5):
+        ring = approximate_polygon(contour, 0.7 * K)[:-1] + (where[0].start - 1, where[1].start - 1)
+        ring = (np.c_[ring[:, 1] * 2 + 1, ring[:, 0] * 2 + 1] - A[:, 2]) @ inv.T
+        if len(ring) > 2 and area(ring) > 25: rings.append(ring)
+    rings.sort(key=area, reverse=True)
+    if rings and area(rings[0]) > 60: blocks.append([np.round(ring, 1).tolist() for ring in rings])
+built = sum(area(np.array(b[0])) - sum(area(np.array(h)) for h in b[1:]) for b in blocks) / 1e4
+assert 100 < len(blocks) < 1500 and 60 < built < 140, (len(blocks), built)
+target = ROOT / 'data' / 'blocks.json'
+target.write_text(json.dumps(blocks, separators=(',', ':')) + '\n')
+print(f'{len(blocks)} blocks, {built:.1f} ha, {target.stat().st_size / 1024:.0f} KB')

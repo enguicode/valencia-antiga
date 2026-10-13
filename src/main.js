@@ -24,8 +24,8 @@ import { t, localized, getLanguage, setLanguage, onLanguageChange } from './i18n
 
 const debug = new URLSearchParams(location.search).has('debug');
 
-const [layout, points, streets] = await Promise.all(
-  ['./data/layout.json', './data/points.json', './data/streets.json'].map(async (url) => (await fetch(url)).json()),
+const [layout, points, blocks] = await Promise.all(
+  ['./data/layout.json', './data/points.json', './data/blocks.json'].map(async (url) => (await fetch(url)).json()),
 );
 const path = createRiverPath(layout);
 
@@ -73,7 +73,7 @@ boatSelect.addEventListener('change', () => {
   }
 });
 water.mesh.renderOrder = DRAW_ORDER.water;
-const city = createCity(layout, streets);
+const city = createCity(layout, blocks);
 const life = createLife(layout, path, city.userData.chimneys, bridgeGuide);
 const nightLights = createNightLights(layout, path);
 const sea = createSea(scene, path, layout, water.material);

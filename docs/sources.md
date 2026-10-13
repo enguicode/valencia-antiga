@@ -76,6 +76,7 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 - **Hora del día:** se elige con el botón de abajo (alba, mediodía, tarde y noche) o en los ajustes, y no avanza sola. Colores, niebla y posición del sol elegidos a ojo. El sol sale por el este y se pone por el oeste, algo al norte en los extremos, como en verano; de noche la misma luz hace de luna.
 - **Reflejos del agua:** no son reflejos reales de la escena. El agua toma un tinte del cielo y brilla con el sol.
 - **Otras barcas, lavanderas, humo y pájaros:** colocados al azar. Las barcas de decorado van siempre a vela. Las lavanderas están junto a las escaleras inventadas de la v0.3.
+- **Gente y carros en los puentes (13-oct-2026):** siete figuras a pie y un carro con mula van y vienen por el tablero de cada puente. Es adorno sin fuente: el número, la ropa, el carro y el paso son inventados. Desde la barca apenas asoman cabezas y la carga sobre el pretil; se ven bien desde arriba.
 - **Luces de noche:** ventanas encendidas, faroles en puentes, pretiles y barcas, antorchas en las puertas, luna y luciérnagas. Son adorno: hacia 1700 la ciudad no tenía alumbrado público.
 - **Sonido:** sintetizado en el navegador (ruido filtrado para el agua y una campana aditiva). La campana da tres toques cada minuto y medio; no reproduce ninguna campana real.
 

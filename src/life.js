@@ -3,9 +3,11 @@ import { RIVER, createRandom, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
 import { createBoatModel, setSailLight, setLanternLight, animateBoat } from './boat.js';
 import { waveHeight } from './water.js';
+import { bridgeDecks } from './bridges.js';
 
 // Things that move or keep the place company: other boats, washerwomen at
-// the water's edge, smoke over the roofs and birds. All of it is decoration
+// the water's edge, people and carts on the bridges, smoke over the roofs
+// and birds. All of it is decoration
 // with no historical source behind it.
 
 function createTraffic(path, random, bridgeGuide) {
@@ -82,6 +84,76 @@ function createWasherwomen(layout, path, random) {
     createInstances(new THREE.SphereGeometry(0.19, 10, 8), material, heads),
   );
   return group;
+}
+
+// People on foot and mule carts crossing each bridge, back and forth along
+// the deck. From the water only what clears the parapet shows.
+function createCrossings(decks, random) {
+  const CLOTH = [0x7a4a3a, 0x4f5d73, 0x6b6b3f, 0x8a5a44, 0x3f4f4a, 0x8c8474];
+  const SKIN = 0xd9a98a;
+  const WOOD = 0x6e5236;
+  const cloth = () => CLOTH[Math.floor(random() * CLOTH.length)];
+  // Parts as [ahead, up, aside, length, height, breadth, colour], in metres.
+  const walker = (ahead = 0, aside = 0) => [
+    [ahead, 0, aside, 0.3, 1.38, 0.42, cloth()],
+    [ahead, 1.4, aside, 0.24, 0.26, 0.24, SKIN],
+  ];
+  const cart = () => [
+    [0, 0.55, 0, 2.3, 0.14, 1.3, WOOD],
+    [0, 0.69, 0, 1.9, 1.1, 1.1, 0xcdbb8a], // the load, under a cloth
+    [0, 0, 0.72, 1.1, 1.1, 0.1, WOOD],
+    [0, 0, -0.72, 1.1, 1.1, 0.1, WOOD],
+    [2.2, 0.75, 0, 1.5, 0.6, 0.45, 0x5a4634], // the mule
+    [3.05, 1.2, 0, 0.5, 0.45, 0.3, 0x5a4634],
+    [1.7, 0, 0, 0.22, 0.75, 0.4, 0x5a4634],
+    [2.7, 0, 0, 0.22, 0.75, 0.4, 0x5a4634],
+    ...walker(2.4, 0.85),
+  ];
+
+  const movers = [];
+  for (const deck of decks) {
+    const lane = deck.width / 2 - 1.2;
+    const add = (parts, speed, aside) =>
+      movers.push({ deck, parts, speed, aside, u: (random() * 2 - 1) * (deck.half - 6), direction: random() < 0.5 ? -1 : 1 });
+    for (let i = 0; i < 7; i++) add(walker(), 0.9 + random() * 0.5, (random() * 2 - 1) * lane);
+    add(cart(), 1.3 + random() * 0.4, (random() * 2 - 1) * (lane - 0.9));
+  }
+
+  const count = movers.reduce((total, mover) => total + mover.parts.length, 0);
+  const mesh = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0),
+    new THREE.MeshStandardMaterial({ roughness: 1 }),
+    count,
+  );
+  mesh.frustumCulled = false;
+  const colour = new THREE.Color();
+  let index = 0;
+  for (const mover of movers) for (const part of mover.parts) mesh.setColorAt(index++, colour.set(part[6]));
+  const dummy = new THREE.Object3D();
+
+  function update(dt, time) {
+    let i = 0;
+    for (const mover of movers) {
+      const { deck } = mover;
+      mover.u += mover.direction * mover.speed * dt;
+      // turn round with room for the mule, so nothing walks off the level deck
+      if (Math.abs(mover.u) > deck.half - 4) mover.direction = -Math.sign(mover.u);
+      const step = Math.abs(Math.sin(time * 6 + mover.aside * 9)) * 0.04;
+      for (const [ahead, up, aside, length, height, breadth] of mover.parts) {
+        const u = mover.u + mover.direction * ahead;
+        const v = mover.aside + aside;
+        // local +X runs across the river, so local +Z is (-rz, rx)
+        dummy.position.set(deck.x + deck.rx * u - deck.rz * v, deck.heightAt(u) + up + step, deck.z + deck.rz * u + deck.rx * v);
+        dummy.rotation.set(0, yawTowards(deck.rx, deck.rz), 0);
+        dummy.scale.set(length, height, breadth);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i++, dummy.matrix);
+      }
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+
+  return { mesh, update };
 }
 
 function createSmoke(chimneys, random) {
@@ -206,14 +278,16 @@ export function createLife(layout, path, chimneys, bridgeGuide) {
   const traffic = createTraffic(path, random, bridgeGuide);
   const smoke = createSmoke(chimneys, random);
   const birds = createBirds(random);
+  const crossings = createCrossings(bridgeDecks(layout, path), random);
 
   const group = new THREE.Group();
-  group.add(...traffic.models, createWasherwomen(layout, path, random), smoke.points, birds.mesh);
+  group.add(...traffic.models, createWasherwomen(layout, path, random), smoke.points, birds.mesh, crossings.mesh);
 
   let extras = true;
 
   function update(dt, time, boatState, atmosphere) {
     traffic.update(dt, time);
+    crossings.update(dt, time);
     setSailLight(THREE.MathUtils.clamp(atmosphere.light, 0.15, 1));
     setLanternLight(atmosphere.night);
     smoke.points.visible = extras;

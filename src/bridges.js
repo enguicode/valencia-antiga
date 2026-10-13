@@ -383,6 +383,16 @@ export function createBridges(layout, path) {
   return group;
 }
 
+// The walkable top of each bridge, for whatever crosses it: a point on the
+// river axis, the unit vector across the river and the deck height along it.
+export function bridgeDecks(layout, path) {
+  return layout.bridges.map((bridge) => {
+    const spec = specOf(bridge);
+    const { sample } = path.project(bridge.x, bridge.z);
+    return { x: sample.x, z: sample.z, rx: sample.rx, rz: sample.rz, half: SPAN / 2, width: spec.width, heightAt: (u) => deckHeight(spec, u) };
+  });
+}
+
 // Keeps boats out of the stonework. From some way off it eases a boat
 // towards the nearest arch, so that by the time it reaches the bridge it is
 // inside an opening; it also says how close the bridge is, from 0 to 1.

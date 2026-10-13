@@ -198,6 +198,7 @@ const CHURCHES = {
   'sants-joans': { apse: 1, towerAt: [-1, 1], chapelDome: [0.15, -1] },
   'sant-marti': { apse: 1, towerAt: [-1, -1], chapelDome: [0.15, -1] },
   'sant-nicolau': { apse: 1, towerAt: [-1, 1] },
+  'sant-esteve': { apse: 1, towerAt: [-1, 1], chapelDome: [-0.2, 1] },
 };
 
 const MODELS = {

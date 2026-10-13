@@ -710,7 +710,7 @@ const MODELS = {
     add('gable', [0, 16, -12], [13, 4, size], ROOF, RIDGE_ALONG_X);
     add('box', [-size / 2 - 2, 0, -3], [5.5, 28, 5.5], STONE);
     add('pyramid', [-size / 2 - 2, 28, -3], [6.5, 5, 6.5], ROOF);
-    cloister(add, { x: 0, z: 12, width: size, depth: 30, height: 9, color: PALE });
+    cloister(add, { x: 0, z: 14, width: Math.min(size, 46), depth: 36, height: 9, color: PALE });
     // Church: side windows, buttresses and a west door
     for (const z of [-18.55, -5.45]) {
       windowRow(add, { from: -size / 2 + 6, to: size / 2 - 6, step: 7, y: 7, z, width: 1.4, height: 6 });
@@ -720,8 +720,8 @@ const MODELS = {
     // Belfry and the cloister range's two rows of small windows
     ringOfOpenings(add, { x: -size / 2 - 2, y: 22, z: -3, sides: 4, apothem: 2.8, width: 1.6, height: 4 });
     add('box', [-size / 2 - 2, 20.5, -3], [6.1, 0.5, 6.1], PALE);
-    windowRow(add, { from: -size / 2 + 4, to: size / 2 - 4, step: 4.5, y: 1.6, z: 27.05, width: 1.1, height: 2 });
-    windowRow(add, { from: -size / 2 + 4, to: size / 2 - 4, step: 4.5, y: 5.6, z: 27.05, width: 1.1, height: 2 });
+    windowRow(add, { from: -Math.min(size, 46) / 2 + 4, to: Math.min(size, 46) / 2 - 4, step: 4.5, y: 1.6, z: 32.05, width: 1.1, height: 2 });
+    windowRow(add, { from: -Math.min(size, 46) / 2 + 4, to: Math.min(size, 46) / 2 - 4, step: 4.5, y: 5.6, z: 32.05, width: 1.1, height: 2 });
   },
 
   // Corpus Christi keeps the generic nave (40 × 18 × 15) and the 32 m corner
@@ -931,11 +931,20 @@ export function createLandmarks(layout, path) {
   return group;
 }
 
-// Clear ground each landmark needs, so the filler houses keep off it.
+// Clear ground each landmark needs, so the filler houses keep off it. A
+// church also keeps a small square before its door, and before a front of
+// its own at the apse end.
 export function landmarkClearings(layout) {
-  return layout.landmarks.map((landmark) => ({
-    x: landmark.x,
-    z: landmark.z,
-    radius: Math.max(landmark.length ?? 40, landmark.width ?? 20, 30) / 2 + 8,
-  }));
+  return layout.landmarks.flatMap((landmark) => {
+    const { x, z, length, width } = landmark;
+    const clearings = [{ x, z, radius: Math.max(length ?? 40, width ?? 20, 30) / 2 + 8 }];
+    if (landmark.kind !== 'church' || !landmark.axis) return clearings;
+    const { apse = -1, turn } = CHURCHES[landmark.id] ?? {};
+    const [ax, az] = turn ? [landmark.axis[1], -landmark.axis[0]] : landmark.axis;
+    const reach = clamp(length ?? 40, 30, 50) / 2 + 18;
+    for (const end of landmark.id in FRONTS ? [-1, 1] : [-apse]) {
+      clearings.push({ x: x + ax * end * reach, z: z + az * end * reach, radius: 17 });
+    }
+    return clearings;
+  });
 }

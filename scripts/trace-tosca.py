@@ -37,7 +37,7 @@ A = np.linalg.lstsq(rows, np.array([p for _, p in CONTROL.values()], float), rco
 PPM = math.sqrt(abs(np.linalg.det(A[:, :2])))
 DARK = 150  # grey level under which a pixel is ink
 EDGE = 12  # metres kept from the line of the wall
-SPUR = 14  # dead ends shorter than this are noise
+SPUR = 26  # dead ends shorter than this are courtyards and noise
 WIDE = 11  # metres from the middle to the nearest ink beyond which it is a square or a garden, not a street
 residual = np.hypot(*(rows @ A.T - np.array([p for _, p in CONTROL.values()])).T) / PPM
 print('fit off by', residual.round(0).tolist(), 'm')
@@ -87,9 +87,12 @@ length = lambda l: sum(math.dist(a, b) for a, b in zip(l, l[1:])) / K
 lines = [l for l in lines if not ((l[0] in ends or l[-1] in ends) and length(l) < SPUR) and length(l) > 3]
 inv = np.linalg.inv(A[:, :2])
 def scene(l):
-    px = np.array([(c * 2 + 1, r * 2 + 1) for r, c in l], float) - A[:, 2]
-    return px @ inv.T
-def simplify(pts, tol=2.2):
+    px = np.array([(c * 2 + 1, r * 2 + 1) for r, c in l], float)
+    if len(px) > 8:  # the skeleton wanders a pixel either way: run a mean along it, ends held
+        pad = np.vstack([np.repeat(px[:1], 4, 0), px, np.repeat(px[-1:], 4, 0)])
+        px = np.stack([np.convolve(pad[:, k], np.ones(9) / 9, 'valid') for k in (0, 1)], 1)
+    return (px - A[:, 2]) @ inv.T
+def simplify(pts, tol=1.6):
     if len(pts) < 3: return pts
     a, b = pts[0], pts[-1]; d = b - a; n = np.hypot(*d) or 1
     dist = np.abs(d[0] * (pts[1:-1, 1] - a[1]) - d[1] * (pts[1:-1, 0] - a[0])) / n

@@ -418,6 +418,22 @@ export function createWalls(layout, path) {
           after.outX,
           after.outZ,
         );
+        // The great round tower at the far end of it, crenellated, as the
+        // engraving of Tosca's plan draws it. Size read off the engraving.
+        const KEEP = { radius: 6.5, height: 14 };
+        const far = style.size / 2 + 5 + HALL.length + KEEP.radius - 1;
+        const keep = makeFrame(
+          vertex.x + ((after.midX - vertex.x) / reach) * far - after.outX * (KEEP.radius * 0.4),
+          vertex.z + ((after.midZ - vertex.z) / reach) * far - after.outZ * (KEEP.radius * 0.4),
+          after.outX,
+          after.outZ,
+        );
+        place(lists.round, keep, 0, KEEP.height / 2, 0, { scale: [KEEP.radius, KEEP.height, KEEP.radius] });
+        place(lists.round, keep, 0, KEEP.height - 1.6, 0, { scale: [KEEP.radius + 0.35, 0.5, KEEP.radius + 0.35] });
+        for (let k = 0; k < 16; k++) {
+          const turn = (k / 16) * Math.PI * 2;
+          place(lists.merlons, keep, Math.cos(turn) * (KEEP.radius - 0.5), KEEP.height + MERLON.height / 2, Math.sin(turn) * (KEEP.radius - 0.5), { yaw: -turn });
+        }
         place(lists.renderedBlocks, hall, 0, HALL.height / 2, 0, { scale: [HALL.depth, HALL.height, HALL.length] });
         place(lists.accents, hall, 0, HALL.height + 0.15, 0, { scale: [HALL.depth + 0.6, 0.3, HALL.length + 0.6] });
         // A door and a row of windows on the side of the city.

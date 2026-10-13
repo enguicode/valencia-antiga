@@ -53,6 +53,10 @@ function cloister(add, { x, z, width, depth, height, color }) {
         add('arch', [alongZ - side * (RANGE / 2 + 0.05), y, k], [0.4, tall, 2], DARK);
       }
     }
+    // two rows of small windows on the outer flanks, so no side is a blank wall from the street
+    for (let k = z - depth / 2 + 4; k <= z + depth / 2 - 3.99; k += 4.5) {
+      for (const y of [height * 0.18, height * 0.6]) add('box', [x + side * (width / 2 + 0.05), y, k], [0.35, 2, 1.1], DARK);
+    }
   }
 }
 
@@ -657,6 +661,7 @@ const MODELS = {
     // Cloister, two storeys round a court, and the belfry
     cloister(add, { x: -2, z: -17, width: 36, depth: 30, height: 9.5, color: RENDER });
     windowRow(add, { from: -17, to: 13, step: 4.3, y: 5.6, z: -1.95, width: 1.6, height: 2.6 });
+    for (const y of [1.7, 5.7]) windowRow(add, { from: -16, to: 12, step: 4.5, y, z: -32.05, width: 1.1, height: 2 });
     add('box', [15, 0, -3], [4.6, 23, 4.6], STONE);
     add('pyramid', [15, 23, -3], [5.4, 4.5, 5.4], ROOF);
     ringOfOpenings(add, { x: 15, y: 17.5, z: -3, sides: 4, apothem: 2.35, width: 1.4, height: 3.6 });

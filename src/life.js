@@ -87,7 +87,8 @@ function createWasherwomen(layout, path, random) {
 }
 
 // People on foot and mule carts crossing each bridge, back and forth along
-// the deck. From the water only what clears the parapet shows.
+// the deck, and a few idlers at the parapet. From the water only what clears
+// the parapet shows.
 function createCrossings(decks, random) {
   const CLOTH = [0x7a4a3a, 0x4f5d73, 0x6b6b3f, 0x8a5a44, 0x3f4f4a, 0x8c8474];
   const SKIN = 0xd9a98a;
@@ -117,6 +118,8 @@ function createCrossings(decks, random) {
       movers.push({ deck, parts, speed, aside, u: (random() * 2 - 1) * (deck.half - 6), direction: random() < 0.5 ? -1 : 1 });
     for (let i = 0; i < 7; i++) add(walker(), 0.9 + random() * 0.5, (random() * 2 - 1) * lane);
     add(cart(), 1.3 + random() * 0.4, (random() * 2 - 1) * (lane - 0.9));
+    // idlers leaning on the parapet, where the boat can see them
+    for (let i = 0; i < 5; i++) add(random() < 0.4 ? [...walker(), ...walker(0.75)] : walker(), 0, (random() < 0.5 ? -1 : 1) * (deck.width / 2 - 0.35));
   }
 
   const count = movers.reduce((total, mover) => total + mover.parts.length, 0);
@@ -138,7 +141,7 @@ function createCrossings(decks, random) {
       mover.u += mover.direction * mover.speed * dt;
       // turn round with room for the mule, so nothing walks off the level deck
       if (Math.abs(mover.u) > deck.half - 4) mover.direction = -Math.sign(mover.u);
-      const step = Math.abs(Math.sin(time * 6 + mover.aside * 9)) * 0.04;
+      const step = mover.speed && Math.abs(Math.sin(time * 6 + mover.aside * 9)) * 0.04;
       for (const [ahead, up, aside, length, height, breadth] of mover.parts) {
         const u = mover.u + mover.direction * ahead;
         const v = mover.aside + aside;

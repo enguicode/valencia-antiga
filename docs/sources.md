@@ -77,6 +77,7 @@ Todo lo de esta versión es decorado, sin fuente histórica detrás:
 - **Reflejos del agua:** no son reflejos reales de la escena. El agua toma un tinte del cielo y brilla con el sol.
 - **Otras barcas, lavanderas, humo y pájaros:** colocados al azar. Las barcas de decorado van siempre a vela. Las lavanderas están junto a las escaleras inventadas de la v0.3.
 - **Gente y carros en los puentes (13-oct-2026):** siete figuras a pie y un carro con mula van y vienen por el tablero de cada puente. Es adorno sin fuente: el número, la ropa, el carro y el paso son inventados. Desde la barca apenas asoman cabezas y la carga sobre el pretil; se ven bien desde arriba.
+- **Asomados al pretil (13-oct-2026):** cinco figuras quietas por puente, solas o de dos en dos, pegadas al pretil de un lado u otro. Adorno sin fuente, como lo anterior; se ponen para que desde la barca se vea a alguien.
 - **Luces de noche:** ventanas encendidas, faroles en puentes, pretiles y barcas, antorchas en las puertas, luna y luciérnagas. Son adorno: hacia 1700 la ciudad no tenía alumbrado público.
 - **Sonido:** sintetizado en el navegador (ruido filtrado para el agua y una campana aditiva). La campana da tres toques cada minuto y medio; no reproduce ninguna campana real.
 

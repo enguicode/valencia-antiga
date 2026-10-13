@@ -237,6 +237,33 @@ const FRONTS = {
     add('arch', [face + out * 0.4, 8.4, 0], [0.3, 3.6, 1.9], DARK);
     add('arch', [face + out * 0.4, 14.5, 0], [0.3, 2.3, 1.2], DARK);
   },
+  // A Jesuit front of the years around 1600: a plain wall under a pediment,
+  // one door and an oculus. A type, not this church: the one of 1595 was
+  // pulled down in 1868 and no view of it has been checked.
+  companyia(add, { apse, naveLength, naveWidth, flank, NAVE }) {
+    const out = -apse;
+    const wall = out * (naveLength / 2 + 0.4);
+    const face = wall + out * 0.55;
+    add('box', [wall, 0, 0], [1, NAVE + 1, naveWidth + 1.2], PALE);
+    add('box', [wall, 0, 0], [0.8, 10.5, flank * 2 + 0.6], PALE);
+    add('box', [wall, NAVE + 1, 0], [1.5, 0.6, naveWidth + 2], STONE);
+    add('gable', [wall, NAVE + 1.6, 0], [naveWidth + 2, 3.6, 1], PALE, RIDGE_ALONG_X);
+    for (const z of [-1, 1]) add('box', [face, 0, z * (naveWidth / 2 + 0.1)], [0.5, NAVE + 1, 1], STONE);
+    add('box', [face, 0, 0], [0.5, 8, 5.2], STONE);
+    add('gable', [face, 8, 0], [5.8, 1.5, 0.6], STONE, RIDGE_ALONG_X);
+    add('arch', [face + out * 0.25, 0, 0], [0.3, 6, 3], DARK);
+    add('disk', [face, 11.6, 0], [0.3, 3, 3], DARK);
+    // crossing: a transept no wider than the chapels and a tiled dome on a drum
+    const crossing = apse * (naveLength / 2 - naveWidth / 2 - 1);
+    add('box', [crossing, 0, 0], [naveWidth, NAVE, flank * 2 + 0.4], PALE);
+    add('gable', [crossing, NAVE, 0], [naveWidth, 4.5, flank * 2 + 0.4], ROOF);
+    add('oct', [crossing, NAVE + 1.5, 0], [naveWidth * 0.82, 5.5, naveWidth * 0.82], PALE);
+    add('oct', [crossing, NAVE + 7, 0], [naveWidth * 0.9, 0.5, naveWidth * 0.9], STONE);
+    add('dome', [crossing, NAVE + 7.5, 0], [naveWidth * 0.8, naveWidth * 0.8, naveWidth * 0.8], TILE_BLUE);
+    add('oct', [crossing, NAVE + 7.5 + naveWidth * 0.38, 0], [1.8, 2.2, 1.8], PALE);
+    add('cone', [crossing, NAVE + 9.7 + naveWidth * 0.38, 0], [2.1, 1.4, 2.1], TILE_BLUE);
+    around(add, { x: crossing, sides: 8, radius: naveWidth * 0.41 - 0.2, y: NAVE + 3.2, solid: 'arch', height: 2.6, width: 1.3, depth: 0.4, color: DARK });
+  },
 };
 
 // What each parish church changes in the shared body. Local +X is the layout
@@ -257,7 +284,7 @@ const CHURCHES = {
   'sant-andreu': { turn: true, apse: 1, towerAt: [-1, -1] },
   'sant-agusti': { apse: 1, tower: false },
   carme: { apse: 1, towerAt: [-1, -1], towerTop: 'lantern' },
-  companyia: { apse: 1 },
+  companyia: { apse: 1, classical: true, tower: false },
 };
 
 const MODELS = {

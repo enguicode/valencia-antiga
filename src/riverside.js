@@ -3,6 +3,7 @@ import { RIVER, BANK, COLORS, yawTowards } from './config.js';
 import { buildRibbon } from './path.js';
 import { createInstances } from './instancing.js';
 import { createSurface } from './materials.js';
+import { bridgeDecks } from './bridges.js';
 
 // Stonework along the river: the parapet walls (pretiles) with their stone
 // balls, the stairs down to the water and a weir.
@@ -24,18 +25,35 @@ export function createRiverside(layout, path) {
   // Parapets end with the tour. Further down the banks are earth and reeds.
   const walled = path.citySamples.filter((sample) => sample.s <= path.garden);
 
+  // The parapet opens where a bridge comes ashore: the decks land level with
+  // the street, and it would stand across their mouths.
+  const mouths = bridgeDecks(layout, path)
+    .map((deck) => ({ s: path.project(deck.x, deck.z).s, half: deck.width / 2 + 0.3 }))
+    .sort((a, b) => a.s - b.s);
+  const inMouth = (s) => mouths.some((mouth) => Math.abs(s - mouth.s) < mouth.half);
+  const runs = [];
+  let from = walled[0].s;
+  for (const mouth of mouths) {
+    runs.push([from, mouth.s - mouth.half]);
+    from = mouth.s + mouth.half;
+  }
+  runs.push([from, walled.at(-1).s]);
+
   for (const side of [-1, 1]) {
-    const wall = new THREE.Mesh(
-      buildRibbon(walled, [
-        [side * PRETIL.offset, PRETIL.foot],
-        [side * PRETIL.offset, top],
-        [side * (PRETIL.offset + PRETIL.thickness), top],
-        [side * (PRETIL.offset + PRETIL.thickness), BANK.height],
-      ]),
-      stone,
-    );
-    wall.frustumCulled = false;
-    group.add(wall);
+    for (const [start, end] of runs) {
+      const stretch = [path.pointAt(start), ...walled.filter((sample) => sample.s > start && sample.s < end), path.pointAt(end)];
+      const wall = new THREE.Mesh(
+        buildRibbon(stretch, [
+          [side * PRETIL.offset, PRETIL.foot],
+          [side * PRETIL.offset, top],
+          [side * (PRETIL.offset + PRETIL.thickness), top],
+          [side * (PRETIL.offset + PRETIL.thickness), BANK.height],
+        ], Math.floor(start / path.step)),
+        stone,
+      );
+      wall.frustumCulled = false;
+      group.add(wall);
+    }
   }
 
   // Stone balls on the parapet, only along the navigable stretch
@@ -43,7 +61,7 @@ export function createRiverside(layout, path) {
   const dummy = new THREE.Object3D();
   const every = Math.round(BALL_SPACING / path.step);
   path.samples.forEach((sample, i) => {
-    if (i % every !== 0 || sample.s < path.start - 150 || sample.s > path.garden) return;
+    if (i % every !== 0 || sample.s < path.start - 150 || sample.s > path.garden || inMouth(sample.s)) return;
     for (const side of [-1, 1]) {
       const lateral = side * (PRETIL.offset + PRETIL.thickness / 2);
       dummy.position.set(sample.x + sample.rx * lateral, top + 0.35, sample.z + sample.rz * lateral);

@@ -78,6 +78,8 @@ function continuationSamples(city, course) {
   });
 }
 
+const FACES_GATE_WITHIN = 90; // metres along the river between a bridge and its gate
+
 function projectList(samples, x, z) {
   let index = 0;
   let best = Infinity;
@@ -101,6 +103,17 @@ function projectList(samples, x, z) {
 
 export function createRiverPath(layout) {
   const city = sampleCurve(layout.river);
+  // A bridge crosses the river square, so it only lands before its gate if
+  // it stands abreast of it: each one is moved along the river to that point,
+  // unless its gate is somewhere else altogether, as the Portal de la Mar is.
+  for (const bridge of layout.bridges) {
+    const gate = layout.gates.find((item) => item.id === bridge.id);
+    if (!gate) continue;
+    const abreast = projectList(city.samples, ...layout.wall[gate.vertex]);
+    if (Math.abs(abreast.sample.s - projectList(city.samples, bridge.x, bridge.z).s) > FACES_GATE_WITHIN) continue;
+    bridge.x = abreast.sample.x;
+    bridge.z = abreast.sample.z;
+  }
   // The tour's start and end come only from the historic bridges, so adding
   // the run to the sea cannot move them.
   const bridgeStations = layout.bridges.map((bridge) => projectList(city.samples, bridge.x, bridge.z).s);
@@ -164,19 +177,21 @@ const ribbons = [];
 
 // Limits every ribbon to the rows between two samples, so the stretches lost
 // in the fog are not drawn. A ribbon shorter than the full river (the city
-// banks stop where the gardens start) is clamped to the rows it has.
+// banks stop where the gardens start, the parapet is in lengths between the
+// bridges) is clamped to the rows it has, counted from the sample it starts at.
 export function setRibbonWindow(first, last) {
-  for (const { geometry, columns, rows } of ribbons) {
-    const from = Math.max(0, Math.min(first, rows - 1));
-    const to = Math.max(from, Math.min(last, rows - 1));
+  for (const { geometry, columns, rows, offset } of ribbons) {
+    const from = Math.max(0, Math.min(first - offset, rows - 1));
+    const to = Math.max(from, Math.min(last - offset, rows - 1));
     geometry.setDrawRange(from * (columns - 1) * 6, (to - from) * (columns - 1) * 6);
   }
 }
 
 // Sweeps a cross-section along the river. `profile` lists [lateral, height]
 // pairs, or is a function of the sample when the section changes along the
-// course. Vertices are laid out row by row, one row per sample.
-export function buildRibbon(samples, profile) {
+// course. Vertices are laid out row by row, one row per sample; `offset` is
+// the place along the river of the first one, for a ribbon that starts further down.
+export function buildRibbon(samples, profile, offset = 0) {
   const vary = typeof profile === 'function';
   const first = vary ? profile(samples[0]) : profile;
   const columns = first.length;
@@ -203,6 +218,6 @@ export function buildRibbon(samples, profile) {
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
-  ribbons.push({ geometry, columns, rows: samples.length });
+  ribbons.push({ geometry, columns, rows: samples.length, offset });
   return geometry;
 }

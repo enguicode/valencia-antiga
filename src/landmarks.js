@@ -205,6 +205,7 @@ const CHURCHES = {
   'sant-andreu': { turn: true, apse: 1, towerAt: [-1, -1] },
   'sant-agusti': { apse: 1, tower: false },
   carme: { apse: 1, towerAt: [-1, -1] },
+  companyia: { apse: 1 },
 };
 
 const MODELS = {

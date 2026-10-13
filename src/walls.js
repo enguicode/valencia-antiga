@@ -625,6 +625,13 @@ export function createWalls(layout, path) {
       if (style.gallery) {
         place(lists.slits, frame, towerX + upperR * 0.866 + 0.04, height * 0.87, towerZ, { scale: [1, height / 17, 1.4] });
       }
+      if (style.walledUp) {
+        // As a prison the outer walls were pierced with barred windows; how
+        // many there were and where is not known.
+        for (const level of [0.3, 0.55]) {
+          for (const side of [-1, 1]) place(lists.slits, frame, face, height * level, towerZ + side * 1.7, { scale: [1, 0.85, 3.2] });
+        }
+      }
     }
 
     if (style.moat) {

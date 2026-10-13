@@ -172,7 +172,7 @@ Después, sobre esa base: las dos barcas con su manejo, las texturas, las sombra
 ## Para más adelante
 
 - Una barca por cada persona conectada. El plan está en [docs/multiplayer-plan.md](docs/multiplayer-plan.md); no está empezado.
-- Bajar de la barca y entrar andando por una puerta.
+- **Versión 2:** bajar de la barca por una escalera y pasear a pie por la ciudad.
 - Ver varias épocas: la València musulmana, la de 1700 y la de ahora.
 - La riada de 1957 y el desvío del río.
 

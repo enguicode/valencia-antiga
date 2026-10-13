@@ -14,7 +14,7 @@ export const RIVER = {
 
 export const BANK = {
   slopeRun: 8,
-  height: 8.5, // street level above the water: that of the bridge decks, which come ashore without a ramp
+  height: 6.25, // street level above the water, half-way up to the bridge decks: a gentle ramp, and the city still shows from a boat
   extent: 1100,
 };
 

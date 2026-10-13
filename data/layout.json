@@ -171,32 +171,57 @@
   {
    "id": "sant-josep",
    "name": "Pont de Sant Josep",
-   "x": -372.0,
-   "z": -322.9
+   "x": -371.4,
+   "z": -322.9,
+   "axis": [
+    0.0896,
+    0.996
+   ],
+   "length": 148
   },
   {
    "id": "serrans",
    "name": "Pont dels Serrans",
-   "x": 55.5,
-   "z": -152.8
+   "x": 55.3,
+   "z": -152.9,
+   "axis": [
+    -0.3302,
+    0.9439
+   ],
+   "length": 160
   },
   {
    "id": "trinitat",
    "name": "Pont de la Trinitat",
    "x": 283.8,
-   "z": 29.5
+   "z": 29.5,
+   "axis": [
+    -0.5282,
+    0.8491
+   ],
+   "length": 157
   },
   {
    "id": "real",
    "name": "Pont del Real",
-   "x": 617.0,
-   "z": 323.6
+   "x": 617.5,
+   "z": 324.0,
+   "axis": [
+    -0.627,
+    0.779
+   ],
+   "length": 165
   },
   {
    "id": "mar",
    "name": "Pont de la Mar",
    "x": 1059.4,
-   "z": 1002.8
+   "z": 1002.8,
+   "axis": [
+    -0.9974,
+    0.0718
+   ],
+   "length": 163
   }
  ],
  "wall": [
@@ -397,8 +422,8 @@
    -207.7
   ],
   [
-   -348.6,
-   -211.3
+   -361.2,
+   -210.1
   ],
   [
    -280.4,
@@ -421,8 +446,8 @@
    -51.7
   ],
   [
-   14.3,
-   -14.2
+   7.5,
+   -16.5
   ],
   [
    77.7,
@@ -437,8 +462,8 @@
    81.4
   ],
   [
-   258.7,
-   119.7
+   236.4,
+   105.8
   ],
   [
    311.9,
@@ -461,8 +486,8 @@
    348.7
   ],
   [
-   565.5,
-   403.6
+   558.2,
+   397.7
   ],
   [
    607.9,
@@ -478,26 +503,42 @@
    "id": "sant-josep",
    "name": "Portal Nou",
    "vertex": 49,
-   "placement": "nearest wall point to the bridge"
+   "placement": "nearest wall point to the bridge, slid 13 m along the wall onto the line of its bridge",
+   "facing": [
+    -0.0896,
+    -0.996
+   ]
   },
   {
    "id": "serrans",
    "name": "Portal dels Serrans",
    "vertex": 55,
-   "placement": "OSM position of the surviving gate",
+   "placement": "OSM position of the surviving gate, slid 7 m along the wall onto the line of its bridge",
+   "facing": [
+    0.3302,
+    -0.9439
+   ],
    "major": true
   },
   {
    "id": "trinitat",
    "name": "Portal de la Trinitat",
    "vertex": 59,
-   "placement": "nearest wall point to the bridge"
+   "placement": "nearest wall point to the bridge, slid 26 m along the wall onto the line of its bridge",
+   "facing": [
+    0.5282,
+    -0.8491
+   ]
   },
   {
    "id": "real",
    "name": "Portal del Real",
    "vertex": 65,
-   "placement": "nearest wall point to the bridge"
+   "placement": "nearest wall point to the bridge, slid 9 m along the wall onto the line of its bridge",
+   "facing": [
+    0.627,
+    -0.779
+   ]
   },
   {
    "id": "mar",

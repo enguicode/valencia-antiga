@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BANK } from './config.js';
 import { PRETIL } from './riverside.js';
+import { bridgeDecks } from './bridges.js';
 import { t, localized, onLanguageChange } from './i18n.js';
 
 // Points of interest. Each one has a pale ring floating on the river beside
@@ -152,10 +153,12 @@ export function createGuide(points, layout, path, camera, elements) {
     } else if (type === 'wall') {
       [x, z] = layout.wall[vertex];
     } else if (type === 'bridge') {
-      const bridge = layout.bridges.find((item) => item.id === id);
-      const { sample } = path.project(bridge.x, bridge.z);
-      ({ x, z } = sample);
-      facing = [-sample.tx, -sample.tz];
+      const deck = bridgeDecks(layout, path).find((item) => item.id === id);
+      ({ x, z } = deck);
+      // Square on to the bridge, from its upstream side.
+      const flow = path.project(x, z).sample;
+      const upstream = -Math.sign(deck.rx * flow.tz - deck.rz * flow.tx) || 1;
+      facing = [-deck.rz * upstream, deck.rx * upstream];
     } else if (type === 'sea') {
       const place = layout.sea.grau[id];
       ({ x, z } = place);

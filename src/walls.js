@@ -281,10 +281,10 @@ export function createWalls(layout, path) {
   vertices.forEach((vertex, i) => {
     const before = segments[(i + count - 1) % count];
     const after = segments[i];
-    const outX = before.outX + after.outX;
-    const outZ = before.outZ + after.outZ;
-    const frame = makeFrame(vertex.x, vertex.z, outX, outZ);
     const gate = gateByVertex.get(i);
+    // The gate of a bridge looks along it; everything else, square out from the wall.
+    const [outX, outZ] = gate?.facing ?? [before.outX + after.outX, before.outZ + after.outZ];
+    const frame = makeFrame(vertex.x, vertex.z, outX, outZ);
     const merlonRing = (x, z, radius, y, count) => {
       for (let k = 0; k < count; k++) {
         const angle = (k / count) * Math.PI * 2;

@@ -134,6 +134,8 @@ ANGLE_BINS = 90
 BED_SPACING = 150  # metres between the points where the river line is centred in its bed
 BED_WIDTHS = (135, 175)  # parapet to parapet; anything else is a break in the outline
 WALL_FROM_RIVER = 85  # metres from the river line: half the bed of the scene (75) and a road
+BRIDGE_LENGTHS = (140, 170)  # metres: the old bridge itself; longer ways of the same name are today's approaches
+GATE_ON_BRIDGE_LINE = 40  # metres: a gate this near the line of its bridge is moved onto it
 
 
 def fetch(cache):
@@ -240,7 +242,14 @@ def main():
         centre = to_local(bbox_centre(points))
         river.append(centre)
         if bridge_id:
-            bridges.append({"id": bridge_id, "name": name, "x": centre[0], "z": centre[1]})
+            spans = []
+            for element in by_name[name]:
+                line = [to_local(p) for p in element_points(element)] if "bridge" in element["tags"] else []
+                if BRIDGE_LENGTHS[0] <= sum(math.dist(a, b) for a, b in zip(line, line[1:])) <= BRIDGE_LENGTHS[1]:
+                    spans.append((line[0], line[-1]))
+            if not spans:
+                sys.exit(f"no way the length of the old bridge in OSM data: {name}")
+            bridges.append({"id": bridge_id, "name": name, "spans": spans})
 
     # Between the bridges the bed does not run straight. Today's Jardí del
     # Túria fills it from one parapet to the other, so its outline gives the
@@ -335,18 +344,42 @@ def main():
     def nearest_wall_vertex(point):
         return min(range(len(wall)), key=lambda i: math.dist(wall[i], point))
 
+    # Each bridge keeps its real line: the middle of its two ends and the
+    # unit vector along it towards the city. A carriageway and its footways
+    # are separate ways, so they are averaged.
+    for bridge in bridges:
+        spans = [(a, b) if math.dist(b, centre) < math.dist(a, centre) else (b, a) for a, b in bridge.pop("spans")]
+        far, city = ([sum(end[k][i] for end in spans) / len(spans) for i in (0, 1)] for k in (0, 1))
+        length = math.dist(far, city)
+        bridge.update(
+            x=(far[0] + city[0]) / 2,
+            z=(far[1] + city[1]) / 2,
+            axis=[round((city[0] - far[0]) / length, 4), round((city[1] - far[1]) / length, 4)],
+            length=round(length),
+        )
+
+    # The gate of a bridge stood at the end of it and looked along it: its
+    # vertex is slid onto the line of the bridge. The Portal de la Mar stood
+    # well away from the line of its bridge and stays where it is.
     gates = []
     for bridge in bridges:
-        gates.append({
+        surviving = bridge["id"] == "serrans"
+        vertex = nearest_wall_vertex((0, 0) if surviving else (bridge["x"], bridge["z"]))
+        gate = {
             "id": bridge["id"],
             "name": BRIDGE_GATES[bridge["id"]],
-            "vertex": nearest_wall_vertex((bridge["x"], bridge["z"])),
-            "placement": "nearest wall point to the bridge",
-        })
-    serrans = next(g for g in gates if g["id"] == "serrans")
-    serrans["vertex"] = nearest_wall_vertex((0, 0))
-    serrans["placement"] = "OSM position of the surviving gate"
-    serrans["major"] = True
+            "vertex": vertex,
+            "placement": "OSM position of the surviving gate" if surviving else "nearest wall point to the bridge",
+        }
+        ax, az = bridge["axis"]
+        off = (wall[vertex][1] - bridge["z"]) * ax - (wall[vertex][0] - bridge["x"]) * az
+        if abs(off) < GATE_ON_BRIDGE_LINE:
+            wall[vertex] = (wall[vertex][0] + az * off, wall[vertex][1] - ax * off)
+            gate["placement"] += f", slid {abs(off):.0f} m along the wall onto the line of its bridge"
+            gate["facing"] = [-ax, -az]
+        if surviving:
+            gate["major"] = True
+        gates.append(gate)
     quart = points_named("Torres de Quart", lambda tags: tags.get("historic") == "city_gate")
     if quart:
         gates.append({
@@ -480,7 +513,7 @@ def main():
         x, z = wall[gate["vertex"]]
         print(f"gate {gate['id']:11} vertex {gate['vertex']:3} at ({x:7.0f}, {z:7.0f})")
     for bridge in bridges:
-        print(f"bridge {bridge['id']:11} at ({bridge['x']:7.0f}, {bridge['z']:7.0f})")
+        print(f"bridge {bridge['id']:11} at ({bridge['x']:7.0f}, {bridge['z']:7.0f}) axis {bridge['axis']} {bridge['length']} m")
     for landmark in landmarks:
         print(
             f"landmark {landmark['id']:18} {landmark['kind']:9} at ({landmark['x']:6.0f}, {landmark['z']:6.0f})"

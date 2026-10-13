@@ -6,7 +6,7 @@ import { createSea } from './sea.js';
 import { createWater } from './water.js';
 import { createWalls } from './walls.js';
 import { createCity } from './city.js';
-import { createBridges, createBridgeGuide } from './bridges.js';
+import { createBridges, createBridgeGuide, bridgeDecks } from './bridges.js';
 import { createLandmarks, landmarkClearings } from './landmarks.js';
 import { createRiverside } from './riverside.js';
 import { createBoat, boatPace, DRAW_ORDER } from './boat.js';
@@ -45,10 +45,11 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
 
 // No orchard where a bridge comes ashore on the far bank.
-const bridgeLandings = layout.bridges.map((bridge) => {
-  const { sample } = path.project(bridge.x, bridge.z);
-  return { x: sample.x - sample.rx * 74, z: sample.z - sample.rz * 74, radius: 16 };
-});
+const bridgeLandings = bridgeDecks(layout, path).map((deck) => ({
+  x: deck.x - deck.rx * (deck.half - 3),
+  z: deck.z - deck.rz * (deck.half - 3),
+  radius: 16,
+}));
 const environment = createEnvironment(scene, path, landmarkClearings(layout), bridgeLandings);
 const { sky } = environment;
 const water = createWater(path);

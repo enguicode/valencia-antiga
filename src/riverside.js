@@ -26,20 +26,27 @@ export function createRiverside(layout, path) {
   const walled = path.citySamples.filter((sample) => sample.s <= path.garden);
 
   // The parapet opens where a bridge comes ashore: the decks land level with
-  // the street, and it would stand across their mouths.
-  const mouths = bridgeDecks(layout, path)
-    .map((deck) => ({ s: path.project(deck.x, deck.z).s, half: deck.width / 2 + 0.3 }))
-    .sort((a, b) => a.s - b.s);
-  const inMouth = (s) => mouths.some((mouth) => Math.abs(s - mouth.s) < mouth.half);
-  const runs = [];
-  let from = walled[0].s;
-  for (const mouth of mouths) {
-    runs.push([from, mouth.s - mouth.half]);
-    from = mouth.s + mouth.half;
-  }
-  runs.push([from, walled.at(-1).s]);
+  // the street, and it would stand across their mouths. A bridge crosses on
+  // the skew, so it meets each bank at its own place and on the slant.
+  const decks = bridgeDecks(layout, path);
+  const mouthsOf = (side) =>
+    decks
+      .map((deck) => {
+        const s = side > 0 ? deck.cityStation : deck.farStation;
+        const bank = path.sampleAt(s);
+        return { s, half: (deck.width / 2 + 0.3) / Math.abs(deck.rx * bank.rx + deck.rz * bank.rz) };
+      })
+      .sort((a, b) => a.s - b.s);
+  const inMouth = (s, side) => mouthsOf(side).some((mouth) => Math.abs(s - mouth.s) < mouth.half);
 
   for (const side of [-1, 1]) {
+    const runs = [];
+    let from = walled[0].s;
+    for (const mouth of mouthsOf(side)) {
+      runs.push([from, mouth.s - mouth.half]);
+      from = mouth.s + mouth.half;
+    }
+    runs.push([from, walled.at(-1).s]);
     for (const [start, end] of runs) {
       const stretch = [path.pointAt(start), ...walled.filter((sample) => sample.s > start && sample.s < end), path.pointAt(end)];
       const wall = new THREE.Mesh(
@@ -61,8 +68,9 @@ export function createRiverside(layout, path) {
   const dummy = new THREE.Object3D();
   const every = Math.round(BALL_SPACING / path.step);
   path.samples.forEach((sample, i) => {
-    if (i % every !== 0 || sample.s < path.start - 150 || sample.s > path.garden || inMouth(sample.s)) return;
+    if (i % every !== 0 || sample.s < path.start - 150 || sample.s > path.garden) return;
     for (const side of [-1, 1]) {
+      if (inMouth(sample.s, side)) continue;
       const lateral = side * (PRETIL.offset + PRETIL.thickness / 2);
       dummy.position.set(sample.x + sample.rx * lateral, top + 0.35, sample.z + sample.rz * lateral);
       dummy.updateMatrix();
@@ -74,8 +82,8 @@ export function createRiverside(layout, path) {
   // Stairs from the street down to the water, just downstream of each bridge
   // on the city side. Local +X points towards the river.
   const steps = [];
-  for (const bridge of layout.bridges) {
-    const station = path.project(bridge.x, bridge.z).s + STAIRS.downstreamOfBridge;
+  for (const deck of decks) {
+    const station = deck.cityStation + STAIRS.downstreamOfBridge;
     const sample = path.sampleAt(station);
     const frame = new THREE.Matrix4()
       .makeRotationY(yawTowards(-sample.rx, -sample.rz))

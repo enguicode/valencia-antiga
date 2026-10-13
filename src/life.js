@@ -43,15 +43,15 @@ function createTraffic(path, random, bridgeGuide) {
 
 // Kneeling figures with a white cloth in front of them, near each bridge on
 // the city side.
-function createWasherwomen(layout, path, random) {
+function createWasherwomen(decks, path, random) {
   const skirts = [0x7a4a3a, 0x4f5d73, 0x6b6b3f, 0x8a5a44, 0x3f4f4a];
   const waterline = RIVER.width / 2 + 5.2;
   const boxes = [];
   const heads = [];
   const dummy = new THREE.Object3D();
 
-  for (const bridge of layout.bridges) {
-    const base = path.project(bridge.x, bridge.z).s + 42;
+  for (const deck of decks) {
+    const base = deck.cityStation + 42;
     for (let i = 0; i < 4; i++) {
       const point = path.pointAt(base + i * 1.7 + random() * 0.5);
       const facing = yawTowards(-point.rx, -point.rz); // local +X towards the river
@@ -88,16 +88,17 @@ function createWasherwomen(layout, path, random) {
 
 // Clumps of reeds in the shallows of both banks. The plan of 1704 draws the
 // river bed full of them; where each clump stands is free.
-function createReeds(layout, path, random) {
+function createReeds(decks, path, random) {
   const COLOURS = [0x6f7d3a, 0x8a8a46, 0x5d6b34];
-  const bridges = layout.bridges.map((bridge) => path.project(bridge.x, bridge.z).s);
   const blades = [];
   const dummy = new THREE.Object3D();
   for (let s = path.start + 10; s < path.end - 10; s += 5 + random() * 11) {
+    const side = random() < 0.5 ? -1 : 1;
     // clear of the piers, and of the washerwomen just downstream of each bridge
-    if (bridges.some((b) => s - b > -14 && s - b < 54)) continue;
+    const past = (deck) => s - (side > 0 ? deck.cityStation : deck.farStation);
+    if (decks.some((deck) => past(deck) > -14 && past(deck) < 54)) continue;
     const point = path.pointAt(s);
-    const lateral = (random() < 0.5 ? -1 : 1) * (RIVER.width / 2 + 0.4 + random() * 3);
+    const lateral = side * (RIVER.width / 2 + 0.4 + random() * 3);
     for (let i = 0; i < 7; i++) {
       const u = lateral + (random() - 0.5) * 2.6;
       const v = (random() - 0.5) * 3.4;
@@ -171,7 +172,7 @@ function createCrossings(decks, random) {
       for (const [ahead, up, aside, length, height, breadth] of mover.parts) {
         const u = mover.u + mover.direction * ahead;
         const v = mover.aside + aside;
-        // local +X runs across the river, so local +Z is (-rz, rx)
+        // local +X runs along the deck, so local +Z is (-rz, rx)
         dummy.position.set(deck.x + deck.rx * u - deck.rz * v, deck.heightAt(u) + up + step, deck.z + deck.rz * u + deck.rx * v);
         dummy.rotation.set(0, yawTowards(deck.rx, deck.rz), 0);
         dummy.scale.set(length, height, breadth);
@@ -318,11 +319,12 @@ export function createLife(layout, path, chimneys, bridgeGuide) {
   const traffic = createTraffic(path, random, bridgeGuide);
   const smoke = createSmoke(chimneys, random);
   const birds = createBirds(random);
-  const crossings = createCrossings(bridgeDecks(layout, path), random);
-  const reeds = createReeds(layout, path, random);
+  const decks = bridgeDecks(layout, path);
+  const crossings = createCrossings(decks, random);
+  const reeds = createReeds(decks, path, random);
 
   const group = new THREE.Group();
-  group.add(...traffic.models, createWasherwomen(layout, path, random), smoke.points, birds.mesh, crossings.mesh, reeds);
+  group.add(...traffic.models, createWasherwomen(decks, path, random), smoke.points, birds.mesh, crossings.mesh, reeds);
 
   let extras = true;
 

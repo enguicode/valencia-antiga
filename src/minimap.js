@@ -1,4 +1,5 @@
 import { RIVER, BANK, COLORS } from './config.js';
+import { bridgeDecks } from './bridges.js';
 
 // Small north-up plan. Inside the walled tour it is the city. Past the pale
 // line at the end of that tour it becomes the river on to the beach, and
@@ -115,12 +116,11 @@ export function createMinimap(canvas, layout, path, guide) {
 
     pen.strokeStyle = '#8c7a55';
     pen.lineWidth = 2.5 * detail * ratio;
-    for (const bridge of layout.bridges) {
-      const { sample } = path.project(bridge.x, bridge.z);
-      const across = RIVER.width * 0.75;
+    for (const deck of bridgeDecks(layout, path)) {
+      const across = deck.half * 1.3; // drawn a little long, so it reads on the map
       pen.beginPath();
-      pen.moveTo(px(sample.x - sample.rx * across), py(sample.z - sample.rz * across));
-      pen.lineTo(px(sample.x + sample.rx * across), py(sample.z + sample.rz * across));
+      pen.moveTo(px(deck.x - deck.rx * across), py(deck.z - deck.rz * across));
+      pen.lineTo(px(deck.x + deck.rx * across), py(deck.z + deck.rz * across));
       pen.stroke();
     }
   }

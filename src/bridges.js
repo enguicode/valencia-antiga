@@ -6,13 +6,11 @@ import { createInstances } from './instancing.js';
 
 // The five stone bridges as they stood around 1700. Each has its own number
 // and shape of arches, width of deck, cutwaters and furniture; what is
-// documented and what is guessed is set out in docs/sources.md. They all
-// cross at right angles to the river and span the same width, which is a
-// simplification: the real ones were between 148 and 171 m long. For the
-// same reason four of them sit a little upstream of where they stood, so
-// that each one lands in front of its gate.
+// documented and what is guessed is set out in docs/sources.md. Each one
+// stands where it stood and keeps its real line, which crosses the river on
+// the skew: its length is whatever that line measures from bank to bank.
 
-const SPAN = RIVER.width + BANK.slopeRun * 2 + 4;
+const BED = RIVER.width + BANK.slopeRun * 2 + 4; // parapet to parapet, and two metres into each bank
 const DECK_TOP = 8.5; // at the crown of the deck
 const PIER = 3;
 const ARCH = { spring: 2, rise: 4.5 };
@@ -42,34 +40,63 @@ const BRIDGES = {
 };
 const FALLBACK = { arches: 10, width: 9, arch: 'segmental' };
 
-const specOf = (bridge) => BRIDGES[bridge.id] ?? FALLBACK;
-const openingOf = (arches) => (SPAN - PIER * (arches + 1)) / arches;
-const archCentre = (arches, i) => -SPAN / 2 + PIER + openingOf(arches) / 2 + i * (openingOf(arches) + PIER);
-// Lateral position of a pier counted from the city bank, which is at +SPAN / 2.
-const pierFromCity = (arches, n) => SPAN / 2 - PIER / 2 - n * (openingOf(arches) + PIER);
+// The shape of a bridge and where it stands: the middle of its deck (x, z),
+// the unit vector along it towards the city (ax, az) and its length.
+const specs = new Map();
+function specOf(bridge, path) {
+  if (specs.has(bridge)) return specs.get(bridge);
+  const shape = BRIDGES[bridge.id] ?? FALLBACK;
+  const [ax, az] = bridge.axis;
+  // The banks curve, so each half is walked out to its own bank.
+  const reach = (side) => {
+    let d = 0;
+    while (d < BED && Math.abs(path.project(bridge.x + ax * side * d, bridge.z + az * side * d).lateral) < BED / 2) d += 0.5;
+    return d;
+  };
+  const city = reach(1);
+  const far = reach(-1);
+  const { sample } = path.project(bridge.x, bridge.z);
+  const cos = ax * sample.rx + az * sample.rz;
+  const spec = {
+    ...shape,
+    x: bridge.x + (ax * (city - far)) / 2,
+    z: bridge.z + (az * (city - far)) / 2,
+    ax,
+    az,
+    // The end is cut square to the deck, not to the bank: long enough for its short corner to come ashore too.
+    span: city + far + (shape.width * Math.sqrt(1 - cos * cos)) / cos,
+  };
+  specs.set(bridge, spec);
+  return spec;
+}
+const openingOf = (spec) => (spec.span - PIER * (spec.arches + 1)) / spec.arches;
+const archCentre = (spec, i) => -spec.span / 2 + PIER + openingOf(spec) / 2 + i * (openingOf(spec) + PIER);
+// Position along the deck of a pier counted from the city bank, which is at +span / 2.
+const pierFromCity = (spec, n) => spec.span / 2 - PIER / 2 - n * (openingOf(spec) + PIER);
 // The deck is hog-backed, as these bridges are: level with the street where
 // it comes ashore and rising in a shallow curve to the middle, so that none
 // of them needs a ramp. `hump` raises the crown further.
 const deckHeight = (spec, x) => {
-  const t = Math.min(1, Math.abs(x) / (SPAN / 2));
+  const t = Math.min(1, Math.abs(x) / (spec.span / 2));
   return BANK.height + (DECK_TOP + (spec.hump ?? 0) - BANK.height) * (1 - t * t);
 };
 // The arches by the banks pay for it: they are lower, to keep stone over them.
 const riseOf = (spec, i) =>
-  Math.min(ARCH.rise, (deckHeight(spec, archCentre(spec.arches, i)) - ARCH.spring - COVER) / CROWN[spec.arch]);
+  Math.min(ARCH.rise, (deckHeight(spec, archCentre(spec, i)) - ARCH.spring - COVER) / CROWN[spec.arch]);
 
 function createBridgeGeometry(spec) {
-  const half = SPAN / 2;
+  const { span } = spec;
+  const half = span / 2;
   const outline = new THREE.Shape();
   outline.moveTo(-half, FOOT);
-  for (let k = 0; k <= 24; k++) outline.lineTo(-half + (SPAN * k) / 24, deckHeight(spec, -half + (SPAN * k) / 24));
+  for (let k = 0; k <= 24; k++) outline.lineTo(-half + (span * k) / 24, deckHeight(spec, -half + (span * k) / 24));
   outline.lineTo(half, FOOT);
   outline.closePath();
 
-  const opening = openingOf(spec.arches);
+  const opening = openingOf(spec);
   const a = opening / 2;
   for (let i = 0; i < spec.arches; i++) {
-    const centre = archCentre(spec.arches, i);
+    const centre = archCentre(spec, i);
     const rise = riseOf(spec, i);
     const hole = new THREE.Path();
     hole.moveTo(centre - a, FOOT + 0.5);
@@ -195,12 +222,11 @@ export function createBridges(layout, path) {
   const crossArm = new THREE.BoxGeometry(0.56, 0.12, 0.12);
 
   for (const bridge of layout.bridges) {
-    const spec = specOf(bridge);
-    const { arches, width } = spec;
-    const { sample } = path.project(bridge.x, bridge.z);
+    const spec = specOf(bridge, path);
+    const { arches, width, span } = spec;
     const model = new THREE.Group();
-    model.position.set(sample.x, 0, sample.z);
-    model.rotation.y = yawTowards(sample.rx, sample.rz);
+    model.position.set(spec.x, 0, spec.z);
+    model.rotation.y = yawTowards(spec.ax, spec.az);
     model.updateMatrix();
     const stamp = (list, x, y, z, scale = [1, 1, 1], yaw = 0) => {
       local.position.set(x, y, z);
@@ -230,7 +256,7 @@ export function createBridges(layout, path) {
           .translate((a + b) / 2, (ya + yb) / 2 + lift, z);
       });
     };
-    piece(mergeGeometries(along(-SPAN / 2, SPAN / 2, 0, -0.83, 0.35, width + 0.5)), stone, 0, 0, 0);
+    piece(mergeGeometries(along(-span / 2, span / 2, 0, -0.83, 0.35, width + 0.5)), stone, 0, 0, 0);
 
     // Parapets
     const edge = width / 2 - PARAPET.thickness / 2;
@@ -239,12 +265,12 @@ export function createBridges(layout, path) {
         // Broken at every pier, where the deck opens into the refuge, and
         // carried round the point of the cutwater.
         const walls = [];
-        const a = openingOf(arches) / 2;
+        const a = openingOf(spec) / 2;
         for (let i = 0; i < arches; i++) {
-          walls.push(...along(archCentre(arches, i) - a, archCentre(arches, i) + a, side * edge, PARAPET.height / 2, PARAPET.height, PARAPET.thickness));
+          walls.push(...along(archCentre(spec, i) - a, archCentre(spec, i) + a, side * edge, PARAPET.height / 2, PARAPET.height, PARAPET.thickness));
         }
         for (let i = 0; i <= arches; i++) {
-          const x = -SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER);
+          const x = -span / 2 + PIER / 2 + i * (openingOf(spec) + PIER);
           for (const k of [-1, 1]) {
             walls.push(
               new THREE.BoxGeometry(Math.hypot(PIER / 2, CUTWATER.reach) + PARAPET.thickness, PARAPET.height, PARAPET.thickness)
@@ -255,11 +281,11 @@ export function createBridges(layout, path) {
         }
         piece(mergeGeometries(walls), stone, 0, 0, 0);
       } else {
-        piece(mergeGeometries(along(-SPAN / 2, SPAN / 2, side * edge, PARAPET.height / 2, PARAPET.height, PARAPET.thickness)), stone, 0, 0, 0);
+        piece(mergeGeometries(along(-span / 2, span / 2, side * edge, PARAPET.height / 2, PARAPET.height, PARAPET.thickness)), stone, 0, 0, 0);
       }
       if (spec.balls) {
         for (let i = 0; i <= arches; i++) {
-          const x = -SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER);
+          const x = -span / 2 + PIER / 2 + i * (openingOf(spec) + PIER);
           stamp(balls, x, deckHeight(spec, x) + PARAPET.height + 0.3, side * edge);
         }
       }
@@ -268,9 +294,9 @@ export function createBridges(layout, path) {
     // Archivolt on each face. It is proud of the stone and follows the same
     // curve as the opening, so the span, the crown and the passage stay put.
     {
-      const a = openingOf(arches) / 2;
+      const a = openingOf(spec) / 2;
       for (let i = 0; i < arches; i++) {
-        const centre = archCentre(arches, i);
+        const centre = archCentre(spec, i);
         for (const side of [-1, 1]) {
           stamp(rings[spec.arch], centre, ARCH.spring, side * (width / 2 + 0.05), [a, riseOf(spec, i), 1], side < 0 ? Math.PI : 0);
         }
@@ -304,7 +330,7 @@ export function createBridges(layout, path) {
       }
     };
     for (let i = 0; i <= arches; i++) {
-      const x = -SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER);
+      const x = -span / 2 + PIER / 2 + i * (openingOf(spec) + PIER);
       piece(spec.refuges ? createCutwaterGeometry(width, deckHeight(spec, x) - 0.02) : cutwater, stone, x, 0, 0);
       if (spec.caps) {
         for (const side of [-1, 1]) {
@@ -322,7 +348,7 @@ export function createBridges(layout, path) {
     // Shrines: a facing pair, one on each side of the same pier, each a
     // three-sided canopy on columns with a figure inside.
     if (spec.shrinePier) {
-      const x = pierFromCity(arches, spec.shrinePier);
+      const x = pierFromCity(spec, spec.shrinePier);
       const base = deckHeight(spec, x);
       for (const side of [-1, 1]) {
         const z = side * (width / 2 + 1.5);
@@ -348,7 +374,7 @@ export function createBridges(layout, path) {
 
     // Two marble statues on plain pedestals, with no canopy
     if (spec.statuePier) {
-      const x = pierFromCity(arches, spec.statuePier);
+      const x = pierFromCity(spec, spec.statuePier);
       const top = deckHeight(spec, x);
       for (const side of [-1, 1]) {
         const z = side * (width / 2 + 1.3);
@@ -359,9 +385,9 @@ export function createBridges(layout, path) {
     }
     group.add(model);
 
-    // A beaten track from the foot of the ramp to the gate the bridge is
-    // for. It leaves along the bridge and reaches the gate square on, so it
-    // bends where the two do not face each other.
+    // A beaten track from the end of the deck to the gate the bridge is for.
+    // It leaves along the bridge and reaches the gate square on: straight
+    // where the gate looks along its bridge, bent where it stands elsewhere.
     const gate = layout.gates.find((item) => item.id === bridge.id);
     if (gate) {
       const count = layout.wall.length;
@@ -372,18 +398,17 @@ export function createBridges(layout, path) {
       let nx = -(bz - az);
       let nz = bx - ax;
       const length = Math.hypot(nx, nz) || 1;
-      const outward = Math.sign(nx * (sample.x - gx) + nz * (sample.z - gz)) || 1;
-      nx *= outward / length;
-      nz *= outward / length;
-      const reach = SPAN / 2 - 2;
-      const sx = sample.x + sample.rx * reach;
-      const sz = sample.z + sample.rz * reach;
+      const outward = Math.sign(nx * (spec.x - gx) + nz * (spec.z - gz)) || 1;
+      [nx, nz] = gate.facing ?? [(nx * outward) / length, (nz * outward) / length];
+      const reach = span / 2 - 2;
+      const sx = spec.x + spec.ax * reach;
+      const sz = spec.z + spec.az * reach;
       const lead = Math.min(30, Math.hypot(gx - sx, gz - sz) * 0.3);
       const y = BANK.height + 0.05;
       const line = new THREE.CatmullRomCurve3(
         [
           new THREE.Vector3(sx, y, sz),
-          new THREE.Vector3(sx + sample.rx * lead, y, sz + sample.rz * lead),
+          new THREE.Vector3(sx + spec.ax * lead, y, sz + spec.az * lead),
           new THREE.Vector3(gx + nx * lead, y, gz + nz * lead),
           new THREE.Vector3(gx + nx * 2, y, gz + nz * 2),
         ],
@@ -410,30 +435,46 @@ export function createBridges(layout, path) {
   return group;
 }
 
-// The walkable top of each bridge, for whatever crosses it: a point on the
-// river axis, the unit vector across the river and the deck height along it.
+// The walkable top of each bridge, for whatever crosses it or stands by it:
+// the middle of the deck, the unit vector along it towards the city (rx, rz),
+// the deck height along it, and how far down the river it meets each bank.
 export function bridgeDecks(layout, path) {
   return layout.bridges.map((bridge) => {
-    const spec = specOf(bridge);
-    const { sample } = path.project(bridge.x, bridge.z);
-    return { x: sample.x, z: sample.z, rx: sample.rx, rz: sample.rz, half: SPAN / 2, width: spec.width, heightAt: (u) => deckHeight(spec, u) };
+    const spec = specOf(bridge, path);
+    const { x, z, ax, az, span } = spec;
+    const bankStation = (side) => path.project(x + ax * side * (span / 2), z + az * side * (span / 2)).s;
+    return {
+      id: bridge.id,
+      x,
+      z,
+      rx: ax,
+      rz: az,
+      half: span / 2,
+      width: spec.width,
+      heightAt: (u) => deckHeight(spec, u),
+      cityStation: bankStation(1),
+      farStation: bankStation(-1),
+    };
   });
 }
 
 // Keeps boats out of the stonework. From some way off it eases a boat
 // towards the nearest arch, so that by the time it reaches the bridge it is
 // inside an opening; it also says how close the bridge is, from 0 to 1.
+// The bridges are skewed, so the boat is placed along and across the bridge
+// itself, not along the river.
 export function createBridgeGuide(layout, path) {
   const FUNNEL = 38; // metres before and after the bridge where it acts
   const CLEARANCE = 1.5; // kept between the boat's middle and the pier
   const bridges = layout.bridges.map((bridge) => {
-    const spec = specOf(bridge);
+    const spec = specOf(bridge, path);
     // A boat is kept to the full-height arches: the low ones by the banks are not for masts.
     const open = Array.from({ length: spec.arches }, (_, i) => i).filter((i) => riseOf(spec, i) > ARCH.rise - 0.5);
     return {
-      s: path.project(bridge.x, bridge.z).s,
-      centres: open.map((i) => archCentre(spec.arches, i)),
-      room: openingOf(spec.arches) / 2 - CLEARANCE,
+      spec,
+      s: path.project(spec.x, spec.z).s,
+      centres: open.map((i) => archCentre(spec, i)),
+      room: openingOf(spec) / 2 - CLEARANCE,
     };
   });
 
@@ -441,14 +482,21 @@ export function createBridgeGuide(layout, path) {
     let closeness = 0;
     let corrected = lateral;
     for (const bridge of bridges) {
-      const gap = Math.abs(s - bridge.s);
+      if (Math.abs(s - bridge.s) > FUNNEL + BED) continue; // nowhere near: spare the sums
+      const { x, z, ax, az } = bridge.spec;
+      const point = path.pointAt(s);
+      const dx = point.x + point.rx * lateral - x;
+      const dz = point.z + point.rz * lateral - z;
+      const gap = Math.abs(dz * ax - dx * az);
       if (gap >= FUNNEL) continue;
       closeness = 1 - gap / FUNNEL;
-      const centre = bridge.centres.reduce((best, c) => (Math.abs(c - lateral) < Math.abs(best - lateral) ? c : best));
+      const along = dx * ax + dz * az;
+      const centre = bridge.centres.reduce((best, c) => (Math.abs(c - along) < Math.abs(best - along) ? c : best));
       // Fully narrowed over the last third of the approach.
       const squeeze = THREE.MathUtils.smoothstep(closeness, 0, 0.66);
       const room = THREE.MathUtils.lerp(RIVER.width, bridge.room, squeeze);
-      corrected = THREE.MathUtils.clamp(lateral, centre - room, centre + room);
+      // Sliding the boat across the river moves it along the bridge by the cosine of the skew.
+      corrected = lateral + (THREE.MathUtils.clamp(along, centre - room, centre + room) - along) / (point.rx * ax + point.rz * az);
     }
     return { lateral: corrected, closeness };
   };

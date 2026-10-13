@@ -78,8 +78,6 @@ function continuationSamples(city, course) {
   });
 }
 
-const FACES_GATE_WITHIN = 90; // metres along the river between a bridge and its gate
-
 function projectList(samples, x, z) {
   let index = 0;
   let best = Infinity;
@@ -103,17 +101,6 @@ function projectList(samples, x, z) {
 
 export function createRiverPath(layout) {
   const city = sampleCurve(layout.river);
-  // A bridge crosses the river square, so it only lands before its gate if
-  // it stands abreast of it: each one is moved along the river to that point,
-  // unless its gate is somewhere else altogether, as the Portal de la Mar is.
-  for (const bridge of layout.bridges) {
-    const gate = layout.gates.find((item) => item.id === bridge.id);
-    if (!gate) continue;
-    const abreast = projectList(city.samples, ...layout.wall[gate.vertex]);
-    if (Math.abs(abreast.sample.s - projectList(city.samples, bridge.x, bridge.z).s) > FACES_GATE_WITHIN) continue;
-    bridge.x = abreast.sample.x;
-    bridge.z = abreast.sample.z;
-  }
   // The tour's start and end come only from the historic bridges, so adding
   // the run to the sea cannot move them.
   const bridgeStations = layout.bridges.map((bridge) => projectList(city.samples, bridge.x, bridge.z).s);

@@ -11,6 +11,8 @@ import { TEXTURES, createSurface } from './materials.js';
 
 const WALL_CLEARANCE = 14;
 const CELL = 24;
+const ROWS = 3;
+const BACK_DEPTH = 9;
 // The great gates stand well inside the line of the wall, with their stairs
 // and halls: each keeps an open square behind it. The lesser ones keep a
 // smaller one, so the way in is not shut by a house.
@@ -85,46 +87,43 @@ export function createCity(layout, blocks) {
   let placed = 0;
   for (const [outline, ...enclosed] of blocks) {
     const within = (x, z) => isInside(x, z, outline) && !enclosed.some((square) => isInside(x, z, square));
-    // Houses stand shoulder to shoulder along every edge of the block, the
-    // outline and the squares inside it, facing the street.
+    // Houses stand shoulder to shoulder along every straight run of the
+    // block's edge, the outline and the squares inside it, facing the street.
+    const slots = [];
     for (const ring of [outline, ...enclosed]) {
-      const edge = [...ring, ring[0]];
-      const marks = [0];
-      for (let i = 1; i < edge.length; i++) marks.push(marks[i - 1] + Math.hypot(edge[i][0] - edge[i - 1][0], edge[i][1] - edge[i - 1][1]));
-      const length = marks.at(-1);
-      const at = (d) => {
-        let i = 1;
-        while (i < edge.length - 1 && marks[i] < d) i++;
-        const t = (Math.max(0, Math.min(length, d)) - marks[i - 1]) / (marks[i] - marks[i - 1] || 1);
-        return [edge[i - 1][0] + (edge[i][0] - edge[i - 1][0]) * t, edge[i - 1][1] + (edge[i][1] - edge[i - 1][1]) * t];
-      };
-      for (let along = random() * 2; along < length; ) {
-        const width = 6.5 + random() * 6;
-        const height = 7 + random() * 8;
-        const roofHeight = 2 + random() * 1.5;
-        const middle = along + width / 2;
-        along += width;
-        if (middle + width / 2 > length + 1) break;
-
-        // the outline is traced from pixels and jitters: take the run of the
-        // edge over the width of the house, not the stretch it stands on
-        const [px, pz] = at(middle);
-        const [ax, az] = at(middle - width / 2);
-        const [bx, bz] = at(middle + width / 2);
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [ax, az] = ring[j];
+        const [bx, bz] = ring[i];
         const run = Math.hypot(bx - ax, bz - az);
-        if (run < width * 0.7) continue; // a corner
+        if (run < 5) continue;
         const tx = (bx - ax) / run;
         const tz = (bz - az) / run;
-        // as deep as the block allows, on whichever side of the edge is block
-        let spot;
-        for (const depth of [8 + random() * 6, 6]) {
-          for (const side of [-1, 1]) {
-            const [x, z] = [px - tz * side * (depth / 2 + 0.2), pz + tx * side * (depth / 2 + 0.2)];
-            if (!spot && within(x, z) && within(px - tz * side * depth, pz + tx * side * depth)) spot = { x, z, depth };
-          }
+        const width = run / Math.max(1, Math.round(run / (7.5 + random() * 4)));
+        // whichever side of the edge is block
+        const side = [-1, 1].find((s) => within((ax + bx) / 2 - tz * s * 3, (az + bz) / 2 + tx * s * 3));
+        if (!side) continue;
+        for (let along = width / 2; along < run; along += width) {
+          slots.push({ px: ax + tx * along, pz: az + tz * along, tx, tz, nx: -tz * side, nz: tx * side, width, reach: 0 });
         }
-        if (!spot) continue;
-        const { x, z, depth } = spot;
+      }
+    }
+    // Behind the front row, lower back rows fill the block; the heart of the
+    // big ones stays open, as yard. The back rows are filler, not Tosca's.
+    for (let row = 0; row < ROWS; row++) {
+      for (const slot of slots) {
+        if (slot.shut) continue;
+        const { px, pz, tx, tz, nx, nz, width } = slot;
+        const fits = (depth) => within(px + nx * (slot.reach + depth / 2), pz + nz * (slot.reach + depth / 2)) && within(px + nx * (slot.reach + depth), pz + nz * (slot.reach + depth));
+        const depth = (row ? [BACK_DEPTH] : [8 + random() * 6, 6]).find(fits);
+        if (!depth) {
+          slot.shut = true;
+          continue;
+        }
+        const x = px + nx * (slot.reach + depth / 2 + 0.2);
+        const z = pz + nz * (slot.reach + depth / 2 + 0.2);
+        slot.reach += depth;
+        const height = row ? 5 + random() * 5 : 7 + random() * 8;
+        const roofHeight = 2 + random() * 1.5;
         const radius = Math.min(width, depth) * 0.48;
         if (!isInside(x, z, polygon) || distanceToEdges(x, z, polygon) < WALL_CLEARANCE) continue;
         if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;

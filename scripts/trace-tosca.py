@@ -123,7 +123,8 @@ for i, where in enumerate(ndi.find_objects(parts), 1):
     mask = np.pad(parts[where] == i, 1)
     rings = []
     for contour in find_contours(mask.astype(float), 0.5):
-        ring = approximate_polygon(contour, 0.7 * K)[:-1] + (where[0].start - 1, where[1].start - 1)
+        # 2.5 m of tolerance: straight runs for the rows of houses
+        ring = approximate_polygon(contour, 2.5 * K)[:-1] + (where[0].start - 1, where[1].start - 1)
         ring = (np.c_[ring[:, 1] * 2 + 1, ring[:, 0] * 2 + 1] - A[:, 2]) @ inv.T
         if len(ring) > 2 and area(ring) > 25: rings.append(ring)
     rings.sort(key=area, reverse=True)

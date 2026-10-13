@@ -161,6 +161,7 @@ Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de
 - **La Companyia (13-oct-2026):** solo se orienta: cabecera al norte y pies al sur, como hoy. La iglesia de 1595 se derribó en 1868 y la actual es de 1886 ([catálogo de la Generalitat](https://inmuebles.edu.gva.es/recursos/planeamientos/4024/20/1/4506.pdf)), así que su cúpula azul no vale para 1700 y la forma de la antigua no se conoce: va el tipo común, que para una iglesia jesuítica es dudoso.
 - **Santa Mònica (13-oct-2026):** se queda con el cuerpo común tal cual: la cabecera al norte y la torre en la esquina noroeste ya coincidían con las vistas aéreas. No se pone la cúpula del crucero: sin fecha contrastada.
 - **Los cinco puentes (13-oct-2026):** contrastados con las vistas aéreas y sin cambios. Lo que se lee hoy (arquería larga y baja, tajamares, casalicios) ya estaba, y sale de las monografías citadas arriba; lo que difiere es posterior a 1700, como el décimo arco y el ensanche del Real.
+- **Sants Joans, fachada del Mercat (13-oct-2026):** ya está el lienzo de piedra que tapa el ábside hacia la Llotja, con la terraza de les covetes, tres edículos, la fila de ventanas bajo la cornisa y el cuerpo del reloj con su templete. Proporciones leídas de una fotografía de Wikimedia Commons («Fachada trasera de la Iglesia de los Santos Juanes.JPG»); medidas estimadas (21 m al cornisamento, 32 m al remate). Es obra de hacia 1700, fechada de memoria: pudo estar sin acabar. La escultura no se dibuja.
 
 ### Micalet y Seu
 

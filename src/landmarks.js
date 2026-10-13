@@ -188,11 +188,44 @@ function createSolids() {
 
 const RIDGE_ALONG_X = Math.PI / 2;
 
+// Fronts that are a church's own. `out` points away from the body.
+const FRONTS = {
+  // The flat stone screen that hides the apse towards the market: a terrace
+  // of small shops, three aedicules, a row of square windows under the
+  // cornice and the clock turret in the middle. Read off a photograph.
+  'sants-joans'(add, { apse: out, naveLength, naveWidth, flank }) {
+    const WIDTH = flank * 2 + 3;
+    const HEIGHT = 21;
+    const wall = out * (naveLength / 2 + naveWidth / 2 + 0.2);
+    const face = wall + out * 0.65;
+    add('box', [wall, 0, 0], [1.2, HEIGHT, WIDTH], PALE);
+    add('box', [wall + out * 2.4, 0, 0], [4, 3.2, WIDTH + 2], STONE);
+    add('box', [wall + out * 4.3, 3.2, 0], [0.2, 0.9, WIDTH + 2], STONE);
+    for (let z = -WIDTH / 2; z <= WIDTH / 2 + 0.01; z += 3) add('box', [wall + out * 4.42, 0.2, z], [0.3, 2.2, 1.4], DARK);
+    for (const y of [15.4, HEIGHT]) add('box', [wall, y, 0], [1.9, 0.5, WIDTH + 0.7], STONE);
+    for (let z = -WIDTH / 2 + 2; z <= WIDTH / 2 - 1.9; z += (WIDTH - 4) / 10) add('box', [face, 17, z], [0.3, 1.9, 1.3], DARK);
+    for (const z of [-WIDTH * 0.3, 0, WIDTH * 0.3]) {
+      add('box', [face, 5.5, z], [0.5, 6.6, 5.2], STONE);
+      add('gable', [face, 12.1, z], [6, 1.7, 0.6], STONE, RIDGE_ALONG_X);
+      add('arch', [face + out * 0.2, 6.6, z], [0.3, 4.2, 2.6], z ? DARK : PALE);
+    }
+    for (let z = -WIDTH / 2 + 0.6; z <= WIDTH / 2; z += (WIDTH - 1.2) / 8) add('ball', [wall, HEIGHT + 0.5, z], [0.8, 0.8, 0.8], STONE);
+    for (const z of [-WIDTH / 2 + 0.6, WIDTH / 2 - 0.6]) add('box', [wall, HEIGHT + 1.2, z], [0.6, 2.2, 0.6], PALE);
+    add('box', [wall, HEIGHT + 0.5, 0], [1.5, 5.6, 4.4], STONE);
+    add('disk', [face + out * 0.25, HEIGHT + 2, 0], [0.3, 2.8, 2.8], PALE);
+    add('box', [wall, HEIGHT + 6.1, 0], [1.5, 3.8, 2.6], STONE);
+    add('arch', [face + out * 0.25, HEIGHT + 6.6, 0], [0.3, 2.5, 1.2], DARK);
+    add('dome', [wall, HEIGHT + 9.9, 0], [2.2, 2.8, 3], PALE);
+    add('ball', [wall, HEIGHT + 11.2, 0], [0.7, 0.7, 0.7], STONE);
+  },
+};
+
 // What each parish church changes in the shared body. Local +X is the layout
 // axis and +Z its right-hand side; `apse` is the end the apse closes,
 // `towerAt` the [end, side] corner the tower stands at and `chapelDome` the
 // [fraction of the length, side] of a domed chapel against the flank. `turn`
 // lays the nave across the layout axis, where the footprint is nearly square.
+// `classical` drops the Gothic apse, pinnacles, pointed windows and rose.
 const CHURCHES = {
   'santa-caterina': { apse: 1, towerAt: [1, 1] },
   'sants-joans': { apse: 1, towerAt: [-1, 1], chapelDome: [0.15, -1] },
@@ -726,25 +759,31 @@ const MODELS = {
     const flank = naveWidth / 2 + CHAPEL.depth;
     add('box', [0, 0, 0], [naveLength, NAVE, naveWidth], PALE);
     add('gable', [0, NAVE, 0], [naveWidth, 4.5, naveLength], ROOF, RIDGE_ALONG_X);
-    add('oct', [apse * naveLength / 2, 0, 0], [naveWidth, NAVE, naveWidth], PALE);
-    add('cone', [apse * naveLength / 2, NAVE, 0], [naveWidth + 0.6, 4.5, naveWidth + 0.6], ROOF);
+    const gothic = !spec.classical;
+    if (gothic) {
+      add('oct', [apse * naveLength / 2, 0, 0], [naveWidth, NAVE, naveWidth], PALE);
+      add('cone', [apse * naveLength / 2, NAVE, 0], [naveWidth + 0.6, 4.5, naveWidth + 0.6], ROOF);
+    }
     for (const side of [-1, 1]) {
       add('box', [0, 0, side * (naveWidth / 2 + CHAPEL.depth / 2)], [naveLength, CHAPEL.height, CHAPEL.depth], PALE);
       // half of this gable is buried in the nave: what shows is the lean-to
       add('gable', [0, CHAPEL.height, side * naveWidth / 2], [CHAPEL.depth * 2 + 0.6, 2.4, naveLength], ROOF, RIDGE_ALONG_X);
       for (let x = -naveLength / 2 + 0.6; x <= naveLength / 2 - 0.5; x += 6.4) {
         add('box', [x, 0, side * (flank - 0.3)], [1.2, 13.5, 1.6], STONE);
-        add('pyramid', [x, 13.5, side * (flank - 0.3)], [1.2, 1.8, 1.6], PALE);
+        if (gothic) add('pyramid', [x, 13.5, side * (flank - 0.3)], [1.2, 1.8, 1.6], PALE);
         add('box', [x, 12, side * (naveWidth / 2 + 1.4)], [0.9, 2.6, 2.8], STONE);
         if (x + 6.4 > naveLength / 2 - 0.5) continue;
-        add('pointed', [x + 3.2, 12, side * (naveWidth / 2 + 0.1)], [0.38, 4.2, 1.5], DARK, FACING_Z);
+        add(gothic ? 'pointed' : 'arch', [x + 3.2, 12, side * (naveWidth / 2 + 0.1)], [0.38, 4.2, 1.5], DARK, FACING_Z);
         add('box', [x + 3.2, 4.2, side * (flank + 0.05)], [0.35, 2.4, 0.9], DARK, FACING_Z);
       }
     }
     const front = -apse * (naveLength / 2 + 0.05);
-    add('pointed', [front, 0, 0], [0.5, 7, 3.8], DARK);
-    add('disk', [front, 10.2, 0], [0.3, 4.2, 4.2], DARK);
-    add('wheel', [front - apse * 0.12, 10.2, 0], [0.3, 4.2, 4.2], STONE);
+    if (gothic) {
+      add('pointed', [front, 0, 0], [0.5, 7, 3.8], DARK);
+      add('disk', [front, 10.2, 0], [0.3, 4.2, 4.2], DARK);
+      add('wheel', [front - apse * 0.12, 10.2, 0], [0.3, 4.2, 4.2], STONE);
+    }
+    FRONTS[landmark.id]?.(add, { apse, naveLength, naveWidth, flank, NAVE });
     if (spec.tower ?? tower) {
       const x = towerAt[0] * (naveLength / 2 - 3);
       const z = towerAt[1] * (flank + 3);
@@ -762,7 +801,13 @@ const MODELS = {
         add('ball', [x, h - 1, z], [1, 1, 1], STONE);
       } else {
         add('box', [x, 0, z], [6, towerHeight, 6], STONE);
-        add('pyramid', [x, towerHeight, z], [7, 5, 7], ROOF);
+        if (spec.towerTop === 'lantern') {
+          add('box', [x, towerHeight, z], [6.8, 1, 6.8], PALE);
+          for (const [i, k] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) add('pyramid', [x + i * 3, towerHeight + 1, z + k * 3], [0.8, 2, 0.8], PALE);
+          add('oct', [x, towerHeight + 1, z], [3.6, 4.4, 3.6], PALE);
+          add('dome', [x, towerHeight + 5.4, z], [3.8, 3.8, 3.8], PALE);
+          add('ball', [x, towerHeight + 7.2, z], [0.8, 0.8, 0.8], STONE);
+        } else add('pyramid', [x, towerHeight, z], [7, 5, 7], ROOF);
         add('box', [x, towerHeight * 0.7, z], [6.6, 0.5, 6.6], PALE);
         ringOfOpenings(add, { x, y: towerHeight * 0.74, z, sides: 4, apothem: 3.05, width: 1.7, height: 4.5 });
       }

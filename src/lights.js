@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RIVER, BANK, createRandom } from './config.js';
 import { PRETIL } from './riverside.js';
+import { bridgeDecks } from './bridges.js';
 
 // Lights that come on at dusk: lamps along the bridges and the parapet,
 // torches at the gates and fireflies among the trees. They are glowing
@@ -9,7 +10,6 @@ import { PRETIL } from './riverside.js';
 const LAMP = new THREE.Color(0xffb45a);
 const TORCH = new THREE.Color(0xff8a3c);
 const FIREFLY = new THREE.Color(0xc8f06a);
-const BRIDGE_SPAN = RIVER.width + BANK.slopeRun * 2 + 4;
 
 export function createNightLights(layout, path) {
   const random = createRandom(1865);
@@ -26,15 +26,14 @@ export function createNightLights(layout, path) {
     drifts.push(drift);
   };
 
-  // Lamps on both parapets of every bridge
-  for (const bridge of layout.bridges) {
-    const { sample } = path.project(bridge.x, bridge.z);
-    for (let lateral = -BRIDGE_SPAN / 2 + 6; lateral <= BRIDGE_SPAN / 2 - 6; lateral += 13) {
+  // Lamps on both parapets of every bridge, following the curve of its deck
+  for (const deck of bridgeDecks(layout, path)) {
+    for (let lateral = -deck.half + 6; lateral <= deck.half - 6; lateral += 13) {
       for (const side of [-1, 1]) {
         add(
-          sample.x + sample.rx * lateral + sample.tx * side * 4.2,
-          9.45,
-          sample.z + sample.rz * lateral + sample.tz * side * 4.2,
+          deck.x + deck.rx * lateral - deck.rz * side * 4.2,
+          deck.heightAt(lateral) + 1.7,
+          deck.z + deck.rz * lateral + deck.rx * side * 4.2,
           LAMP,
           1,
         );

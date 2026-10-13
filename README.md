@@ -139,8 +139,11 @@ Colocar cada cosa donde estaba cuesta más que el 3D. Las reglas:
 | Las dieciocho fichas | Contrastadas con Wikipedia en español, que es fuente secundaria. Los portales Nou, de la Trinitat y del Real, además, con blogs de historia local. |
 | La muralla cristiana, de 1356-1370, y el derribo desde 1865 | Contrastado con Wikipedia en español y en valenciano. |
 | La forma de puertas, puentes, Micalet, Seu, Palau del Real, Trinitat y Sant Pius V | Rehecha según lo que dicen las fuentes. Las medidas que faltan, estimadas. |
+| Serrans, Quart, Micalet, Lonja y la basílica dels Desemparats | Corregidos además sobre vistas aéreas actuales, dejando fuera lo que es posterior a 1700. |
+| Las iglesias | Un cuerpo gótico común, que es un tipo y no un levantamiento. De cada una, solo la orientación, la torre y las capillas con cúpula, leídas de vistas aéreas; casi todas las fechas, de memoria. Sants Joans y el Carme llevan fachada propia, sacada de una fotografía. La Companyia es conjetura: la iglesia de entonces se derribó en 1868. |
+| Los claustros de la Trinitat, Sant Doménec y la Saïdia | Patio abierto con arcadas, como en las vistas aéreas de los dos primeros. Medidas estimadas; de la Saïdia no queda nada. |
 | Navegar el Turia | Licencia. Hacia 1700 el río no era navegable. |
-| Texturas, casas, iglesias menores, luces | Esbozo. El tapial y la sillería de la muralla siguen a las fuentes; el dibujo, no. |
+| Texturas, casas, luces | Esbozo. El tapial y la sillería de la muralla siguen a las fuentes; el dibujo, no. |
 | Valenciano e inglés | Sin revisión de un hablante nativo. |
 
 ## Cómo fue creciendo

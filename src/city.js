@@ -156,6 +156,52 @@ export function createCity(layout, streets) {
   }
   if (new URLSearchParams(location.search).has('debug')) console.info(`houses: ${placed}`);
 
+  // The streets, worn paler into the floor: soft strokes on one transparent
+  // drawing laid over it, and only where houses line them. The plan's open
+  // yards and orchards trace as tangles of alleys that must not show.
+  const SCALE = 2048 / Math.max(spanX, spanZ); // pixels per metre
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(spanX * SCALE);
+  canvas.height = Math.ceil(spanZ * SCALE);
+  const ctx = canvas.getContext('2d');
+  ctx.lineCap = ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(228, 210, 168, 0.24)';
+  const lined = (x, z) =>
+    neighbours(x, z).filter((h) => Math.hypot(x - h.x, z - h.z) < 13).length > 1 &&
+    !clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius - 8);
+  for (const width of [8, 6, 4.4, 3]) {
+    // a wide faint pass under narrower ones: the edge fades instead of cutting
+    ctx.lineWidth = width * SCALE;
+    ctx.beginPath();
+    for (const street of streets) {
+      let drawing = false;
+      // a point every 5 m or less, so a long straight stops where its houses do
+      const points = street.flatMap(([x, z], i) => {
+        if (!i) return [[x, z]];
+        const [px, pz] = street[i - 1];
+        const steps = Math.ceil(Math.hypot(x - px, z - pz) / 5);
+        return Array.from({ length: steps }, (_, k) => [px + ((x - px) * (k + 1)) / steps, pz + ((z - pz) * (k + 1)) / steps]);
+      });
+      for (const [x, z] of points) {
+        if (!lined(x, z)) drawing = false;
+        else if (drawing) ctx.lineTo((x - minX) * SCALE, (z - minZ) * SCALE);
+        else {
+          ctx.moveTo((x - minX) * SCALE, (z - minZ) * SCALE);
+          drawing = true;
+        }
+      }
+    }
+    ctx.stroke();
+  }
+  const worn = new THREE.CanvasTexture(canvas);
+  worn.colorSpace = THREE.SRGBColorSpace;
+  const streetsMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(spanX, spanZ),
+    new THREE.MeshStandardMaterial({ map: worn, transparent: true, depthWrite: false, roughness: 1 }),
+  );
+  streetsMesh.rotation.x = -Math.PI / 2;
+  streetsMesh.position.set(minX + spanX / 2, BANK.height + 0.07, minZ + spanZ / 2);
+
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
@@ -176,6 +222,7 @@ export function createCity(layout, streets) {
   const group = new THREE.Group();
   group.add(
     floor,
+    streetsMesh,
     createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
     createInstances(roofGeometry, createSurface('tiles', 3), roofs),
   );

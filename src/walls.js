@@ -370,6 +370,8 @@ export function createWalls(layout, path) {
       } else {
         arch(faceX, 4.2, 6);
       }
+      // the same way through, seen from the city
+      place(lists.arches, frame, 0.8 - faceX, 0.5, 0, { yaw: Math.PI, scale: [1, 6 / 1.4, 4.2] });
       for (let along = -style.width / 2 + 0.8; along <= style.width / 2 - 0.8; along += MERLON.spacing) {
         place(lists.merlons, frame, 1.2, style.height + MERLON.height / 2, along);
       }
@@ -391,6 +393,8 @@ export function createWalls(layout, path) {
         place(lists.accents, frame, x + style.size / 2 + 0.03, 3.2, 0, { scale: [0.2, 6.4, 4.4] });
       } else {
         arch(x + style.size / 2 + 0.05, 4.4, 6.4);
+        // the same way through, seen from the city
+        place(lists.arches, frame, x - style.size / 2 - 0.05, 0.5, 0, { yaw: Math.PI, scale: [1, 6.4 / 1.4, 4.4] });
       }
       place(lists.slits, frame, x + style.size / 2 + 0.03, style.height * 0.72, 0);
       if (style.niches) {
@@ -736,9 +740,9 @@ export function createWalls(layout, path) {
         }
       }
       arch(front + 0.05, archWidth, archHeight);
+      // the way through seen from the city and, in the great gates, the hall over it
+      place(lists.arches, frame, back - 0.05, 0.5, 0, { yaw: Math.PI, scale: [1, archHeight / 1.4, archWidth] });
       if (style.rear) {
-        // the way through seen from the city, and the hall over it
-        place(lists.arches, frame, back - 0.05, 0.5, 0, { yaw: Math.PI, scale: [1, archHeight / 1.4, archWidth] });
         rearArch(back, height * BACK.mid[0], height * BACK.centre, 0, (gap - radius) * 2 * 0.72);
       }
     }

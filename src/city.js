@@ -12,8 +12,9 @@ const STREET_HALF = 2.2; // from the middle of a street to the house fronts
 const WALL_CLEARANCE = 14;
 const CELL = 24;
 // The great gates stand well inside the line of the wall, with their stairs
-// and halls: each keeps an open square behind it.
-const GATE_SQUARE = { inset: 16, radius: 32 };
+// and halls: each keeps an open square behind it. The lesser ones keep a
+// smaller one, so the way in is not shut by a house.
+const GATE_SQUARE = { inset: 16, radius: 32, lesser: 20 };
 
 function isInside(x, z, polygon) {
   let inside = false;
@@ -61,13 +62,13 @@ export function createCity(layout, streets) {
   const centreX = xs.reduce((sum, x) => sum + x, 0) / xs.length;
   const centreZ = zs.reduce((sum, z) => sum + z, 0) / zs.length;
   const squares = layout.gates
-    .filter((gate) => gate.major)
     .map((gate) => {
       const [x, z] = polygon[gate.vertex];
       const reach = Math.hypot(centreX - x, centreZ - z);
       return {
         x: x + ((centreX - x) / reach) * GATE_SQUARE.inset,
         z: z + ((centreZ - z) / reach) * GATE_SQUARE.inset,
+        radius: gate.major ? GATE_SQUARE.radius : GATE_SQUARE.lesser,
       };
     });
   const random = createRandom(1356);
@@ -129,7 +130,7 @@ export function createCity(layout, streets) {
         const radius = Math.min(width, depth) * 0.48;
         if (!isInside(x, z, polygon) || distanceToEdges(x, z, polygon) < WALL_CLEARANCE) continue;
         if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
-        if (squares.some((c) => Math.hypot(x - c.x, z - c.z) < GATE_SQUARE.radius)) continue;
+        if (squares.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
         // not on another street, nor into a house already standing
         const clear = STREET_HALF + depth / 2 - 0.3;
         if ([...(streetCells.get(cellOf(x, z)) ?? [])].some((s) => distanceToSegment(x, z, ...s) < clear)) continue;

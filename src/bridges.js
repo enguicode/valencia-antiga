@@ -228,6 +228,27 @@ export function createBridges(layout, path) {
           );
           half.rotation.z = -end * slope;
         }
+      } else if (spec.refuges) {
+        // Broken at every pier, where the deck opens into the refuge, and
+        // carried round the point of the cutwater.
+        const wall = (length, x, z, yaw = 0) =>
+          new THREE.BoxGeometry(length, PARAPET.height, PARAPET.thickness).rotateY(yaw).translate(x, DECK_TOP + PARAPET.height / 2, z);
+        const walls = [];
+        for (let i = 0; i < arches; i++) walls.push(wall(openingOf(arches), archCentre(arches, i), side * edge));
+        for (let i = 0; i <= arches; i++) {
+          const x = -SPAN / 2 + PIER / 2 + i * (openingOf(arches) + PIER);
+          for (const k of [-1, 1]) {
+            walls.push(
+              wall(
+                Math.hypot(PIER / 2, CUTWATER.reach) + PARAPET.thickness,
+                x + (k * PIER) / 4,
+                side * (width / 2 + CUTWATER.reach / 2),
+                Math.atan2(-side * CUTWATER.reach, (-k * PIER) / 2),
+              ),
+            );
+          }
+        }
+        piece(mergeGeometries(walls), stone, 0, 0, 0);
       } else {
         piece(new THREE.BoxGeometry(SPAN, PARAPET.height, PARAPET.thickness), stone, 0, DECK_TOP + PARAPET.height / 2, side * edge);
       }
@@ -251,9 +272,10 @@ export function createBridges(layout, path) {
       }
     }
 
-    // Cutwaters on every pier. On the Serrans they rise to the parapet as
-    // refuges; on the Trinitat they end in stepped caps.
-    const cutwaterTop = spec.refuges ? DECK_TOP + PARAPET.height : CUTWATER.top;
+    // Cutwaters on every pier. On the Serrans they rise to the deck as
+    // refuges, a hair under it so the two tops do not fight; on the Trinitat
+    // they end in stepped caps.
+    const cutwaterTop = spec.refuges ? DECK_TOP - 0.02 : CUTWATER.top;
     const cutwater = createCutwaterGeometry(width, cutwaterTop);
     const occupied = new Set([...(spec.stairPiers ?? []), spec.shrinePier, spec.statuePier].filter((n) => n != null));
     let extraPier = null;

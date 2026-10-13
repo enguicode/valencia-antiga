@@ -570,10 +570,8 @@ const MODELS = {
       }
     };
     // The Real Nou, round its two courtyards, to the west
-    add('box', [-27, 0, -2], [70, 13, 44], RENDER);
-    add('box', [-27, 13, -2], [70.8, 1, 44.8], STONE);
-    add('box', [-40, 13.4, -2], [22, 0.3, 22], DARK); // the great courtyard, seen from above
-    add('box', [-12, 13.4, -4], [12, 0.3, 14], DARK); // the small one
+    cloister(add, { x: -42, z: -2, width: 40, depth: 44, height: 13, color: RENDER }); // the great courtyard
+    cloister(add, { x: -7, z: -2, width: 30, depth: 44, height: 13, color: RENDER }); // the small one
     windowRow(add, { from: -58, to: 4, step: 6.2, y: 7.5, z: -24.05, width: 1.5, height: 3.2 });
     // The gallery between the two towers: an arcade of round arches on
     // pillars, and over it a gallery of windows with iron balconies
@@ -599,12 +597,19 @@ const MODELS = {
     add('arch', [-6, 0, front + 3.85], [0.42, 7.2, 4.6], STONE, FACING_Z);
     add('arch', [-6, 0, front + 4.15], [0.46, 6.2, 3.6], DARK, FACING_Z);
     // The Real Vell at the east corner, with the lower church and its bell gable
-    add('box', [27, 0, -2], [38, 12, 40], RENDER);
-    add('box', [27, 12, -2], [38.8, 0.9, 40.8], STONE);
-    add('box', [27, 12.3, -2], [16, 0.3, 16], DARK); // its courtyard
+    cloister(add, { x: 27, z: -2, width: 38, depth: 40, height: 12, color: RENDER });
     windowRow(add, { from: 13, to: 41, step: 5.6, y: 6, z: 18.05, width: 1.4, height: 3 });
     add('box', [10, 12.9, 17.5], [3.4, 4, 0.7], STONE);
     add('box', [10, 14.2, 17.5], [1.3, 1.6, 0.9], DARK);
+    // The slender bell tower that Tosca's plan of 1704 draws between the two
+    // palaces, taller than everything else, with a lantern and a cross
+    add('box', [9, 0, -12], [4.4, 27, 4.4], STONE);
+    add('box', [9, 27, -12], [5, 0.5, 5], STONE);
+    ringOfOpenings(add, { x: 9, y: 22.5, z: -12, sides: 4, apothem: 2.25, width: 1.1, height: 2.6 });
+    add('oct', [9, 27.5, -12], [3, 2.4, 3], STONE);
+    add('cone', [9, 29.9, -12], [3.2, 1.8, 3.2], ROOF);
+    add('box', [9, 31.7, -12], [0.18, 1.8, 0.18], DARK);
+    add('box', [9, 32.6, -12], [0.9, 0.18, 0.18], DARK);
     // Its corner towers: lower at the back, and the one nearest the bridge
     // (the Torre de la Reina) the tallest
     for (const [x, z, tall] of [[44, 16, 19], [44, -20, 14], [10, -20, 14]]) {

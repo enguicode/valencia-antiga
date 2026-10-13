@@ -144,6 +144,10 @@ Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de
 - **Estimado:** las medidas (bloque de 32 × 29 m y 14 de alto, cúpula de 19 × 14,5 m), la linterna y el número de puertas y ventanas. El tejado a cuatro aguas resume las varias cubiertas que rodean el tambor.
 - **Dudoso para 1700:** el revestimiento de teja azul de la cúpula y el aspecto de la fachada a la plaza, que no se han contrastado con vistas antiguas. Las casas de relleno llegan hasta la puerta: la plaza no está despejada.
 
+### Iglesias parroquiales y de convento
+
+- **Cuerpo común (13-oct-2026):** las iglesias sin modelo propio dejan de ser una caja con tejado. Pasan a la forma del gótico valenciano que se lee en las vistas aéreas actuales de casi todas: una nave alta, capillas entre contrafuertes bajo un tejado a un agua, ábside poligonal y la puerta con un óculo en el otro extremo. Es un tipo, no un levantamiento: el número de tramos, las alturas (nave de 17 m, capillas de 9,5 m), el óculo y la puerta son inventados, y a las que se rehicieron en barroco o después les sobra goticismo. Lo propio de cada una se anota debajo según se va contrastando.
+
 ### Micalet y Seu
 
 - **Con fuente:** Micalet, prisma octogonal de 50,85 m hasta la terraza, igual que su perímetro, con contrafuertes en las ocho aristas y cuatro cuerpos (macizo, «presó», casa del campanero y sala de campanas con ocho ventanales); la crestería gótica calada no se derribó hasta el XVIII; la espadaña de piedra es de 1660-1736. Seu, 94 m de largo y 53,65 m en el crucero; cimborrio octogonal de dos cuerpos con ocho ventanas de alabastro cada uno; Obra Nova de tres pisos de arcos (1566); puerta de los Apóstoles con rosetón de 6,45 m; Aula Capitular de 13 m de lado y 16 de alto. ([Wikipedia: El Miguelete](https://es.wikipedia.org/wiki/El_Miguelete), [Catedral](https://es.wikipedia.org/wiki/Catedral_de_Santa_María_de_Valencia))

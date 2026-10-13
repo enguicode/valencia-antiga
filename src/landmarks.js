@@ -188,6 +188,11 @@ function createSolids() {
 
 const RIDGE_ALONG_X = Math.PI / 2;
 
+// What each parish church changes in the shared body. Local +X is the layout
+// axis and +Z its right-hand side; `apse` is the end the apse closes and
+// `towerAt` the [end, side] corner the tower stands at.
+const CHURCHES = {};
+
 const MODELS = {
   // The cathedral's bell tower: an octagonal prism 50.85 m to the terrace,
   // the same as its perimeter. Four equal bodies, each twice a face wide
@@ -690,26 +695,39 @@ const MODELS = {
       MODELS.desemparats(add);
       return;
     }
+    // A Valencian Gothic parish: one tall nave, chapels between the buttresses
+    // under a lean-to roof, a polygonal apse and the door at the other end.
     const { length, width, dome = false, tower = true, towerHeight = 32, towerSides = 4 } = landmark;
+    const { apse = -1, towerAt = [-1, 1] } = CHURCHES[landmark.id] ?? {};
     const naveLength = clamp(length ?? 40, 30, 50);
-    const naveWidth = clamp(width ?? 18, 14, 20);
-    add('box', [0, 0, 0], [naveLength, 15, naveWidth], PALE);
-    add('gable', [0, 15, 0], [naveWidth, 5, naveLength], ROOF, RIDGE_ALONG_X);
+    const naveWidth = clamp(width ?? 18, 14, 20) - 4;
+    const NAVE = 17;
+    const CHAPEL = { depth: 3.6, height: 9.5 };
+    const flank = naveWidth / 2 + CHAPEL.depth;
+    add('box', [0, 0, 0], [naveLength, NAVE, naveWidth], PALE);
+    add('gable', [0, NAVE, 0], [naveWidth, 4.5, naveLength], ROOF, RIDGE_ALONG_X);
+    add('oct', [apse * naveLength / 2, 0, 0], [naveWidth, NAVE, naveWidth], PALE);
+    add('cone', [apse * naveLength / 2, NAVE, 0], [naveWidth + 0.6, 4.5, naveWidth + 0.6], ROOF);
     for (const side of [-1, 1]) {
-      windowRow(add, {
-        from: -naveLength / 2 + 7,
-        to: naveLength / 2 - 6,
-        step: 7,
-        y: 7,
-        z: side * (naveWidth / 2 + 0.05),
-        width: 1.4,
-        height: 5.5,
-      });
+      add('box', [0, 0, side * (naveWidth / 2 + CHAPEL.depth / 2)], [naveLength, CHAPEL.height, CHAPEL.depth], PALE);
+      // half of this gable is buried in the nave: what shows is the lean-to
+      add('gable', [0, CHAPEL.height, side * naveWidth / 2], [CHAPEL.depth * 2 + 0.6, 2.4, naveLength], ROOF, RIDGE_ALONG_X);
+      for (let x = -naveLength / 2 + 0.6; x <= naveLength / 2 - 0.5; x += 6.4) {
+        add('box', [x, 0, side * (flank - 0.3)], [1.2, 13.5, 1.6], STONE);
+        add('pyramid', [x, 13.5, side * (flank - 0.3)], [1.2, 1.8, 1.6], PALE);
+        add('box', [x, 12, side * (naveWidth / 2 + 1.4)], [0.9, 2.6, 2.8], STONE);
+        if (x + 6.4 > naveLength / 2 - 0.5) continue;
+        add('pointed', [x + 3.2, 12, side * (naveWidth / 2 + 0.1)], [0.38, 4.2, 1.5], DARK, FACING_Z);
+        add('box', [x + 3.2, 4.2, side * (flank + 0.05)], [0.35, 2.4, 0.9], DARK, FACING_Z);
+      }
     }
-    add('box', [naveLength / 2 + 0.05, 0, 0], [0.4, 6.5, 3.6], DARK);
+    const front = -apse * (naveLength / 2 + 0.05);
+    add('pointed', [front, 0, 0], [0.5, 7, 3.8], DARK);
+    add('disk', [front, 10.2, 0], [0.3, 4.2, 4.2], DARK);
+    add('wheel', [front - apse * 0.12, 10.2, 0], [0.3, 4.2, 4.2], STONE);
     if (tower) {
-      const x = -naveLength / 2 + 3;
-      const z = naveWidth / 2 + 3;
+      const x = towerAt[0] * (naveLength / 2 - 3);
+      const z = towerAt[1] * (flank + 3);
       if (towerSides === 6) {
         add('hex', [x, 0, z], [9, towerHeight, 9], STONE);
         add('cone', [x, towerHeight, z], [7, 6, 7], PALE);
@@ -724,8 +742,8 @@ const MODELS = {
     }
     if (dome) {
       const diameter = naveWidth * 0.9;
-      add('oct', [naveLength * 0.2, 15, 0], [diameter, 6, diameter], PALE);
-      add('dome', [naveLength * 0.2, 21, 0], [diameter, diameter, diameter], TILE_BLUE);
+      add('oct', [naveLength * 0.2, NAVE, 0], [diameter, 5, diameter], PALE);
+      add('dome', [naveLength * 0.2, NAVE + 5, 0], [diameter, diameter, diameter], TILE_BLUE);
     }
   },
 };

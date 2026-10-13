@@ -150,6 +150,7 @@ Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de
 - **Santa Caterina (13-oct-2026):** el ábside mira a levante y la torre hexagonal queda a su lado sur, como en las vistas aéreas; antes estaba a los pies. La torre se rehace en cuerpos: fuste con impostas, cuerpo de campanas, templete más estrecho y remate. Es obra de 1688-1705 (dato de memoria, sin contrastar): hacia 1700 estaba a medio levantar y aquí se dibuja acabada. Los 56 m de alto son los de la torre real; el reparto de cuerpos es lectura de las vistas.
 - **Sants Joans (13-oct-2026):** el ábside mira a la plaza del Mercat, la torre queda a los pies por el lado sur y la capilla de la Comunió, con su cúpula, contra el flanco norte: así en las vistas aéreas. La capilla se fecha de memoria a mediados del XVII. No se dibuja la fachada-retablo con el reloj que cierra el ábside hacia la Llotja (obra de hacia 1700): falta.
 - **Sant Martí (13-oct-2026):** ábside a levante, torre cuadrada en la esquina noroeste y capilla con cúpula contra el flanco norte, como en las vistas aéreas. Torre (1627) y capilla (hacia 1670) fechadas de memoria. La planta real se estrecha hacia los pies; aquí es un rectángulo.
+- **Sant Nicolau (13-oct-2026):** ábside a levante y torre cuadrada en la esquina suroeste, como en las vistas aéreas. No se pone la cupulita azul de junto a la torre: es de la capilla de la Comunió, que creo del XVIII. La fecha de la torre no está contrastada.
 
 ### Micalet y Seu
 

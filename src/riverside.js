@@ -15,7 +15,7 @@ export const PRETIL = {
 };
 
 const BALL_SPACING = 12;
-const STAIRS = { steps: 13, tread: 0.6, rise: 0.45, width: 6, downstreamOfBridge: 30 };
+const STAIRS = { steps: 12, tread: 0.6, rise: 0.45, width: 6, downstreamOfBridge: 30 };
 
 export function createRiverside(layout, path) {
   const stone = createSurface('masonry', 3, { color: COLORS.stone, side: THREE.DoubleSide });

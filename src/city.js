@@ -5,8 +5,8 @@ import { landmarkClearings } from './landmarks.js';
 import { TEXTURES, createSurface } from './materials.js';
 
 // Generic houses filling the walled city, in rows along both sides of every
-// street. The streets are today's (data/streets.json); the houses are
-// placeholders for volume.
+// street. The streets are traced from Tosca's plan of 1704 (data/streets.json,
+// scripts/trace-tosca.py); the houses are placeholders for volume.
 
 const STREET_HALF = 2.2; // from the middle of a street to the house fronts
 const WALL_CLEARANCE = 14;
@@ -97,10 +97,21 @@ export function createCity(layout, streets) {
   };
 
   let placed = 0;
-  for (const [ax, az, bx, bz] of stretches) {
-    const length = Math.hypot(bx - ax, bz - az);
-    const tx = (bx - ax) / length;
-    const tz = (bz - az) / length;
+  for (const street of streets) {
+    // Houses follow the whole street, not each stretch of it: the bends are
+    // short and a row must carry on round them.
+    const marks = [0];
+    for (let i = 1; i < street.length; i++) marks.push(marks[i - 1] + Math.hypot(street[i][0] - street[i - 1][0], street[i][1] - street[i - 1][1]));
+    const length = marks.at(-1);
+    const at = (d) => {
+      let i = 1;
+      while (i < street.length - 1 && marks[i] < d) i++;
+      const [ax, az] = street[i - 1];
+      const [bx, bz] = street[i];
+      const run = marks[i] - marks[i - 1] || 1;
+      const t = (d - marks[i - 1]) / run;
+      return [ax + (bx - ax) * t, az + (bz - az) * t, (bx - ax) / run, (bz - az) / run];
+    };
     for (const side of [-1, 1]) {
       for (let along = random() * 2; along < length; ) {
         const width = 6.5 + random() * 6;
@@ -111,9 +122,10 @@ export function createCity(layout, streets) {
         along += width + (random() < 0.12 ? random() * 3 : 0);
         if (from + width > length + 1) break;
 
+        const [px, pz, tx, tz] = at(from + width / 2);
         const off = side * (STREET_HALF + depth / 2);
-        const x = ax + tx * (from + width / 2) - tz * off;
-        const z = az + tz * (from + width / 2) + tx * off;
+        const x = px - tz * off;
+        const z = pz + tx * off;
         const radius = Math.min(width, depth) * 0.48;
         if (!isInside(x, z, polygon) || distanceToEdges(x, z, polygon) < WALL_CLEARANCE) continue;
         if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
@@ -143,6 +155,24 @@ export function createCity(layout, streets) {
   }
   if (new URLSearchParams(location.search).has('debug')) console.info(`houses: ${placed}`);
 
+  // The streets themselves, as strips of paler beaten earth, so the blocks
+  // read from above. One quad per stretch, run a little past both ends to
+  // close the corners.
+  const strip = [];
+  for (const [ax, az, bx, bz] of stretches) {
+    // the plan is some 20 m out of place: no street is drawn across a monument
+    if (clearings.some((c) => Math.hypot((ax + bx) / 2 - c.x, (az + bz) / 2 - c.z) < c.radius - 8)) continue;
+    const length = Math.hypot(bx - ax, bz - az) || 1;
+    const tx = ((bx - ax) / length) * STREET_HALF;
+    const tz = ((bz - az) / length) * STREET_HALF;
+    const corners = [[ax - tx + tz, az - tz - tx], [ax - tx - tz, az - tz + tx], [bx + tx + tz, bz + tz - tx], [bx + tx - tz, bz + tz + tx]];
+    for (const i of [0, 1, 2, 2, 1, 3]) strip.push(corners[i][0], BANK.height + 0.07, corners[i][1]);
+  }
+  const paving = new THREE.BufferGeometry();
+  paving.setAttribute('position', new THREE.Float32BufferAttribute(strip, 3));
+  paving.computeVertexNormals();
+  const streetsMesh = new THREE.Mesh(paving, new THREE.MeshStandardMaterial({ color: 0xd9cba6, roughness: 1, side: THREE.DoubleSide }));
+
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
@@ -163,6 +193,7 @@ export function createCity(layout, streets) {
   const group = new THREE.Group();
   group.add(
     floor,
+    streetsMesh,
     createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
     createInstances(roofGeometry, createSurface('tiles', 3), roofs),
   );

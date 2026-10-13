@@ -218,6 +218,25 @@ const FRONTS = {
     add('dome', [wall, HEIGHT + 9.9, 0], [2.2, 2.8, 3], PALE);
     add('ball', [wall, HEIGHT + 11.2, 0], [0.7, 0.7, 0.7], STONE);
   },
+  // A tall, bare stone front, flat-topped, with a three-storey portal like an
+  // altarpiece set against the middle of it. Read off a photograph.
+  carme(add, { apse, naveLength, flank }) {
+    const out = -apse;
+    const WIDTH = flank * 2 + 1;
+    const wall = out * (naveLength / 2 + 0.5);
+    const face = wall + out * 0.7;
+    add('box', [wall, 0, 0], [1.2, 21.5, WIDTH], PALE);
+    add('box', [wall, 21.5, 0], [2, 0.7, WIDTH + 0.9], STONE);
+    for (const [y, height, width] of [[0, 7.5, 8.4], [7.5, 6.5, 6.4], [14, 4, 3.8]]) {
+      add('box', [face, y, 0], [0.7, height, width], STONE);
+      for (const z of [-1, 1]) add('box', [face + out * 0.3, y, z * (width / 2 - 0.5)], [0.6, height - 0.5, 0.7], PALE);
+      add('box', [face + out * 0.15, y + height - 0.5, 0], [1.1, 0.5, width + 0.5], PALE);
+    }
+    add('gable', [face, 18, 0], [4.4, 1.5, 0.7], STONE, RIDGE_ALONG_X);
+    add('arch', [face + out * 0.4, 0, 0], [0.3, 5.6, 3.2], DARK);
+    add('arch', [face + out * 0.4, 8.4, 0], [0.3, 3.6, 1.9], DARK);
+    add('arch', [face + out * 0.4, 14.5, 0], [0.3, 2.3, 1.2], DARK);
+  },
 };
 
 // What each parish church changes in the shared body. Local +X is the layout
@@ -237,7 +256,7 @@ const CHURCHES = {
   'sant-joan-hospital': { apse: 1, tower: false, chapelDome: [0.4, 1] },
   'sant-andreu': { turn: true, apse: 1, towerAt: [-1, -1] },
   'sant-agusti': { apse: 1, tower: false },
-  carme: { apse: 1, towerAt: [-1, -1] },
+  carme: { apse: 1, towerAt: [-1, -1], towerTop: 'lantern' },
   companyia: { apse: 1 },
 };
 

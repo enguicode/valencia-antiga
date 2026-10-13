@@ -1,14 +1,16 @@
 import * as THREE from 'three';
-import { BANK, COLORS, createRandom } from './config.js';
+import { BANK, COLORS, createRandom, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
 import { landmarkClearings } from './landmarks.js';
 import { TEXTURES, createSurface } from './materials.js';
 
-// Generic houses filling the walled city. They are placeholders for volume:
-// there is no street plan behind them.
+// Generic houses filling the walled city, in rows along both sides of every
+// street. The streets are today's (data/streets.json); the houses are
+// placeholders for volume.
 
-const HOUSE_COUNT = 2600;
-const WALL_CLEARANCE = 16;
+const STREET_HALF = 2.2; // from the middle of a street to the house fronts
+const WALL_CLEARANCE = 14;
+const CELL = 24;
 // The great gates stand well inside the line of the wall, with their stairs
 // and halls: each keeps an open square behind it.
 const GATE_SQUARE = { inset: 16, radius: 32 };
@@ -23,20 +25,24 @@ function isInside(x, z, polygon) {
   return inside;
 }
 
+function distanceToSegment(x, z, ax, az, bx, bz) {
+  const dx = bx - ax;
+  const dz = bz - az;
+  const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+  return Math.hypot(x - ax - dx * t, z - az - dz * t);
+}
+
 function distanceToEdges(x, z, polygon) {
   let best = Infinity;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [ax, az] = polygon[j];
-    const [bx, bz] = polygon[i];
-    const dx = bx - ax;
-    const dz = bz - az;
-    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)));
-    best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+    best = Math.min(best, distanceToSegment(x, z, ...polygon[j], ...polygon[i]));
   }
   return best;
 }
 
-export function createCity(layout) {
+const cellOf = (x, z) => `${Math.floor(x / CELL)},${Math.floor(z / CELL)}`;
+
+export function createCity(layout, streets) {
   const polygon = layout.wall;
   const xs = polygon.map(([x]) => x);
   const zs = polygon.map(([, z]) => z);
@@ -68,41 +74,74 @@ export function createCity(layout) {
   const pick = (list) => list[Math.floor(random() * list.length)];
   const dummy = new THREE.Object3D();
 
-  for (let placed = 0; placed < HOUSE_COUNT; ) {
-    const x = minX + random() * spanX;
-    const z = minZ + random() * spanZ;
-    if (!isInside(x, z, polygon) || distanceToEdges(x, z, polygon) < WALL_CLEARANCE) continue;
-    if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
-    // A house that would stand in a gate's square is still drawn from the
-    // random sequence and then dropped, so the rest of the city stays put.
-    const inSquare = squares.some((c) => Math.hypot(x - c.x, z - c.z) < GATE_SQUARE.radius);
-    const kept = [bodies.length, roofs.length, chimneys.length];
-
-    const width = 7 + random() * 6;
-    const depth = 7 + random() * 8;
-    const height = 8 + random() * 7;
-    const roofHeight = 2 + random() * 1.5;
-    const yaw = random() * Math.PI;
-
-    dummy.rotation.set(0, yaw, 0);
-    dummy.position.set(x, BANK.height + height / 2, z);
-    dummy.scale.set(width, height, depth);
-    dummy.updateMatrix();
-    bodies.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(pick(COLORS.houseWalls)) });
-
-    dummy.position.set(x, BANK.height + height + roofHeight / 2, z);
-    dummy.scale.set(width * 1.08, roofHeight, depth * 1.08);
-    dummy.updateMatrix();
-    roofs.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(pick(COLORS.roofs)) });
-
-    if (placed % 45 === 0) chimneys.push({ x, y: BANK.height + height + roofHeight, z });
-    placed++;
-    if (inSquare) {
-      bodies.length = kept[0];
-      roofs.length = kept[1];
-      chimneys.length = kept[2];
+  // Every stretch of street, indexed by the cells it comes within reach of,
+  // so a house can tell whether it would stand on one.
+  const REACH = 12;
+  const stretches = streets.flatMap((street) => street.slice(1).map((end, i) => [...street[i], ...end]));
+  const streetCells = new Map();
+  for (const stretch of stretches) {
+    const [ax, az, bx, bz] = stretch;
+    for (let x = Math.min(ax, bx) - REACH; x <= Math.max(ax, bx) + REACH + CELL; x += CELL) {
+      for (let z = Math.min(az, bz) - REACH; z <= Math.max(az, bz) + REACH + CELL; z += CELL) {
+        const key = cellOf(x, z);
+        if (!streetCells.has(key)) streetCells.set(key, new Set());
+        streetCells.get(key).add(stretch);
+      }
     }
   }
+  const houseCells = new Map();
+  const neighbours = (x, z) => {
+    const found = [];
+    for (const dx of [-CELL, 0, CELL]) for (const dz of [-CELL, 0, CELL]) found.push(...(houseCells.get(cellOf(x + dx, z + dz)) ?? []));
+    return found;
+  };
+
+  let placed = 0;
+  for (const [ax, az, bx, bz] of stretches) {
+    const length = Math.hypot(bx - ax, bz - az);
+    const tx = (bx - ax) / length;
+    const tz = (bz - az) / length;
+    for (const side of [-1, 1]) {
+      for (let along = random() * 2; along < length; ) {
+        const width = 6.5 + random() * 6;
+        const depth = 8 + random() * 6;
+        const height = 7 + random() * 8;
+        const roofHeight = 2 + random() * 1.5;
+        const from = along;
+        along += width + (random() < 0.12 ? random() * 3 : 0);
+        if (from + width > length + 1) break;
+
+        const off = side * (STREET_HALF + depth / 2);
+        const x = ax + tx * (from + width / 2) - tz * off;
+        const z = az + tz * (from + width / 2) + tx * off;
+        const radius = Math.min(width, depth) * 0.48;
+        if (!isInside(x, z, polygon) || distanceToEdges(x, z, polygon) < WALL_CLEARANCE) continue;
+        if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.radius)) continue;
+        if (squares.some((c) => Math.hypot(x - c.x, z - c.z) < GATE_SQUARE.radius)) continue;
+        // not on another street, nor into a house already standing
+        const clear = STREET_HALF + depth / 2 - 0.3;
+        if ([...(streetCells.get(cellOf(x, z)) ?? [])].some((s) => distanceToSegment(x, z, ...s) < clear)) continue;
+        if (neighbours(x, z).some((h) => Math.hypot(x - h.x, z - h.z) < radius + h.radius)) continue;
+        const key = cellOf(x, z);
+        if (!houseCells.has(key)) houseCells.set(key, []);
+        houseCells.get(key).push({ x, z, radius });
+
+        dummy.rotation.set(0, yawTowards(tx, tz), 0);
+        dummy.position.set(x, BANK.height + height / 2, z);
+        dummy.scale.set(width, height, depth);
+        dummy.updateMatrix();
+        bodies.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(pick(COLORS.houseWalls)) });
+
+        dummy.position.set(x, BANK.height + height + roofHeight / 2, z);
+        dummy.scale.set(width * 1.08, roofHeight, depth * 1.08);
+        dummy.updateMatrix();
+        roofs.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(pick(COLORS.roofs)) });
+
+        if (placed++ % 45 === 0) chimneys.push({ x, y: BANK.height + height + roofHeight, z });
+      }
+    }
+  }
+  if (new URLSearchParams(location.search).has('debug')) console.info(`houses: ${placed}`);
 
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(

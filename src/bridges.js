@@ -169,6 +169,18 @@ function trackGeometry(points, width, lift) {
   return geometry;
 }
 
+// A gate with a bridge before it looks straight down that bridge, as the
+// Torres dels Serrans do, whichever way the smoothed wall runs there. Gives
+// the unit vector from the gate to the bridge, or null for any other gate.
+const FACES_BRIDGE_WITHIN = 200;
+export function gateFacing(layout, gate) {
+  const bridge = layout.bridges.find((item) => item.id === gate.id);
+  if (!bridge) return null;
+  const [gx, gz] = layout.wall[gate.vertex];
+  const far = Math.hypot(bridge.x - gx, bridge.z - gz);
+  return far < FACES_BRIDGE_WITHIN ? [(bridge.x - gx) / far, (bridge.z - gz) / far] : null;
+}
+
 export function createBridges(layout, path) {
   // Double-sided, so a camera that strays into the stonework sees stone
   // rather than straight through it.
@@ -375,6 +387,7 @@ export function createBridges(layout, path) {
       const outward = Math.sign(nx * (sample.x - gx) + nz * (sample.z - gz)) || 1;
       nx *= outward / length;
       nz *= outward / length;
+      [nx, nz] = gateFacing(layout, gate) ?? [nx, nz];
       const reach = SPAN / 2 - 2;
       const sx = sample.x + sample.rx * reach;
       const sz = sample.z + sample.rz * reach;

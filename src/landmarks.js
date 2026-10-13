@@ -191,7 +191,9 @@ const RIDGE_ALONG_X = Math.PI / 2;
 // What each parish church changes in the shared body. Local +X is the layout
 // axis and +Z its right-hand side; `apse` is the end the apse closes and
 // `towerAt` the [end, side] corner the tower stands at.
-const CHURCHES = {};
+const CHURCHES = {
+  'santa-caterina': { apse: 1, towerAt: [1, 1] },
+};
 
 const MODELS = {
   // The cathedral's bell tower: an octagonal prism 50.85 m to the terrace,
@@ -729,10 +731,17 @@ const MODELS = {
       const x = towerAt[0] * (naveLength / 2 - 3);
       const z = towerAt[1] * (flank + 3);
       if (towerSides === 6) {
-        add('hex', [x, 0, z], [9, towerHeight, 9], STONE);
-        add('cone', [x, towerHeight, z], [7, 6, 7], PALE);
-        for (const y of [towerHeight * 0.4, towerHeight * 0.68]) add('hex', [x, y, z], [9.6, 0.6, 9.6], PALE);
-        ringOfOpenings(add, { x, y: towerHeight * 0.74, z, sides: 6, apothem: 3.95, width: 1.6, height: 6 });
+        // Baroque belfry in stages: shaft, bell stage, a narrower lantern and a spire
+        const h = towerHeight;
+        add('hex', [x, 0, z], [8.4, h * 0.78, 8.4], STONE);
+        for (const y of [0.2, 0.4, 0.6, 0.78]) add('hex', [x, h * y - 0.6, z], [9.2, 0.6, 9.2], PALE);
+        ringOfOpenings(add, { x, y: h * 0.62, z, sides: 6, apothem: 3.68, width: 1.7, height: h * 0.13 });
+        add('hex', [x, h * 0.78, z], [5.4, h * 0.12, 5.4], PALE);
+        ringOfOpenings(add, { x, y: h * 0.8, z, sides: 6, apothem: 2.38, width: 1.1, height: h * 0.08 });
+        add('hex', [x, h * 0.9, z], [6, 0.5, 6], STONE);
+        add('dome', [x, h * 0.9 + 0.5, z], [5, 5, 5], PALE);
+        add('cone', [x, h * 0.9 + 2.6, z], [1.6, h * 0.1 - 3.6, 1.6], PALE);
+        add('ball', [x, h - 1, z], [1, 1, 1], STONE);
       } else {
         add('box', [x, 0, z], [6, towerHeight, 6], STONE);
         add('pyramid', [x, towerHeight, z], [7, 5, 7], ROOF);

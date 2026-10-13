@@ -147,6 +147,7 @@ Casi todo sale de las monografías de Víctor Yepes (Universitat Politècnica de
 ### Iglesias parroquiales y de convento
 
 - **Cuerpo común (13-oct-2026):** las iglesias sin modelo propio dejan de ser una caja con tejado. Pasan a la forma del gótico valenciano que se lee en las vistas aéreas actuales de casi todas: una nave alta, capillas entre contrafuertes bajo un tejado a un agua, ábside poligonal y la puerta con un óculo en el otro extremo. Es un tipo, no un levantamiento: el número de tramos, las alturas (nave de 17 m, capillas de 9,5 m), el óculo y la puerta son inventados, y a las que se rehicieron en barroco o después les sobra goticismo. Lo propio de cada una se anota debajo según se va contrastando.
+- **Santa Caterina (13-oct-2026):** el ábside mira a levante y la torre hexagonal queda a su lado sur, como en las vistas aéreas; antes estaba a los pies. La torre se rehace en cuerpos: fuste con impostas, cuerpo de campanas, templete más estrecho y remate. Es obra de 1688-1705 (dato de memoria, sin contrastar): hacia 1700 estaba a medio levantar y aquí se dibuja acabada. Los 56 m de alto son los de la torre real; el reparto de cuerpos es lectura de las vistas.
 
 ### Micalet y Seu
 

@@ -204,6 +204,7 @@ const CHURCHES = {
   'sant-joan-hospital': { apse: 1, tower: false, chapelDome: [0.4, 1] },
   'sant-andreu': { turn: true, apse: 1, towerAt: [-1, -1] },
   'sant-agusti': { apse: 1, tower: false },
+  carme: { apse: 1, towerAt: [-1, -1] },
 };
 
 const MODELS = {

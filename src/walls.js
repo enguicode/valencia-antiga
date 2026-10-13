@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { BANK, WALL, COLORS, yawTowards } from './config.js';
-import { gateFacing } from './bridges.js';
 import { createInstances } from './instancing.js';
 import { stoneSurface, createSurface } from './materials.js';
 
@@ -282,9 +281,10 @@ export function createWalls(layout, path) {
   vertices.forEach((vertex, i) => {
     const before = segments[(i + count - 1) % count];
     const after = segments[i];
-    const gate = gateByVertex.get(i);
-    const [outX, outZ] = (gate && gateFacing(layout, gate)) ?? [before.outX + after.outX, before.outZ + after.outZ];
+    const outX = before.outX + after.outX;
+    const outZ = before.outZ + after.outZ;
     const frame = makeFrame(vertex.x, vertex.z, outX, outZ);
+    const gate = gateByVertex.get(i);
     const merlonRing = (x, z, radius, y, count) => {
       for (let k = 0; k < count; k++) {
         const angle = (k / count) * Math.PI * 2;

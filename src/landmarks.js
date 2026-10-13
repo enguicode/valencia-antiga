@@ -36,6 +36,26 @@ function archRow(add, solid, { from, to, step, y, z, width, height, depth = 0.4,
   }
 }
 
+// Four ranges round an open court, two storeys of arcades looking into it.
+function cloister(add, { x, z, width, depth, height, color }) {
+  const RANGE = 7;
+  const tiers = [[0.2, 3.4], [height / 2 + 0.5, 2.7]];
+  for (const side of [-1, 1]) {
+    const alongX = z + side * (depth / 2 - RANGE / 2);
+    const alongZ = x + side * (width / 2 - RANGE / 2);
+    add('box', [x, 0, alongX], [width, height, RANGE], color);
+    add('gable', [x, height, alongX], [RANGE + 0.6, 2.2, width], ROOF, RIDGE_ALONG_X);
+    add('box', [alongZ, 0, z], [RANGE, height, depth - RANGE * 2], color);
+    add('gable', [alongZ, height, z], [RANGE + 0.6, 2.2, depth - RANGE * 2], ROOF);
+    for (const [y, tall] of tiers) {
+      archRow(add, 'arch', { from: x - width / 2 + RANGE + 2, to: x + width / 2 - RANGE - 2, step: 3.4, y, z: alongX - side * (RANGE / 2 + 0.05), width: 2, height: tall });
+      for (let k = z - depth / 2 + RANGE + 2; k <= z + depth / 2 - RANGE - 1.99; k += 3.4) {
+        add('arch', [alongZ - side * (RANGE / 2 + 0.05), y, k], [0.4, tall, 2], DARK);
+      }
+    }
+  }
+}
+
 // One piece on each flat of a prism. `radius` is the distance from the axis
 // to the piece's centre; the piece's local +X, its thickness, points outward.
 function around(add, { x = 0, z = 0, sides, radius, y, solid, height, width, depth, color, skip }) {
@@ -629,8 +649,7 @@ const MODELS = {
     add('pointed', [-4, 10.85, 13.05], [0.36, 3.35, 1.65], DARK, FACING_Z);
     add('box', [-4, 14.05, 12.85], [0.55, 0.5, 3.8], STONE, FACING_Z);
     // Cloister, two storeys round a court, and the belfry
-    add('box', [-2, 0, -17], [36, 9.5, 30], RENDER);
-    add('box', [-2, 9.5, -17], [37, 0.8, 31], ROOF);
+    cloister(add, { x: -2, z: -17, width: 36, depth: 30, height: 9.5, color: RENDER });
     windowRow(add, { from: -17, to: 13, step: 4.3, y: 5.6, z: -1.95, width: 1.6, height: 2.6 });
     add('box', [15, 0, -3], [4.6, 23, 4.6], STONE);
     add('pyramid', [15, 23, -3], [5.4, 4.5, 5.4], ROOF);
@@ -691,8 +710,7 @@ const MODELS = {
     add('gable', [0, 16, -12], [13, 4, size], ROOF, RIDGE_ALONG_X);
     add('box', [-size / 2 - 2, 0, -3], [5.5, 28, 5.5], STONE);
     add('pyramid', [-size / 2 - 2, 28, -3], [6.5, 5, 6.5], ROOF);
-    add('box', [0, 0, 12], [size, 9, 30], PALE);
-    add('box', [0, 9, 12], [size + 1, 0.8, 31], ROOF);
+    cloister(add, { x: 0, z: 12, width: size, depth: 30, height: 9, color: PALE });
     // Church: side windows, buttresses and a west door
     for (const z of [-18.55, -5.45]) {
       windowRow(add, { from: -size / 2 + 6, to: size / 2 - 6, step: 7, y: 7, z, width: 1.4, height: 6 });

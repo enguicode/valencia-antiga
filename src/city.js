@@ -159,11 +159,41 @@ export function createCity(layout, streets) {
   }
   if (new URLSearchParams(location.search).has('debug')) console.info(`houses: ${placed}`);
 
-  // Nothing inside the walls is left over: the floor is the street, every
-  // house closes its block with a walled yard behind it (bare soil or kitchen
-  // garden, as far back as it can go without stepping on another street or
-  // house), and the open ground is orchard. All of it is one drawing laid on
-  // the floor; only the yard walls are geometry.
+  // Streets as in the old city builders: a paved piece with its own texture
+  // and a hard edge, laid from house front to house front, and a walled yard
+  // behind every house (bare soil or kitchen garden, as far back as it can go
+  // without stepping on another street or house). Yards and their gardens are
+  // invented. A street is paved only where houses line it: the plan's open
+  // yards and orchards trace as tangles of alleys that must not show.
+  const lined = (x, z) => neighbours(x, z).filter((h) => Math.hypot(x - h.x, z - h.z) < 13).length > 1;
+  const strip = [];
+  for (const street of streets) {
+    // a point every 5 m or less, so a long straight stops where its houses do
+    const points = street.flatMap(([x, z], i) => {
+      if (!i) return [[x, z]];
+      const [bx, bz] = street[i - 1];
+      const steps = Math.ceil(Math.hypot(x - bx, z - bz) / 5);
+      return Array.from({ length: steps }, (_, k) => [bx + ((x - bx) * (k + 1)) / steps, bz + ((z - bz) * (k + 1)) / steps]);
+    });
+    const edges = points.map(([x, z], i) => {
+      const [bx, bz] = points[Math.max(0, i - 1)];
+      const [ax, az] = points[Math.min(points.length - 1, i + 1)];
+      const run = Math.hypot(ax - bx, az - bz) || 1;
+      const nx = (-(az - bz) / run) * STREET_HALF;
+      const nz = ((ax - bx) / run) * STREET_HALF;
+      return lined(x, z) && [x + nx, z + nz, x - nx, z - nz];
+    });
+    for (let i = 1; i < edges.length; i++) {
+      const [a, b] = [edges[i - 1], edges[i]];
+      if (!a || !b) continue;
+      for (const [x, z] of [[a[0], a[1]], [a[2], a[3]], [b[0], b[1]], [b[0], b[1]], [a[2], a[3]], [b[2], b[3]]]) strip.push(x, BANK.height + 0.1, z);
+    }
+  }
+  const paving = new THREE.BufferGeometry();
+  paving.setAttribute('position', new THREE.Float32BufferAttribute(strip, 3));
+  paving.computeVertexNormals();
+  const streetsMesh = new THREE.Mesh(paving, createSurface('masonry', 2.4, { color: 0xb9b2a2, side: THREE.DoubleSide }));
+
   const SCALE = 2048 / Math.max(spanX, spanZ); // pixels per metre
   const canvas = document.createElement('canvas');
   canvas.width = Math.ceil(spanX * SCALE);
@@ -171,23 +201,6 @@ export function createCity(layout, streets) {
   const ctx = canvas.getContext('2d');
   const px = (x) => (x - minX) * SCALE;
   const pz = (z) => (z - minZ) * SCALE;
-  // Orchards and tilled plots where no house stands, as Tosca's plan has
-  // them, clear of the squares and of the way round inside the wall.
-  const open = (x, z) =>
-    isInside(x, z, polygon) &&
-    distanceToEdges(x, z, polygon) > WALL_CLEARANCE + CELL / 2 &&
-    ![...clearings, ...squares].some((c) => Math.hypot(x - c.x, z - c.z) < c.radius + CELL * 0.7);
-  for (let x = Math.floor(minX / CELL) * CELL; x < minX + spanX; x += CELL) {
-    for (let z = Math.floor(minZ / CELL) * CELL; z < minZ + spanZ; z += CELL) {
-      if (houseCells.get(cellOf(x, z))?.length || !open(x + CELL / 2, z + CELL / 2)) continue;
-      ctx.save();
-      ctx.translate(px(x + CELL / 2), pz(z + CELL / 2));
-      ctx.rotate((random() - 0.5) * 0.5);
-      ctx.fillStyle = pick(['rgb(112, 126, 76)', 'rgb(126, 132, 84)', 'rgb(142, 124, 86)']);
-      ctx.fillRect((-CELL / 2 - 1) * SCALE, (-CELL / 2 - 1) * SCALE, (CELL + 2) * SCALE, (CELL + 2) * SCALE);
-      ctx.restore();
-    }
-  }
   const free = (x, z, self) =>
     isInside(x, z, polygon) &&
     distanceToEdges(x, z, polygon) > WALL_CLEARANCE - 4 &&
@@ -237,7 +250,7 @@ export function createCity(layout, streets) {
   // The river banks only reach so far inland, so the city gets its own floor.
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(new THREE.Shape(polygon.map(([x, z]) => new THREE.Vector2(x, -z)))),
-    createSurface('mottle', 6, { color: 0xd2c29c, side: THREE.DoubleSide }),
+    createSurface('mottle', 9, { color: 0xb8a67e, side: THREE.DoubleSide }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = BANK.height + 0.04; // just over the river bank's ground, which it overlaps
@@ -255,6 +268,7 @@ export function createCity(layout, streets) {
   group.add(
     floor,
     yardsMesh,
+    streetsMesh,
     createInstances(fence, createSurface('tapial', 3, { color: 0xdccdaa, side: THREE.DoubleSide }), yards),
     createInstances(new THREE.BoxGeometry(1, 1, 1), facades, bodies),
     createInstances(roofGeometry, createSurface('tiles', 3), roofs),

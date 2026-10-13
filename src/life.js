@@ -86,6 +86,31 @@ function createWasherwomen(layout, path, random) {
   return group;
 }
 
+// Clumps of reeds in the shallows of both banks. The plan of 1704 draws the
+// river bed full of them; where each clump stands is free.
+function createReeds(layout, path, random) {
+  const COLOURS = [0x6f7d3a, 0x8a8a46, 0x5d6b34];
+  const bridges = layout.bridges.map((bridge) => path.project(bridge.x, bridge.z).s);
+  const blades = [];
+  const dummy = new THREE.Object3D();
+  for (let s = path.start + 10; s < path.end - 10; s += 5 + random() * 11) {
+    // clear of the piers, and of the washerwomen just downstream of each bridge
+    if (bridges.some((b) => s - b > -14 && s - b < 54)) continue;
+    const point = path.pointAt(s);
+    const lateral = (random() < 0.5 ? -1 : 1) * (RIVER.width / 2 + 0.4 + random() * 3);
+    for (let i = 0; i < 7; i++) {
+      const u = lateral + (random() - 0.5) * 2.6;
+      const v = (random() - 0.5) * 3.4;
+      dummy.position.set(point.x + point.rx * u + point.tx * v, -0.2, point.z + point.rz * u + point.tz * v);
+      dummy.rotation.set((random() - 0.5) * 0.3, random() * Math.PI, (random() - 0.5) * 0.3);
+      dummy.scale.set(0.4, 1.7 + random() * 1.5, 0.4);
+      dummy.updateMatrix();
+      blades.push({ matrix: dummy.matrix.clone(), color: new THREE.Color(COLOURS[Math.floor(random() * COLOURS.length)]) });
+    }
+  }
+  return createInstances(new THREE.ConeGeometry(0.5, 1, 4).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ roughness: 1 }), blades);
+}
+
 // People on foot and mule carts crossing each bridge, back and forth along
 // the deck, and a few idlers at the parapet. From the water only what clears
 // the parapet shows.
@@ -282,9 +307,10 @@ export function createLife(layout, path, chimneys, bridgeGuide) {
   const smoke = createSmoke(chimneys, random);
   const birds = createBirds(random);
   const crossings = createCrossings(bridgeDecks(layout, path), random);
+  const reeds = createReeds(layout, path, random);
 
   const group = new THREE.Group();
-  group.add(...traffic.models, createWasherwomen(layout, path, random), smoke.points, birds.mesh, crossings.mesh);
+  group.add(...traffic.models, createWasherwomen(layout, path, random), smoke.points, birds.mesh, crossings.mesh, reeds);
 
   let extras = true;
 

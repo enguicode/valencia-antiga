@@ -53,19 +53,54 @@
  ],
  "sea": {
   "course": [
-   [1853.6, 2352.5],
-   [2254.0, 2717.7],
-   [2800.0, 2680.0],
-   [3300.0, 2580.0],
-   [3720.0, 2520.0],
-   [4200.0, 2520.0],
-   [4580.0, 2520.0]
+   [
+    1853.6,
+    2352.5
+   ],
+   [
+    2254.0,
+    2717.6
+   ],
+   [
+    2800.0,
+    2680.0
+   ],
+   [
+    3300.0,
+    2579.9
+   ],
+   [
+    3720.0,
+    2519.9
+   ],
+   [
+    4200.0,
+    2519.9
+   ],
+   [
+    4580.0,
+    2519.9
+   ]
   ],
-  "mouth": [3720.0, 2520.0],
-  "offshore": [4200.0, 2520.0],
+  "mouth": [
+   3720.0,
+   2519.9
+  ],
+  "offshore": [
+   4200.0,
+   2519.9
+  ],
   "grau": {
-   "church": {"name": "Santa Maria del Mar", "x": 3579.8, "z": 2054.2},
-   "yards": {"name": "Drassanes del Grau", "x": 3647.7, "z": 1997.4}
+   "church": {
+    "name": "Santa Maria del Mar",
+    "x": 3579.8,
+    "z": 2054.1
+   },
+   "yards": {
+    "name": "Drassanes del Grau",
+    "x": 3647.7,
+    "z": 1997.4
+   }
   }
  },
  "bridges": [
@@ -740,9 +775,8 @@
    "id": "corpus-christi",
    "name": "Convento del Corpus Christi",
    "kind": "church",
-   "x": -615.0,
-   "z": 135.5,
-   "moved": "pulled 102 m inside the wall, whose smoothed line passes behind it"
+   "x": -695.3,
+   "z": 72.6
   }
  ]
 }

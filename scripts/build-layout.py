@@ -117,7 +117,8 @@ LANDMARKS = [
     ("Església de Sant Agustí i Santa Caterina", "sant-agusti", "church", {}),
     ("Església de la Santíssima Creu", "carme", "church", {}),
     ("Església de la Companyia de Jesús", "companyia", "church", {}),
-    ("Convento del Corpus Christi", "corpus-christi", "church", {"inside": 38}),
+    # Outside the wall, almost opposite the Corona gate: no `inside`.
+    ("Convento del Corpus Christi", "corpus-christi", "church", {}),
 ]
 
 # From Pont del Regne to the sea. The first two are today's bridges over the

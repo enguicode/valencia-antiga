@@ -305,6 +305,7 @@ const CHURCHES = {
   'sant-agusti': { apse: 1, tower: false },
   carme: { apse: 1, towerAt: [-1, -1], towerTop: 'lantern' },
   companyia: { apse: 1, classical: true, tower: false },
+  'santa-monica': { tower: false },
 };
 
 const MODELS = {

@@ -87,7 +87,7 @@ BRIDGE_GATES = {
 LAND_GATES = [
     ("tints", "Portal dels Tints", (39.478267, -0.383382), "Carrer de la Corona at Guillem de Castro, by the Beneficència"),
     ("coixo", "Portal del Coixo", (39.474009, -0.383824), "Carrer dels Carnissers at Guillem de Castro"),
-    ("torrent", "Portal de Torrent", (39.470721, -0.383463), "Carrer de l'Hospital at Guillem de Castro"),
+    ("torrent", "Portal de Torrent", (39.470335, -0.383021), "where Tosca's plan of 1704 draws it, some 80 m south of the Carrer de l'Hospital"),
     ("russafa", "Portal de Russafa", (39.467236, -0.374990), "Carrer de Xàtiva at the Passeig de Russafa"),
     ("jueus", "Portal dels Jueus", (39.470236, -0.370847), "Plaça dels Pinazo"),
 ]

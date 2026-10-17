@@ -18,6 +18,14 @@ export const BANK = {
   extent: 1100,
 };
 
+// The riverside parapet walls (pretiles).
+export const PRETIL = {
+  offset: RIVER.width / 2 + BANK.slopeRun, // from the centreline
+  foot: 1, // height of the shore where the wall starts
+  parapet: 1.1, // above street level
+  thickness: 0.8,
+};
+
 export const WALL = {
   height: 10, // about what the sources give for the curtain
   thickness: 2.6,

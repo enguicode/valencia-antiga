@@ -1,19 +1,15 @@
 import * as THREE from 'three';
-import { RIVER, BANK, COLORS, yawTowards } from './config.js';
+import { BANK, COLORS, PRETIL, yawTowards } from './config.js';
 import { buildRibbon } from './path.js';
 import { createInstances } from './instancing.js';
 import { createSurface } from './materials.js';
 import { bridgeDecks } from './bridges.js';
 
+export { PRETIL };
+
 // Stonework along the river: the parapet walls (pretiles) with their stone
 // balls, the stairs down to the water and a weir.
 
-export const PRETIL = {
-  offset: RIVER.width / 2 + BANK.slopeRun, // from the centreline
-  foot: 1, // height of the shore where the wall starts
-  parapet: 1.1, // above street level
-  thickness: 0.8,
-};
 
 const BALL_SPACING = 12;
 const STAIRS = { steps: 12, tread: 0.6, rise: 0.45, width: 6, downstreamOfBridge: 30 };
@@ -34,30 +30,36 @@ export function createRiverside(layout, path) {
       .map((deck) => {
         const s = side > 0 ? deck.cityStation : deck.farStation;
         const bank = path.sampleAt(s);
-        return { s, half: (deck.width / 2 + 0.3) / Math.abs(deck.rx * bank.rx + deck.rz * bank.rz) };
+        // Out to the middle of the bridge's own parapets, so its ends tuck into them.
+        return { s, half: (deck.width / 2 - 0.25) / Math.abs(deck.rx * bank.rx + deck.rz * bank.rz) };
       })
       .sort((a, b) => a.s - b.s);
   const inMouth = (s, side) => mouthsOf(side).some((mouth) => Math.abs(s - mouth.s) < mouth.half);
 
+  // In a mouth only the parapet goes: the wall below the street carries on,
+  // and closes the back of the end arch.
+  const parapet = (side) => [
+    [side * PRETIL.offset, PRETIL.foot],
+    [side * PRETIL.offset, top],
+    [side * (PRETIL.offset + PRETIL.thickness), top],
+    [side * (PRETIL.offset + PRETIL.thickness), BANK.height],
+  ];
+  const retaining = (side) => [
+    [side * PRETIL.offset, PRETIL.foot],
+    [side * PRETIL.offset, BANK.height - 0.1],
+    [side * (PRETIL.offset + PRETIL.thickness), BANK.height - 0.1],
+  ];
   for (const side of [-1, 1]) {
     const runs = [];
     let from = walled[0].s;
     for (const mouth of mouthsOf(side)) {
-      runs.push([from, mouth.s - mouth.half]);
+      runs.push([from, mouth.s - mouth.half, parapet(side)], [mouth.s - mouth.half, mouth.s + mouth.half, retaining(side)]);
       from = mouth.s + mouth.half;
     }
-    runs.push([from, walled.at(-1).s]);
-    for (const [start, end] of runs) {
+    runs.push([from, walled.at(-1).s, parapet(side)]);
+    for (const [start, end, profile] of runs) {
       const stretch = [path.pointAt(start), ...walled.filter((sample) => sample.s > start && sample.s < end), path.pointAt(end)];
-      const wall = new THREE.Mesh(
-        buildRibbon(stretch, [
-          [side * PRETIL.offset, PRETIL.foot],
-          [side * PRETIL.offset, top],
-          [side * (PRETIL.offset + PRETIL.thickness), top],
-          [side * (PRETIL.offset + PRETIL.thickness), BANK.height],
-        ], Math.floor(start / path.step)),
-        stone,
-      );
+      const wall = new THREE.Mesh(buildRibbon(stretch, profile, Math.floor(start / path.step)), stone);
       wall.frustumCulled = false;
       group.add(wall);
     }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { RIVER, BANK, COLORS, yawTowards } from './config.js';
+import { RIVER, BANK, PRETIL, COLORS, yawTowards } from './config.js';
 import { createSurface } from './materials.js';
 import { createInstances } from './instancing.js';
 
@@ -16,7 +16,8 @@ const PIER = 3;
 const ARCH = { spring: 2, rise: 4.5 };
 const CROWN = { segmental: 1, pointed: 1.12, flatPointed: 0.9 }; // how far over its rise each shape of arch peaks
 const COVER = 1; // stone kept over the crown of an arch
-const PARAPET = { height: 0.9, thickness: 0.5 };
+const PARAPET = { height: 1.05, thickness: 0.5 }; // a hair under the riverside parapet it meets
+const STREET = PRETIL.offset + PRETIL.thickness; // from the river's centreline to where the street starts
 const FOOT = -3;
 const CUTWATER = { reach: 3.2, top: 4.6 };
 
@@ -39,6 +40,18 @@ const BRIDGES = {
   mar: { arches: 10, width: 8.35, arch: 'flatPointed', hump: 1.6, shrinePier: 3, balls: true },
 };
 const FALLBACK = { arches: 10, width: 9, arch: 'segmental' };
+
+// How far from (x, z) along the deck towards `side`, on a line `aside` metres
+// off its axis, the bridge gets `lateral` metres from the river's centreline.
+function reachOf(path, x, z, ax, az, side, aside, lateral) {
+  const px = x - az * aside;
+  const pz = z + ax * aside;
+  const out = (d) => Math.abs(path.project(px + ax * side * d, pz + az * side * d).lateral) >= lateral;
+  let d = 0;
+  while (d < BED && !out(d)) d += 0.5;
+  while (d > 0 && out(d - 0.05)) d -= 0.05;
+  return d;
+}
 
 // The shape of a bridge and where it stands: the middle of its deck (x, z),
 // the unit vector along it towards the city (ax, az) and its length.
@@ -66,6 +79,18 @@ function specOf(bridge, path) {
     // The end is cut square to the deck, not to the bank: long enough for its short corner to come ashore too.
     span: city + far + (shape.width * Math.sqrt(1 - cos * cos)) / cos,
   };
+  // The street meets the deck on the skew. `landing` is where the first
+  // edge of the deck reaches it at each end (1 the city, -1 the far bank):
+  // the deck is down to street level from there on and buried after.
+  // `parapetEnd` is where each parapet (by side across the deck) reaches it.
+  const edge = shape.width / 2 - PARAPET.thickness / 2;
+  const street = (end, aside) => reachOf(path, spec.x, spec.z, ax, az, end, aside, STREET);
+  spec.landing = {};
+  spec.parapetEnd = {};
+  for (const end of [1, -1]) {
+    spec.landing[end] = Math.min(street(end, shape.width / 2), street(end, -shape.width / 2));
+    spec.parapetEnd[end] = { [1]: street(end, edge), [-1]: street(end, -edge) };
+  }
   specs.set(bridge, spec);
   return spec;
 }
@@ -75,10 +100,12 @@ const archCentre = (spec, i) => -spec.span / 2 + PIER + openingOf(spec) / 2 + i 
 const pierFromCity = (spec, n) => spec.span / 2 - PIER / 2 - n * (openingOf(spec) + PIER);
 // The deck is hog-backed, as these bridges are: level with the street where
 // it comes ashore and rising in a shallow curve to the middle, so that none
-// of them needs a ramp. `hump` raises the crown further.
+// of them needs a ramp. `hump` raises the crown further. Past its landing it
+// sinks a few centimetres under the street, so the two never flicker.
+const LANDED = BANK.height - 0.05;
 const deckHeight = (spec, x) => {
-  const t = Math.min(1, Math.abs(x) / (spec.span / 2));
-  return BANK.height + (DECK_TOP + (spec.hump ?? 0) - BANK.height) * (1 - t * t);
+  const t = Math.min(1, Math.abs(x) / spec.landing[x > 0 ? 1 : -1]);
+  return LANDED + (DECK_TOP + (spec.hump ?? 0) - LANDED) * (1 - t * t);
 };
 // The arches by the banks pay for it: they are lower, to keep stone over them.
 const riseOf = (spec, i) =>
@@ -89,7 +116,12 @@ function createBridgeGeometry(spec) {
   const half = span / 2;
   const outline = new THREE.Shape();
   outline.moveTo(-half, FOOT);
-  for (let k = 0; k <= 24; k++) outline.lineTo(-half + (span * k) / 24, deckHeight(spec, -half + (span * k) / 24));
+  // Level past each landing, curved between them.
+  const from = -spec.landing[-1];
+  const to = spec.landing[1];
+  outline.lineTo(-half, LANDED);
+  for (let k = 0; k <= 24; k++) outline.lineTo(from + ((to - from) * k) / 24, deckHeight(spec, from + ((to - from) * k) / 24));
+  outline.lineTo(half, LANDED);
   outline.lineTo(half, FOOT);
   outline.closePath();
 
@@ -258,18 +290,25 @@ export function createBridges(layout, path) {
     };
     piece(mergeGeometries(along(-span / 2, span / 2, 0, -0.83, 0.35, width + 0.5)), stone, 0, 0, 0);
 
-    // Parapets
+    // Parapets. Each one stops where it reaches the street, against the end
+    // of the riverside parapet; on the skew the two sides stop at different places.
     const edge = width / 2 - PARAPET.thickness / 2;
     for (const side of [-1, 1]) {
+      const from = -spec.parapetEnd[-1][side];
+      const to = spec.parapetEnd[1][side];
       if (spec.refuges) {
         // Broken at every pier, where the deck opens into the refuge, and
-        // carried round the point of the cutwater.
+        // carried round the point of the cutwater. Solid over the abutments.
         const walls = [];
         const a = openingOf(spec) / 2;
-        for (let i = 0; i < arches; i++) {
-          walls.push(...along(archCentre(spec, i) - a, archCentre(spec, i) + a, side * edge, PARAPET.height / 2, PARAPET.height, PARAPET.thickness));
+        const runs = [[from, archCentre(spec, 0) - a], [archCentre(spec, arches - 1) + a, to]];
+        for (let i = 0; i < arches; i++) runs.push([archCentre(spec, i) - a, archCentre(spec, i) + a]);
+        for (const [start, end] of runs) {
+          const lo = Math.max(start, from);
+          const hi = Math.min(end, to);
+          if (hi > lo) walls.push(...along(lo, hi, side * edge, PARAPET.height / 2, PARAPET.height, PARAPET.thickness));
         }
-        for (let i = 0; i <= arches; i++) {
+        for (let i = 1; i < arches; i++) {
           const x = -span / 2 + PIER / 2 + i * (openingOf(spec) + PIER);
           for (const k of [-1, 1]) {
             walls.push(
@@ -281,11 +320,12 @@ export function createBridges(layout, path) {
         }
         piece(mergeGeometries(walls), stone, 0, 0, 0);
       } else {
-        piece(mergeGeometries(along(-span / 2, span / 2, side * edge, PARAPET.height / 2, PARAPET.height, PARAPET.thickness)), stone, 0, 0, 0);
+        piece(mergeGeometries(along(from, to, side * edge, PARAPET.height / 2, PARAPET.height, PARAPET.thickness)), stone, 0, 0, 0);
       }
       if (spec.balls) {
         for (let i = 0; i <= arches; i++) {
           const x = -span / 2 + PIER / 2 + i * (openingOf(spec) + PIER);
+          if (x < from || x > to) continue;
           stamp(balls, x, deckHeight(spec, x) + PARAPET.height + 0.3, side * edge);
         }
       }
@@ -329,7 +369,8 @@ export function createBridges(layout, path) {
         stamp(treads, pierX, fromY - t * (fromY - toY), -(width / 2 + 0.8 + t * run), [PIER * 0.82, 0.46, zStep + 0.08]);
       }
     };
-    for (let i = 0; i <= arches; i++) {
+    // The two end piers are abutments in the banks: no cutwater there.
+    for (let i = 1; i < arches; i++) {
       const x = -span / 2 + PIER / 2 + i * (openingOf(spec) + PIER);
       piece(spec.refuges ? createCutwaterGeometry(width, deckHeight(spec, x) - 0.02) : cutwater, stone, x, 0, 0);
       if (spec.caps) {
@@ -400,7 +441,7 @@ export function createBridges(layout, path) {
       const length = Math.hypot(nx, nz) || 1;
       const outward = Math.sign(nx * (spec.x - gx) + nz * (spec.z - gz)) || 1;
       [nx, nz] = gate.facing ?? [(nx * outward) / length, (nz * outward) / length];
-      const reach = span / 2 - 2;
+      const reach = spec.landing[1]; // from where the first edge of the deck reaches the street
       const sx = spec.x + spec.ax * reach;
       const sz = spec.z + spec.az * reach;
       const lead = Math.min(30, Math.hypot(gx - sx, gz - sz) * 0.3);
@@ -415,8 +456,12 @@ export function createBridges(layout, path) {
         false,
         'centripetal',
       ).getSpacedPoints(Math.max(8, Math.ceil(Math.hypot(gx - sx, gz - sz) / 6)));
-      // A worn verge underneath, a little wider, takes the edge off.
-      verges.push(trackGeometry(line, width + 3.4, -0.03));
+      // A worn verge underneath, a little wider, takes the edge off. Being
+      // wider it starts further on, where both its edges have reached the street.
+      const verge = [...line];
+      const ahead = Math.max(...[1, -1].map((k) => reachOf(path, spec.x, spec.z, spec.ax, spec.az, 1, k * (width / 2 + 1.7), STREET))) - reach;
+      verge[0] = line[0].clone().addScaledVector(new THREE.Vector3(spec.ax, 0, spec.az), Math.min(ahead, line[0].distanceTo(line[1]) * 0.9));
+      verges.push(trackGeometry(verge, width + 3.4, -0.03));
       tracks.push(trackGeometry(line, width, 0));
     }
   }
@@ -442,7 +487,11 @@ export function bridgeDecks(layout, path) {
   return layout.bridges.map((bridge) => {
     const spec = specOf(bridge, path);
     const { x, z, ax, az, span } = spec;
-    const bankStation = (side) => path.project(x + ax * side * (span / 2), z + az * side * (span / 2)).s;
+    // Where its axis crosses the middle of the riverside parapet.
+    const bankStation = (side) => {
+      const d = reachOf(path, x, z, ax, az, side, 0, PRETIL.offset + PRETIL.thickness / 2);
+      return path.project(x + ax * side * d, z + az * side * d).s;
+    };
     return {
       id: bridge.id,
       x,

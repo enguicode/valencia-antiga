@@ -533,15 +533,22 @@ for (const card of hourCards.children) card.addEventListener('click', () => cent
 // Third-person camera: sits behind and above the boat and eases towards that spot.
 const CAMERA_BACK = 15;
 const CAMERA_UP = 6.5;
-const ORBIT = { yawPerPixel: 0.006, liftPerPixel: 0.06, maxLift: 30, holdSeconds: 2, returnRate: 2 };
+const ORBIT = { yawPerPixel: 0.006, liftPerPixel: 0.06, maxLift: 30, holdSeconds: 2, returnRate: 2, nearest: 0.45, farthest: 3, zoomPerPixel: 0.0015 };
 const cameraGoal = new THREE.Vector3();
 const lookGoal = new THREE.Vector3();
 const lookAt = new THREE.Vector3();
 const viewDirection = new THREE.Vector3();
-const orbit = { yaw: 0, lift: 0, idle: ORBIT.holdSeconds };
+const orbit = { yaw: 0, lift: 0, zoom: 1, idle: ORBIT.holdSeconds };
 
-// Dragging with a second finger swings the camera around the boat and raises
-// it. Once released it stays put for a moment, then drifts back astern.
+// The mouse wheel brings the camera closer to the boat or takes it further off.
+canvas.addEventListener('wheel', (event) => {
+  event.preventDefault();
+  orbit.zoom = THREE.MathUtils.clamp(orbit.zoom * Math.exp(event.deltaY * ORBIT.zoomPerPixel), ORBIT.nearest, ORBIT.farthest);
+}, { passive: false });
+
+// Dragging with a second finger or the mouse swings the camera around the
+// boat and raises it. Once released it stays put until the boat sails ahead
+// or astern, then drifts back behind it, as in most driving games.
 function updateOrbit(dt, axes) {
   if (axes.looking) {
     orbit.yaw += axes.lookX * ORBIT.yawPerPixel;
@@ -550,7 +557,7 @@ function updateOrbit(dt, axes) {
     return;
   }
   orbit.idle += dt;
-  if (orbit.idle < ORBIT.holdSeconds) return;
+  if (axes.throttle === 0) return;
   const keep = Math.exp(-dt * ORBIT.returnRate);
   orbit.yaw = Math.atan2(Math.sin(orbit.yaw), Math.cos(orbit.yaw)) * keep;
   orbit.lift *= keep;
@@ -835,8 +842,8 @@ function updateCamera(dt, snap = false) {
   viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
   chasePosition
     .copy(boat.mesh.position)
-    .addScaledVector(viewDirection, -THREE.MathUtils.lerp(CAMERA_BACK, UNDER_BRIDGE.back, tucked));
-  chasePosition.y = THREE.MathUtils.lerp(CAMERA_UP + orbit.lift, UNDER_BRIDGE.up, tucked);
+    .addScaledVector(viewDirection, -THREE.MathUtils.lerp(CAMERA_BACK * orbit.zoom, UNDER_BRIDGE.back, tucked));
+  chasePosition.y = THREE.MathUtils.lerp(CAMERA_UP * orbit.zoom + orbit.lift, UNDER_BRIDGE.up, tucked);
   chaseLook.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
   chaseLook.y = 2;
 

@@ -30,7 +30,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 | | Barca | Cámara |
 | --- | --- | --- |
 | **Teclado** | `W` `S` o las flechas de arriba y abajo, para avanzar y ciar. `A` `D` o izquierda y derecha, para el timón. | — |
-| **Ratón** | Arrastrar con el botón izquierdo. | Arrastrar con el botón derecho. |
+| **Ratón** | — (se lleva con el teclado). | Arrastrar con cualquier botón; la rueda acerca y aleja. Al avanzar o ciar, vuelve sola detrás de la barca. |
 | **Pantalla** | El mando de abajo a la izquierda. | El mando de abajo a la derecha, el del ojo. |
 
 En el móvil, el primer dedo lleva la barca y el segundo gira la cámara, también fuera de los mandos.

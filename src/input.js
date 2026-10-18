@@ -1,7 +1,8 @@
 // Keyboard plus a drag-anywhere virtual joystick. Both feed the same two axes:
 // throttle (+1 ahead, -1 astern) and steer (+1 to starboard, -1 to port).
-// A second finger (or the right mouse button) looks around instead: its drag
-// is reported as lookX / lookY, in pixels since the last update.
+// A second finger, or any mouse button, looks around instead: its drag is
+// reported as lookX / lookY, in pixels since the last update. With a mouse
+// the boat is sailed from the keyboard only.
 
 const KEY_AXES = {
   KeyW: ['throttle', 1],
@@ -94,7 +95,7 @@ export function createInput(surface, joystickElement, { moveStick, lookStick, on
   surface.addEventListener('pointerdown', (event) => {
     // Event timestamps say when the finger moved, even if a slow frame delayed the handler.
     presses.set(event.pointerId, { x: event.clientX, y: event.clientY, at: event.timeStamp });
-    if (event.button === 2 || drag.id !== null || lookOnly) {
+    if (event.pointerType === 'mouse' || drag.id !== null || lookOnly) {
       if (look.id !== null) return;
       lookStarted = true;
       look.id = event.pointerId;

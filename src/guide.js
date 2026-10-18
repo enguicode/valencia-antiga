@@ -15,6 +15,7 @@ const RING_RADIUS = 18;
 // reach. Quart's nearest water is just beyond the weir.
 const EARLIEST_RING = 90;
 const RING_OFFSET = 14; // from the middle of the river, towards the place
+const RING_GAP = RING_RADIUS * 2 + 4; // between the centres of two rings, so they never overlap
 const CARD_STAYS_WITHIN = 75; // metres from the ring before the card goes
 const VISIBLE_WITHIN = 750;
 const PIN_SIZE = 0.05; // of the viewport's height
@@ -207,18 +208,34 @@ export function createGuide(points, layout, path, camera, elements) {
     };
   };
 
+  // Rings that would overlap are spread out: a bridge's ring stays under its
+  // bridge, and any other slides downstream until it is clear of those placed.
+  const spots = points.map((point) => locate(point.at));
+  const ringAt = ({ s, side, reach }) => {
+    const centre = path.pointAt(s);
+    return [centre.x + centre.rx * side * (reach ?? RING_OFFSET), centre.z + centre.rz * side * (reach ?? RING_OFFSET)];
+  };
+  const isBridge = (i) => points[i].at.type === 'bridge';
+  const placed = [];
+  for (const i of spots.map((_, i) => i).sort((a, b) => isBridge(b) - isBridge(a) || spots[a].s - spots[b].s)) {
+    const clash = () => {
+      const [x, z] = ringAt(spots[i]);
+      return placed.some(([px, pz]) => Math.hypot(x - px, z - pz) < RING_GAP);
+    };
+    for (let tries = 0; tries < 100 && clash(); tries++) spots[i].s += 2;
+    placed.push(ringAt(spots[i]));
+  }
+
   const group = new THREE.Group();
   const markers = points.map((point, i) => {
-    const { s, side, subject, reach } = locate(point.at);
+    const { side, subject } = spots[i];
     // The night-only point is about the moon: that is what the camera turns to.
     if (point.bonus === 'night') subject.moon = true;
     const onWater = point.at.type === 'sea' || point.at.type === 'along';
     const ground = onWater ? 1.2 : point.at.type === 'bridge' || point.at.type === 'start' ? 0 : BANK.height;
     subject.y = ground + subject.aim;
     subject.ground = ground;
-    const centre = path.pointAt(s);
-    const x = centre.x + centre.rx * side * (reach ?? RING_OFFSET);
-    const z = centre.z + centre.rz * side * (reach ?? RING_OFFSET);
+    const [x, z] = ringAt(spots[i]);
     const state = found.has(point.id) ? 'found' : 'pending';
 
     const ring = new THREE.Group();

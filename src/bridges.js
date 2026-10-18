@@ -16,7 +16,8 @@ const PIER = 3;
 const ARCH = { spring: 2, rise: 4.5 };
 const CROWN = { segmental: 1, pointed: 1.12, flatPointed: 0.9 }; // how far over its rise each shape of arch peaks
 const COVER = 1; // stone kept over the crown of an arch
-const PARAPET = { height: 1.05, thickness: 0.5 }; // a hair under the riverside parapet it meets
+// Where it comes ashore its top is a centimetre under the riverside parapet's, so the two read as one wall without flickering.
+const PARAPET = { height: PRETIL.parapet + 0.04, thickness: 0.5 };
 const STREET = PRETIL.offset + PRETIL.thickness; // from the river's centreline to where the street starts
 const FOOT = -3;
 const CUTWATER = { reach: 3.2, top: 4.6 };
@@ -83,14 +84,16 @@ function specOf(bridge, path) {
   // The street meets the deck on the skew. `landing` is where the first
   // edge of the deck reaches it at each end (1 the city, -1 the far bank):
   // the deck is down to street level from there on and buried after.
-  // `parapetEnd` is where each parapet (by side across the deck) reaches it.
+  // `parapetEnd` is where each parapet (by side across the deck) reaches the
+  // middle of the riverside parapet, which runs on over its end.
   const edge = shape.width / 2 - PARAPET.thickness / 2;
   const street = (end, aside) => reachOf(path, spec.x, spec.z, ax, az, end, aside, STREET);
   spec.landing = {};
   spec.parapetEnd = {};
   for (const end of [1, -1]) {
     spec.landing[end] = Math.min(street(end, shape.width / 2), street(end, -shape.width / 2));
-    spec.parapetEnd[end] = { [1]: street(end, edge), [-1]: street(end, -edge) };
+    const pretil = (aside) => reachOf(path, spec.x, spec.z, ax, az, end, aside, PRETIL.offset + PRETIL.thickness / 2);
+    spec.parapetEnd[end] = { [1]: pretil(edge), [-1]: pretil(-edge) };
   }
   specs.set(bridge, spec);
   return spec;
@@ -509,6 +512,27 @@ export function bridgeDecks(layout, path) {
       const d = reachOf(path, x, z, ax, az, side, 0, PRETIL.offset + PRETIL.thickness / 2);
       return path.project(x + ax * side * d, z + az * side * d).s;
     };
+    // Where the inner face of each of its parapets crosses the middle of the
+    // riverside parapet, as stations down the river: the riverside parapet
+    // opens between them, so it runs on over the ends of the bridge's own.
+    // Measured, not worked out from the skew: on a bend a metre of bank is not a metre of river.
+    const mouth = (side) => {
+      const stations = [1, -1].map((k) => {
+        const aside = k * (spec.width / 2 - PARAPET.thickness);
+        const d = reachOf(path, x, z, ax, az, side, aside, PRETIL.offset + PRETIL.thickness / 2);
+        const px = x - az * aside + ax * side * d;
+        const pz = z + ax * aside + az * side * d;
+        // project() reads the station off the nearest sample; the riverside
+        // parapet is built on the interpolated frame, so settle it on that.
+        let s = path.project(px, pz).s;
+        for (let i = 0; i < 20; i++) {
+          const point = path.pointAt(s);
+          s += (px - point.x) * point.tx + (pz - point.z) * point.tz;
+        }
+        return s;
+      });
+      return [Math.min(...stations), Math.max(...stations)];
+    };
     return {
       id: bridge.id,
       x,
@@ -520,6 +544,7 @@ export function bridgeDecks(layout, path) {
       heightAt: (u) => deckHeight(spec, u),
       cityStation: bankStation(1),
       farStation: bankStation(-1),
+      mouths: { [1]: mouth(1), [-1]: mouth(-1) },
     };
   });
 }

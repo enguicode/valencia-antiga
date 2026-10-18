@@ -25,16 +25,9 @@ export function createRiverside(layout, path) {
   // the street, and it would stand across their mouths. A bridge crosses on
   // the skew, so it meets each bank at its own place and on the slant.
   const decks = bridgeDecks(layout, path);
-  const mouthsOf = (side) =>
-    decks
-      .map((deck) => {
-        const s = side > 0 ? deck.cityStation : deck.farStation;
-        const bank = path.sampleAt(s);
-        // Out to the middle of the bridge's own parapets, so its ends tuck into them.
-        return { s, half: (deck.width / 2 - 0.25) / Math.abs(deck.rx * bank.rx + deck.rz * bank.rz) };
-      })
-      .sort((a, b) => a.s - b.s);
-  const inMouth = (s, side) => mouthsOf(side).some((mouth) => Math.abs(s - mouth.s) < mouth.half);
+  // Up to the inner face of the bridge's own parapets, so it runs on over their ends.
+  const mouthsOf = (side) => decks.map((deck) => deck.mouths[side]).sort((a, b) => a[0] - b[0]);
+  const inMouth = (s, side) => mouthsOf(side).some(([from, to]) => s > from && s < to);
 
   // In a mouth only the parapet goes: the wall below the street carries on,
   // and closes the back of the end arch.
@@ -52,9 +45,9 @@ export function createRiverside(layout, path) {
   for (const side of [-1, 1]) {
     const runs = [];
     let from = walled[0].s;
-    for (const mouth of mouthsOf(side)) {
-      runs.push([from, mouth.s - mouth.half, parapet(side)], [mouth.s - mouth.half, mouth.s + mouth.half, retaining(side)]);
-      from = mouth.s + mouth.half;
+    for (const [start, end] of mouthsOf(side)) {
+      runs.push([from, start, parapet(side)], [start, end, retaining(side)]);
+      from = end;
     }
     runs.push([from, walled.at(-1).s, parapet(side)]);
     for (const [start, end, profile] of runs) {

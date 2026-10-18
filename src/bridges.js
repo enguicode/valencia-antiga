@@ -212,7 +212,8 @@ function createArchRingGeometry(kind) {
 
 // A flat strip along a line of points, `width` across: a number, or a
 // function of how far along the line (0 to 1) for a strip that narrows.
-function trackGeometry(points, width, lift) {
+// `first`, if given, is the pair of corners its first edge runs between.
+function trackGeometry(points, width, lift, first) {
   const positions = [];
   const index = [];
   points.forEach((point, i) => {
@@ -224,7 +225,8 @@ function trackGeometry(points, width, lift) {
     const length = Math.hypot(dx, dz) || 1;
     const px = (-dz / length) * (across / 2);
     const pz = (dx / length) * (across / 2);
-    positions.push(point.x + px, point.y + lift, point.z + pz, point.x - px, point.y + lift, point.z - pz);
+    if (i === 0 && first) positions.push(first[0].x, first[0].y + lift, first[0].z, first[1].x, first[1].y + lift, first[1].z);
+    else positions.push(point.x + px, point.y + lift, point.z + pz, point.x - px, point.y + lift, point.z - pz);
     if (i) index.push(i * 2 - 2, i * 2, i * 2 - 1, i * 2 - 1, i * 2, i * 2 + 1);
   });
   const geometry = new THREE.BufferGeometry();
@@ -435,6 +437,15 @@ export function createBridges(layout, path) {
     // A beaten track from the end of the deck to the gate the bridge is for.
     // It leaves along the bridge and reaches the gate square on: straight
     // where the gate looks along its bridge, bent where it stands elsewhere.
+    // Where a strip `across` wide, centred on the deck, meets the street at
+    // `end`: on the skew, along the bank. In the order trackGeometry lays out a row.
+    const y = BANK.height + 0.05;
+    const streetEdge = (end, across) =>
+      [1, -1].map((k) => {
+        const aside = (end * k * across) / 2;
+        const d = reachOf(path, spec.x, spec.z, spec.ax, spec.az, end, aside, STREET);
+        return new THREE.Vector3(spec.x - spec.az * aside + spec.ax * end * d, y, spec.z + spec.ax * aside + spec.az * end * d);
+      });
     const gate = layout.gates.find((item) => item.id === bridge.id);
     if (gate) {
       const count = layout.wall.length;
@@ -446,12 +457,11 @@ export function createBridges(layout, path) {
       let nz = bx - ax;
       const length = Math.hypot(nx, nz) || 1;
       const outward = Math.sign(nx * (spec.x - gx) + nz * (spec.z - gz)) || 1;
-      [nx, nz] = gate.facing ?? [(nx * outward) / length, (nz * outward) / length];
+      [nx, nz] = [(nx * outward) / length, (nz * outward) / length];
       const reach = spec.landing[1]; // from where the first edge of the deck reaches the street
       const sx = spec.x + spec.ax * reach;
       const sz = spec.z + spec.az * reach;
       const lead = Math.min(30, Math.hypot(gx - sx, gz - sz) * 0.3);
-      const y = BANK.height + 0.05;
       const line = new THREE.CatmullRomCurve3(
         [
           new THREE.Vector3(sx, y, sz),
@@ -462,27 +472,25 @@ export function createBridges(layout, path) {
         false,
         'centripetal',
       ).getSpacedPoints(Math.max(8, Math.ceil(Math.hypot(gx - sx, gz - sz) / 6)));
-      // A worn verge underneath, a little wider, takes the edge off. Being
-      // wider it starts further on, where both its edges have reached the street.
-      const verge = [...line];
-      const ahead = Math.max(...[1, -1].map((k) => reachOf(path, spec.x, spec.z, spec.ax, spec.az, 1, k * (width / 2 + 1.7), STREET))) - reach;
-      verge[0] = line[0].clone().addScaledVector(new THREE.Vector3(spec.ax, 0, spec.az), Math.min(ahead, line[0].distanceTo(line[1]) * 0.9));
-      verges.push(trackGeometry(verge, width + 3.4, -0.03));
-      tracks.push(trackGeometry(line, width, 0));
+      // A worn verge underneath, a little wider, takes the edge off. Both
+      // start along the bank, where the bridge meets the street.
+      verges.push(trackGeometry(line, width + 3.4, -0.03, streetEdge(1, width + 3.4)));
+      tracks.push(trackGeometry(line, width, 0, streetEdge(1, width)));
     }
 
     // On the far bank the track runs straight on into the fields, narrowing
     // until it is lost in them. Where each one led is not modelled.
     {
       const reach = spec.landing[-1];
-      const y = BANK.height + 0.05;
-      const step = (spec.farTrack ?? 90) / 15;
-      const line = Array.from({ length: 16 }, (_, k) => new THREE.Vector3(spec.x - spec.ax * (reach + k * step), y, spec.z - spec.az * (reach + k * step)));
-      const ahead = Math.max(...[1, -1].map((k) => reachOf(path, spec.x, spec.z, spec.ax, spec.az, -1, k * (width / 2 + 1.7), STREET))) - reach;
-      const verge = [line[0].clone().addScaledVector(new THREE.Vector3(-spec.ax, 0, -spec.az), Math.min(ahead, step * 0.9)), ...line.slice(1)];
+      const length = spec.farTrack ?? 90;
+      const count = Math.max(2, Math.round(length / 6));
+      const line = Array.from({ length: count + 1 }, (_, k) => {
+        const d = reach + (k * length) / count;
+        return new THREE.Vector3(spec.x - spec.ax * d, y, spec.z - spec.az * d);
+      });
       const fading = (base) => (t) => base * Math.min(1, (1 - t) / 0.5);
-      verges.push(trackGeometry(verge, fading(width + 3.4), -0.03));
-      tracks.push(trackGeometry(line, fading(width), 0));
+      verges.push(trackGeometry(line, fading(width + 3.4), -0.03, streetEdge(-1, width + 3.4)));
+      tracks.push(trackGeometry(line, fading(width), 0, streetEdge(-1, width)));
     }
   }
   if (tracks.length) {

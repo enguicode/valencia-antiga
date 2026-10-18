@@ -503,42 +503,26 @@
    "id": "sant-josep",
    "name": "Portal Nou",
    "vertex": 49,
-   "placement": "nearest wall point to the bridge, slid 13 m along the wall onto the line of its bridge",
-   "facing": [
-    -0.0896,
-    -0.996
-   ]
+   "placement": "nearest wall point to the bridge, slid 13 m along the wall onto the line of its bridge"
   },
   {
    "id": "serrans",
    "name": "Portal dels Serrans",
    "vertex": 55,
    "placement": "OSM position of the surviving gate, slid 7 m along the wall onto the line of its bridge",
-   "facing": [
-    0.3302,
-    -0.9439
-   ],
    "major": true
   },
   {
    "id": "trinitat",
    "name": "Portal de la Trinitat",
    "vertex": 59,
-   "placement": "nearest wall point to the bridge, slid 26 m along the wall onto the line of its bridge",
-   "facing": [
-    0.5282,
-    -0.8491
-   ]
+   "placement": "nearest wall point to the bridge, slid 26 m along the wall onto the line of its bridge"
   },
   {
    "id": "real",
    "name": "Portal del Real",
    "vertex": 65,
-   "placement": "nearest wall point to the bridge, slid 9 m along the wall onto the line of its bridge",
-   "facing": [
-    0.627,
-    -0.779
-   ]
+   "placement": "nearest wall point to the bridge, slid 9 m along the wall onto the line of its bridge"
   },
   {
    "id": "mar",

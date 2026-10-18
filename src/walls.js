@@ -282,8 +282,8 @@ export function createWalls(layout, path) {
     const before = segments[(i + count - 1) % count];
     const after = segments[i];
     const gate = gateByVertex.get(i);
-    // The gate of a bridge looks along it; everything else, square out from the wall.
-    const [outX, outZ] = gate?.facing ?? [before.outX + after.outX, before.outZ + after.outZ];
+    // Gates and towers alike stand square out from the wall they are built into.
+    const [outX, outZ] = [before.outX + after.outX, before.outZ + after.outZ];
     const frame = makeFrame(vertex.x, vertex.z, outX, outZ);
     const merlonRing = (x, z, radius, y, count) => {
       for (let k = 0; k < count; k++) {

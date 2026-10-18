@@ -358,9 +358,10 @@ def main():
             length=round(length),
         )
 
-    # The gate of a bridge stood at the end of it and looked along it: its
-    # vertex is slid onto the line of the bridge. The Portal de la Mar stood
-    # well away from the line of its bridge and stays where it is.
+    # The gate of a bridge stood at the end of it: its vertex is slid onto the
+    # line of the bridge. It stays square to the wall it is built into. The
+    # Portal de la Mar stood well away from the line of its bridge and stays
+    # where it is.
     gates = []
     for bridge in bridges:
         surviving = bridge["id"] == "serrans"
@@ -376,7 +377,6 @@ def main():
         if abs(off) < GATE_ON_BRIDGE_LINE:
             wall[vertex] = (wall[vertex][0] + az * off, wall[vertex][1] - ax * off)
             gate["placement"] += f", slid {abs(off):.0f} m along the wall onto the line of its bridge"
-            gate["facing"] = [-ax, -az]
         if surviving:
             gate["major"] = True
         gates.append(gate)

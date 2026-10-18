@@ -31,7 +31,8 @@ const BRIDGES = {
   serrans: { arches: 9, width: 10.9, arch: 'segmental', refuges: true, shrinePier: 1 },
   // Slightly pointed arches, stepped caps on the cutwaters and two stairs
   // down to the river bed on the downstream side.
-  trinitat: { arches: 10, width: 10.4, arch: 'pointed', caps: true, stairPiers: [3, 7] },
+  // Its track on the far bank stops short of the walls of the monastery.
+  trinitat: { arches: 10, width: 10.4, arch: 'pointed', caps: true, stairPiers: [3, 7], farTrack: 33 },
   // Nine arches in 1700 (ten today), a level deck, the shrines of the two
   // Vicents and stone balls on the parapet.
   real: { arches: 9, width: 10.5, arch: 'segmental', shrinePier: 2, stairPiers: [6], balls: true },
@@ -206,18 +207,20 @@ function createArchRingGeometry(kind) {
   return new THREE.ShapeGeometry(shape, 8);
 }
 
-// A flat strip along a line of points, `width` across.
+// A flat strip along a line of points, `width` across: a number, or a
+// function of how far along the line (0 to 1) for a strip that narrows.
 function trackGeometry(points, width, lift) {
   const positions = [];
   const index = [];
   points.forEach((point, i) => {
+    const across = typeof width === 'function' ? width(i / (points.length - 1)) : width;
     const before = points[Math.max(0, i - 1)];
     const after = points[Math.min(points.length - 1, i + 1)];
     const dx = after.x - before.x;
     const dz = after.z - before.z;
     const length = Math.hypot(dx, dz) || 1;
-    const px = (-dz / length) * (width / 2);
-    const pz = (dx / length) * (width / 2);
+    const px = (-dz / length) * (across / 2);
+    const pz = (dx / length) * (across / 2);
     positions.push(point.x + px, point.y + lift, point.z + pz, point.x - px, point.y + lift, point.z - pz);
     if (i) index.push(i * 2 - 2, i * 2, i * 2 - 1, i * 2 - 1, i * 2, i * 2 + 1);
   });
@@ -464,6 +467,20 @@ export function createBridges(layout, path) {
       verges.push(trackGeometry(verge, width + 3.4, -0.03));
       tracks.push(trackGeometry(line, width, 0));
     }
+
+    // On the far bank the track runs straight on into the fields, narrowing
+    // until it is lost in them. Where each one led is not modelled.
+    {
+      const reach = spec.landing[-1];
+      const y = BANK.height + 0.05;
+      const step = (spec.farTrack ?? 90) / 15;
+      const line = Array.from({ length: 16 }, (_, k) => new THREE.Vector3(spec.x - spec.ax * (reach + k * step), y, spec.z - spec.az * (reach + k * step)));
+      const ahead = Math.max(...[1, -1].map((k) => reachOf(path, spec.x, spec.z, spec.ax, spec.az, -1, k * (width / 2 + 1.7), STREET))) - reach;
+      const verge = [line[0].clone().addScaledVector(new THREE.Vector3(-spec.ax, 0, -spec.az), Math.min(ahead, step * 0.9)), ...line.slice(1)];
+      const fading = (base) => (t) => base * Math.min(1, (1 - t) / 0.5);
+      verges.push(trackGeometry(verge, fading(width + 3.4), -0.03));
+      tracks.push(trackGeometry(line, fading(width), 0));
+    }
   }
   if (tracks.length) {
     group.add(
@@ -517,12 +534,11 @@ export function createBridgeGuide(layout, path) {
   const CLEARANCE = 1.5; // kept between the boat's middle and the pier
   const bridges = layout.bridges.map((bridge) => {
     const spec = specOf(bridge, path);
-    // A boat is kept to the full-height arches: the low ones by the banks are not for masts.
-    const open = Array.from({ length: spec.arches }, (_, i) => i).filter((i) => riseOf(spec, i) > ARCH.rise - 0.5);
+    // Every arch lets a boat through, the lower ones by the banks too.
     return {
       spec,
       s: path.project(spec.x, spec.z).s,
-      centres: open.map((i) => archCentre(spec, i)),
+      centres: Array.from({ length: spec.arches }, (_, i) => archCentre(spec, i)),
       room: openingOf(spec) / 2 - CLEARANCE,
     };
   });

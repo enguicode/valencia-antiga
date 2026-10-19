@@ -122,16 +122,17 @@ export function build(add, _landmark, kit) {
 
   // Paved square between the two houses. The portal, further out, closes it.
   {
-    const [x, z] = fore(18.2, -0.4);
-    addG('box', [x, 0, z], [16, 0.14, 10.4], PALE, yawOut);
+    const [x, z] = fore(15, 0);
+    addG('box', [x, 0, z], [23, 0.14, 14.8], PALE, yawOut);
   }
 
-  // Low walls from the gate to the portal, just outside the 8.35 m track, so
-  // the square reads as closed without hiding the city gate behind it.
+  // Low walls all the way from the gate tower to the portal, just outside the
+  // 8.35 m track, so the square is closed (it was a «placita cerrada») without
+  // hiding the city gate behind it. They start inside the tower so no gap shows.
   for (const s of [7.4, -7.4]) {
-    const [x, z] = fore(21, s);
-    addG('box', [x, 0, z], [11, 3.2, 0.9], STONE, yawOut);
-    addG('box', [x, 3.2, z], [11.2, 0.25, 1.1], PALE, yawOut);
+    const [x, z] = fore(15, s);
+    addG('box', [x, 0, z], [24, 3.2, 0.9], STONE, yawOut);
+    addG('box', [x, 3.2, z], [24.2, 0.25, 1.1], PALE, yawOut);
   }
 
   // Outer portal on the beaten track from the Pont de la Mar, 26.5 m out
@@ -141,8 +142,8 @@ export function build(add, _landmark, kit) {
   {
     const t = 26.5;
     const [x, z] = fore(t, 0);
-    addG('box', [x, 0, z], [12, 6.5, 1.6], STONE, yawAcross);
-    addG('box', [x, 6.5, z], [12.4, 0.3, 1.9], PALE, yawAcross);
+    addG('box', [x, 0, z], [16.6, 6.5, 1.6], STONE, yawAcross); // reaches both side walls
+    addG('box', [x, 6.5, z], [17, 0.3, 1.9], PALE, yawAcross);
     const proud = (amount, y) => [x + OUT[0] * amount, y, z + OUT[1] * amount];
     addG('arch', proud(0.9, 0.1), [0.5, 5.2, 3.8], DARK, yawOut);
     addG('arch', proud(-0.9, 0.1), [0.5, 5.2, 3.8], DARK, yawOut + Math.PI);

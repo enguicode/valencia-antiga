@@ -7,7 +7,7 @@ import { createWater } from './water.js';
 import { createWalls } from './walls.js';
 import { createCity } from './city.js';
 import { createBridges, createBridgeGuide, bridgeDecks } from './bridges.js';
-import { createLandmarks, landmarkClearings } from './landmarks.js';
+import { addExtraLandmarks, createLandmarks, landmarkClearings } from './landmarks.js';
 import { createRiverside } from './riverside.js';
 import { createBoat, boatPace, DRAW_ORDER } from './boat.js';
 import { createBoatPicker } from './boatpicker.js';
@@ -27,6 +27,7 @@ const debug = new URLSearchParams(location.search).has('debug');
 const [layout, points, blocks] = await Promise.all(
   ['./data/layout.json', './data/points.json', './data/blocks.json'].map(async (url) => (await fetch(url)).json()),
 );
+addExtraLandmarks(layout);
 const path = createRiverPath(layout);
 
 const canvas = document.getElementById('scene');

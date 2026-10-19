@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BANK, COLORS, yawTowards } from './config.js';
 import { createInstances } from './instancing.js';
 import { createSurface } from './materials.js';
+import { EXTRAS } from './extras/index.js';
 
 // Buildings with a silhouette of their own. Each one is assembled from a few
 // unit solids placed in a local frame: +X runs along the building's long axis
@@ -928,12 +929,35 @@ const MODELS = {
   },
 };
 
+// What an extra monument may build with: the palette and the helpers the
+// models above use, and the models themselves, to reuse a generic church or
+// convent.
+const KIT = {
+  colors: { STONE, PALE, ROOF, TILE_BLUE, DARK, ALABASTER, RENDER, BRICK, SOIL, LEAF, CYPRESS },
+  windowRow,
+  archRow,
+  cloister,
+  around,
+  ringOfOpenings,
+  yawTowards,
+  models: MODELS,
+  RIDGE_ALONG_X,
+  FACING_Z,
+};
+const EXTRA_MODELS = Object.fromEntries(EXTRAS.map(({ landmark, build }) => [landmark.kind, (add, entry) => build(add, entry, KIT)]));
+
+// The extra monuments join the layout's own, so the houses, the trees and the
+// guide treat them alike.
+export function addExtraLandmarks(layout) {
+  layout.landmarks.push(...EXTRAS.map(({ landmark }) => landmark));
+}
+
 export function createLandmarks(layout, path) {
   const parts = {};
   const local = new THREE.Object3D();
 
   for (const landmark of layout.landmarks) {
-    const build = MODELS[landmark.kind];
+    const build = MODELS[landmark.kind] ?? EXTRA_MODELS[landmark.kind];
     if (!build) continue;
 
     let [axisX, axisZ] = landmark.axis ?? [1, 0];
@@ -971,6 +995,7 @@ export function createLandmarks(layout, path) {
 // its own at the apse end.
 export function landmarkClearings(layout) {
   return layout.landmarks.flatMap((landmark) => {
+    if (landmark.clearings) return landmark.clearings; // a long or odd shape lists its own
     const { x, z, length, width } = landmark;
     const clearings = [{ x, z, radius: Math.max(length ?? 40, width ?? 20, 30) / 2 + 8 }];
     if (landmark.kind !== 'church' || !landmark.axis) return clearings;

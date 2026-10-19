@@ -33,7 +33,7 @@ Eje local `[0,107, −0,994]`: +X hacia el norte, a lo largo de la muralla (del 
 - [Guía del CTAV, 2007](https://arquitectosdevalencia.es/arquitectura/iglesia-de-santa-ursula/) (el mismo texto en [cultural.valencia.es](https://cultural.valencia.es/monument/antic-monestir-de-santa-ursula/)): Teixidor, 1645 y 1691, Francisco Martí, bóveda de concha, portada de piedra, teja de fuerte pendiente.
 - [Inventario de campaners.com, ficha 499](https://www.campaners.com/php/campanar.php?numer=499): campana María de 1665; la espadaña actual de dos huecos, de hacia 1960, sustituye a la destruida en los años 50.
 - [Ficha municipal](https://www.valencia.es/ayuntamiento/Infociudad_accesible.nsf/vDocumentosWebListado/CFE0FAFFED8863E9C12572C20023DA43?OpenDocument&bdOrigen=&idapoyo=&nivel=3&lang=1), enlazada desde Wikipedia.
-- Plano de Tosca de 1704 y grabado de Fortea de 1738 (`assets-test/tosca/`): el número 45 es el bloque inmediato al este y al norte de las torres de Quart, con claustro y huerto. Fachada actual: [foto de 2014 en Wikimedia](https://commons.wikimedia.org/wiki/File:Iglesia_de_Santa_%C3%9Arsula,_Valencia,_Espa%C3%B1a,_2014-06-30,_DD_87.JPG).
+- Plano de Tosca de 1704 y grabado de Fortea de 1738 (publicados en [puentesvalencia.com](https://puentesvalencia.com/plano-cartografico-valencia-en-1704-del-padre-tosca/)): el número 45 es el bloque inmediato al este y al norte de las torres de Quart, con claustro y huerto. Fachada actual: [foto de 2014 en Wikimedia](https://commons.wikimedia.org/wiki/File:Iglesia_de_Santa_%C3%9Arsula,_Valencia,_Espa%C3%B1a,_2014-06-30,_DD_87.JPG).
 
 ## Qué está inventado o estimado
 

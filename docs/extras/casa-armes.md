@@ -36,7 +36,7 @@ El Portal de la Mar de la escena está en el vértice 4 de la muralla (808,9, 80
 
 - [Ciudadela de Valencia](https://es.wikipedia.org/wiki/Ciudadela_de_Valencia) y [Ciutadella de València](https://ca.wikipedia.org/wiki/Ciutadella_de_Val%C3%A8ncia): casa de armas, restauración de 1643, aduana a la izquierda y casa de armas a la derecha, portal de la imagen, derribo después de 1707.
 - [Plaza de la Puerta del Mar](https://es.wikipedia.org/wiki/Plaza_de_la_Puerta_del_Mar_(Valencia)): la puerta y la plaza.
-- Plano de Tosca, fotografía del original de 1704 y grabado de 1738 (norte hacia abajo), recortes en `assets-test/tosca/`. El grabado da el patio largo y la torre redonda; en las notas del proyecto el radio de 6,5 m y los 14 m de altura están leídos de esa lámina (`docs/sources.md`).
+- Plano de Tosca, fotografía del original de 1704 y grabado de 1738 (norte hacia abajo), publicados en [puentesvalencia.com](https://puentesvalencia.com/plano-cartografico-valencia-en-1704-del-padre-tosca/). El grabado da el patio largo y la torre redonda; en las notas del proyecto el radio de 6,5 m y los 14 m de altura están leídos de esa lámina (`docs/sources.md`).
 - Des Essarts (siglo XVII): dos salas de 80 por 20 pasos. Tomado el paso francés a 0,65 m, unos 52 × 13 m.
 - Gauna, 1599: plaza ancha, salas de armas, polvorín abovedado y plataforma con más de veinticinco piezas de bronce.
 
@@ -47,7 +47,7 @@ El Portal de la Mar de la escena está en el vértice 4 de la muralla (808,9, 80
 - La torre es un octógono en lugar de un cilindro. El diámetro y la altura salen de la lectura del grabado, no de un levantamiento.
 - Cuatro cajas oscuras sustituyen la batería de Gauna. Un bloque de alabastro sustituye la imagen, en la cara exterior del portal.
 - Se deja fuera el revellín en punta de flecha de 1574 (entraría en el río) y el baluarte de flor de lis de 1707 hacia la huerta de Sant Doménec.
-- `src/walls.js` sigue dibujando, en la cara de ciudad de la cortina sur, la nave y el cubo que el proyecto ya da por mal puestos (Tosca muestra el patio largo y la torre, no esa nave). Este módulo no lo toca y no se solapa con él. Conviene quitarlo al fusionar.
+- La nave y la torre redonda que `src/walls.js` dibujaba antes junto a esta puerta se han quitado: este modelo las sustituye.
 - En el vértice 3 de la muralla la escena pone su torreon redondo genérico (diámetro 4,2 m). Queda a unos 3 m de la torre de la Casa de Armas, sin cruzarla.
 
 ## Dudas

@@ -48,7 +48,7 @@ const GATE_STYLES = {
   'sant-josep': { kind: 'round', radius: 4.2, height: 20, gap: 7, centre: 16, batter: true },
   trinitat: { kind: 'square', radius: 3.5, height: 14, gap: 6.5, centre: 11.5 },
   // a single tower with the gate through it
-  mar: { kind: 'single', size: 9, height: 15, annex: true },
+  mar: { kind: 'single', size: 9, height: 15 }, // the Casa de les Armes beside it is src/extras/casa-armes.js
   'sant-vicent': { kind: 'single', size: 9, height: 14.5, niches: true },
   // no tower: an arch in a taller, slightly projecting stretch of wall
   real: { kind: 'plain', width: 11, height: 12.5 },
@@ -402,59 +402,6 @@ export function createWalls(layout, path) {
         for (const side of [-1, 1]) {
           place(lists.accents, frame, x + style.size / 2 + 0.15, 8.4, side * 2.7, { scale: [0.4, 2.4, 1.1] });
         }
-      }
-      if (style.annex) {
-        // The Casa de les Armes stood against the wall beside the gate, on
-        // the city side: a long plain hall under a tiled roof. Its shape is
-        // a sketch. It is set against the next stretch of wall, not on the
-        // corner's own frame, or it would stand outside.
-        const HALL = { length: 30, depth: 7, height: 8.5, ridge: 2.6 }; // shallow: the houses start 16 m from the wall
-        const reach = Math.hypot(after.midX - vertex.x, after.midZ - vertex.z) || 1;
-        const along = style.size / 2 + 5 + HALL.length / 2;
-        const inward = WALL.thickness / 2 + HALL.depth / 2;
-        const hall = makeFrame(
-          vertex.x + ((after.midX - vertex.x) / reach) * along - after.outX * inward,
-          vertex.z + ((after.midZ - vertex.z) / reach) * along - after.outZ * inward,
-          after.outX,
-          after.outZ,
-        );
-        // The great round tower at the far end of it, crenellated, as the
-        // engraving of Tosca's plan draws it. Size read off the engraving.
-        const KEEP = { radius: 6.5, height: 14 };
-        const far = style.size / 2 + 5 + HALL.length + KEEP.radius - 1;
-        const keep = makeFrame(
-          vertex.x + ((after.midX - vertex.x) / reach) * far - after.outX * (KEEP.radius * 0.4),
-          vertex.z + ((after.midZ - vertex.z) / reach) * far - after.outZ * (KEEP.radius * 0.4),
-          after.outX,
-          after.outZ,
-        );
-        place(lists.round, keep, 0, KEEP.height / 2, 0, { scale: [KEEP.radius, KEEP.height, KEEP.radius] });
-        place(lists.round, keep, 0, KEEP.height - 1.6, 0, { scale: [KEEP.radius + 0.35, 0.5, KEEP.radius + 0.35] });
-        for (let k = 0; k < 16; k++) {
-          const turn = (k / 16) * Math.PI * 2;
-          place(lists.merlons, keep, Math.cos(turn) * (KEEP.radius - 0.5), KEEP.height + MERLON.height / 2, Math.sin(turn) * (KEEP.radius - 0.5), { yaw: -turn });
-        }
-        place(lists.renderedBlocks, hall, 0, HALL.height / 2, 0, { scale: [HALL.depth, HALL.height, HALL.length] });
-        place(lists.accents, hall, 0, HALL.height + 0.15, 0, { scale: [HALL.depth + 0.6, 0.3, HALL.length + 0.6] });
-        // A door and a row of windows on the side of the city.
-        const face = -HALL.depth / 2 - 0.05;
-        place(lists.arches, hall, face, 0.3, 0, { scale: [1, 4.6 / 1.4, 3.2], yaw: Math.PI });
-        for (let k = 0; k < 6; k++) {
-          const z = ((k + 0.5) / 6 - 0.5) * (HALL.length - 4);
-          place(lists.slits, hall, face, HALL.height * 0.68, z, { scale: [1, 1, 2.6], yaw: Math.PI });
-          if (Math.abs(z) > 3) place(lists.slits, hall, face, HALL.height * 0.3, z, { scale: [1, 0.8, 2.6], yaw: Math.PI });
-        }
-        const gable = new THREE.Shape();
-        gable.moveTo(-HALL.depth / 2 - 0.5, 0);
-        gable.lineTo(0, HALL.ridge);
-        gable.lineTo(HALL.depth / 2 + 0.5, 0);
-        gable.closePath();
-        const roof = new THREE.Mesh(
-          new THREE.ExtrudeGeometry(gable, { depth: HALL.length + 0.8, bevelEnabled: false }).translate(0, HALL.height + 0.3, -HALL.length / 2 - 0.4),
-          createSurface('tiles', 3, { color: COLORS.roofs[1] }),
-        );
-        roof.applyMatrix4(hall);
-        extras.push(roof);
       }
       return;
     }

@@ -46,7 +46,7 @@ El punto 39.47419, −0.36464 que da la ficha cae en este mismo tramo. El desví
 - [Infociudad, La Alameda](https://www.valencia.es/-/infociudad-la-alameda): acceso desde la mar, dos salones, torres de 1714.
 - [Museu d'Història de València, L'Albereda](https://mhv.valencia.es/va/l-albereda): tres hileras de álamos en 1677.
 - [Del prado de palacio a la Alameda](https://www.levante-emv.com/valencia/2007/11/04/prado-palacio-alameda-13516572.html) (*Levante-EMV*, 4 de noviembre de 2007): el óvalo como enlace entre el palacio y el arbolado, y las columnas de 1716.
-- Grabado de Josep Fortea (1738) del plano de Tosca, lámina en el repositorio de trabajo (`assets-test/tosca/`). Norte hacia abajo. Se ven el Llano abierto delante del palacio, el óvalo plantado con columna al arranque del paseo, cuatro hileras hasta el Pont de la Mar, la ermita y las dos torres. Esas tres últimas cosas no se han modelado.
+- Grabado de Josep Fortea (1738) del plano de Tosca, publicado en [puentesvalencia.com](https://puentesvalencia.com/plano-cartografico-valencia-en-1704-del-padre-tosca/). Norte hacia abajo. Se ven el Llano abierto delante del palacio, el óvalo plantado con columna al arranque del paseo, cuatro hileras hasta el Pont de la Mar, la ermita y las dos torres. Esas tres últimas cosas no se han modelado.
 
 ## Qué está inventado o estimado
 

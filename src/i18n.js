@@ -130,7 +130,7 @@ const STRINGS = {
     'stick.look': 'Mirar alrededor',
     'walk.ashore': 'Bajar a tierra',
     'walk.aboard': 'Subir a la barca',
-    'help.walk': '<strong>A pie:</strong> junto a las escaleras de los puentes, y en las dos de los pretiles junto a Serrans, aparece una bota para bajar a tierra. El muñeco se lleva con los mismos mandos que la barca y no atraviesa casas ni muralla: se sale por las puertas. Junto a cualquier escalera, el botón del barco te devuelve a bordo.',
+    'help.walk': '<strong>A caballo:</strong> cada escalera del río, en los puentes y en los pretiles, tiene un círculo pequeño en el agua. Al entrar en él con la barca aparece una bota para bajar a tierra, a caballo, con los mismos mandos que la barca. No se atraviesan casas ni muralla: se sale por las puertas. Junto a cualquier escalera, el botón del barco te devuelve a bordo.',
   },
 
   ca: {
@@ -256,7 +256,7 @@ const STRINGS = {
     'stick.look': 'Mirar al voltant',
     'walk.ashore': 'Baixar a terra',
     'walk.aboard': 'Pujar a la barca',
-    'help.walk': '<strong>A peu:</strong> al costat de les escales dels ponts, i en les dues dels pretils prop de Serrans, apareix una bota per a baixar a terra. El ninot es porta amb els mateixos comandaments que la barca i no travessa cases ni muralla: s’ix per les portes. Al costat de qualsevol escala, el botó de la barca et torna a bord.',
+    'help.walk': '<strong>A cavall:</strong> cada escala del riu, als ponts i als pretils, té un cercle menut a l’aigua. En entrar-hi amb la barca apareix una bota per a baixar a terra, a cavall, amb els mateixos comandaments que la barca. No es travessen cases ni muralla: s’ix per les portes. Al costat de qualsevol escala, el botó de la barca et torna a bord.',
   },
 
   en: {
@@ -382,7 +382,7 @@ const STRINGS = {
     'stick.look': 'Look around',
     'walk.ashore': 'Go ashore',
     'walk.aboard': 'Back aboard',
-    'help.walk': '<strong>On foot:</strong> by the steps on the bridges, and the two in the river walls near Serrans, a boot appears to go ashore. The figure moves with the same controls as the boat and cannot pass through houses or the city wall: leave by the gates. By any flight of steps, the boat button takes you back aboard.',
+    'help.walk': '<strong>On horseback:</strong> every flight of steps on the river, on the bridges and in the river walls, has a small ring on the water. Sail into it and a boot appears to go ashore, on horseback, with the same controls as the boat. Houses and the city wall cannot be passed through: leave by the gates. By any flight of steps, the boat button takes you back aboard.',
   },
 };
 

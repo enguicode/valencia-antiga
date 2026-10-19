@@ -10,7 +10,7 @@ import { t, localized, onLanguageChange } from './i18n.js';
 // found. Finding them all is the visitor's errand.
 
 const STORAGE_KEY = 'valencia-antiga.found';
-const RING_RADIUS = 18;
+export const RING_RADIUS = 18;
 // No ring sits upstream of this, measured from the head of the navigable
 // reach. Quart's nearest water is just beyond the weir.
 const EARLIEST_RING = 90;

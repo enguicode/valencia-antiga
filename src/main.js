@@ -14,7 +14,7 @@ import { createWalk } from './walk.js';
 import { createBoatPicker } from './boatpicker.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
-import { createGuide, createTour, sourceLabel } from './guide.js';
+import { createGuide, createTour, sourceLabel, RING_RADIUS } from './guide.js';
 import { createMinimap } from './minimap.js';
 import { createAtmosphere } from './atmosphere.js';
 import { createLife } from './life.js';
@@ -166,6 +166,8 @@ const guide = createGuide(points, layout, path, camera, {
   onLeave: () => restoreBorrowedNight(),
   isShowing: () => focus.left > 0,
 });
+// The rings off the steps keep clear of the points of interest's rings.
+walk.markLandings(guide.markers, RING_RADIUS);
 scene.add(guide.group);
 
 // The logbook: tapping the tally lists every point. Those not yet found are
@@ -536,8 +538,9 @@ for (const card of hourCards.children) card.addEventListener('click', () => cent
 // Third-person camera: sits behind and above the boat and eases towards that spot.
 const CAMERA_BACK = 15;
 const CAMERA_UP = 6.5;
-// On foot: metres behind, above the feet, of the eyes, and how much of the drag's lift to take.
-const WALK_CAMERA = { back: 4.6, nearest: 1.2, up: 2.6, eye: 1.6, lift: 0.25 };
+// Ashore, on horseback: metres behind, the closest it comes in a narrow
+// street, above the ground, of the rider's eyes, and how much of the drag's lift to take.
+const WALK_CAMERA = { back: 7.5, nearest: 2, up: 3.8, eye: 2.6, lift: 0.3 };
 const ORBIT = { yawPerPixel: 0.006, liftPerPixel: 0.06, maxLift: 30, holdSeconds: 2, returnRate: 2, nearest: 0.45, farthest: 3, zoomPerPixel: 0.0015 };
 const cameraGoal = new THREE.Vector3();
 const lookGoal = new THREE.Vector3();

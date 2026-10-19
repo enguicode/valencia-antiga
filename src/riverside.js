@@ -77,9 +77,7 @@ export function createRiverside(layout, path) {
   // Stairs from the street down to the water, just downstream of each bridge
   // on the city side. Local +X points towards the river.
   const steps = [];
-  for (const deck of decks) {
-    const station = deck.cityStation + STAIRS.downstreamOfBridge;
-    const sample = path.sampleAt(station);
+  for (const { sample } of riverStairs(path, decks)) {
     const frame = new THREE.Matrix4()
       .makeRotationY(yawTowards(-sample.rx, -sample.rz))
       .setPosition(sample.x + sample.rx * PRETIL.offset, 0, sample.z + sample.rz * PRETIL.offset);
@@ -112,3 +110,17 @@ export function createRiverside(layout, path) {
 
   return group;
 }
+
+// Where the riverside stairs are, for going ashore: `top` on the street
+// behind the parapet, `foot` in the water past the last step, `inward` the
+// way from the river into the city and `away` downstream.
+export function riverStairs(path, decks) {
+  return decks.map((deck) => {
+    const sample = path.sampleAt(deck.cityStation + STAIRS.downstreamOfBridge);
+    const at = (lateral) => [sample.x + sample.rx * lateral, sample.z + sample.rz * lateral];
+    const [x, z] = at(PRETIL.offset + PRETIL.thickness + 1.2);
+    const [footX, footZ] = at(PRETIL.offset - STAIRS.steps * STAIRS.tread - 1.5);
+    return { id: `pretil-${deck.id}`, sample, x, z, footX, footZ, inward: [sample.rx, sample.rz], away: [sample.tx, sample.tz] };
+  });
+}
+

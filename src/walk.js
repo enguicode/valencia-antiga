@@ -1,34 +1,34 @@
 import * as THREE from 'three';
-import { BANK, COLORS, PRETIL, yawTowards } from './config.js';
+import { BANK, PRETIL, RIVER } from './config.js';
 import { bridgeDecks, bridgeStairs } from './bridges.js';
-import { createSurface } from './materials.js';
+import { riverStairs } from './riverside.js';
 
-// Going ashore. At a flight of steps down to the water the boat can be left
-// moored and a figure of about 1700 walks the streets: the same controls
-// steer it, the camera follows at a person's height, and it runs into the
-// blocks of houses, the monuments, the city wall (passable only at its
-// gates), the river and the bridges' parapets. Back at any flight of steps
-// it can take to the boat again.
+// Going ashore. At any flight of steps down to the water (on the bridges and
+// in the riverside parapet) the boat can be left moored and a rider of about
+// 1700 goes on horseback through the streets: the same controls steer the
+// horse, the camera follows close behind, and it runs into the blocks of
+// houses, the monuments, the city wall (passable only at its gates), the
+// river and the bridges' parapets. Back at any flight it can take to the boat
+// again. Each flight is marked on the water with a small ring of its own.
 
-const WALK = { speed: 2.2, back: 1.1, turn: 2.2, radius: 0.35, gate: 6 };
-const REACH = { ashore: 12, aboard: 4 }; // metres from the foot of the steps (boat) or their top (on foot)
+const RIDE = { speed: 7, back: 1.5, turn: 1.8, radius: 0.75, gate: 6 };
+const MARK = { radius: 5, edge: 1.1, height: 0.55, gap: 3 }; // the info rings are 18 m across the middle
+const REACH = { aboard: 5 }; // metres from the top of the steps, ashore
 const STREET = PRETIL.offset + PRETIL.thickness + 0.3; // the river side of the street, from the centreline
-const OPEN = new Set(['albereda', 'jardins-real']); // planted ground, walked through
+const OPEN = new Set(['albereda', 'jardins-real']); // planted ground, ridden through
 
-// A pair of invented flights against the riverside parapet, one on each bank
-// a little downstream of the Pont dels Serrans, so the city can be reached
-// near its main gate. Only their place is invented: such steps existed.
-const BANK_STEPS = { after: 45, run: 10, steps: 16 };
-
-function createFigure() {
-  const figure = new THREE.Group();
+function createRider() {
+  const group = new THREE.Group();
   const cloth = (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.9 });
   const coat = cloth(0x6e3b2b);
   const breeches = cloth(0x3a3328);
   const stockings = cloth(0xd8cfba);
   const skin = cloth(0xd6a07c);
   const felt = cloth(0x26211d);
-  const box = (w, h, d, material, x, y, z, parent = figure) => {
+  const bay = cloth(0x6b4528);
+  const mane = cloth(0x2b1f17);
+  const tack = cloth(0x5a2a22);
+  const box = (w, h, d, material, x, y, z, parent = group) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
@@ -36,40 +36,67 @@ function createFigure() {
     return mesh;
   };
   // Limbs hang from a pivot at the hip or the shoulder, so they can swing.
-  const limb = (x, y) => {
+  const limb = (parent, x, y, z = 0) => {
     const pivot = new THREE.Group();
-    pivot.position.set(x, y, 0);
-    figure.add(pivot);
+    pivot.position.set(x, y, z);
+    parent.add(pivot);
     return pivot;
   };
-  const legs = [-0.1, 0.1].map((x) => {
-    const leg = limb(x, 0.92);
+
+  // The horse, a bay, facing +Z: barrel, neck and head, four legs and a tail.
+  const horse = new THREE.Group();
+  group.add(horse);
+  box(0.56, 0.66, 1.75, bay, 0, 1.27, 0, horse);
+  box(0.6, 0.62, 0.5, bay, 0, 1.3, 0.62, horse); // chest
+  box(0.58, 0.6, 0.5, bay, 0, 1.32, -0.62, horse); // quarters
+  const neck = box(0.3, 0.8, 0.42, bay, 0, 1.78, 0.98, horse);
+  neck.rotation.x = 0.55;
+  const crest = box(0.08, 0.72, 0.16, mane, 0, 1.86, 0.88, horse);
+  crest.rotation.x = 0.55;
+  const head = box(0.26, 0.3, 0.62, bay, 0, 2.08, 1.38, horse);
+  head.rotation.x = 0.5;
+  for (const x of [-0.07, 0.07]) box(0.05, 0.14, 0.05, bay, x, 2.3, 1.18, horse);
+  const tail = box(0.12, 0.7, 0.14, mane, 0, 1.2, -1.02, horse);
+  tail.rotation.x = 0.35;
+  const legs = [];
+  for (const [x, z] of [[-0.17, 0.66], [0.17, 0.66], [-0.17, -0.66], [0.17, -0.66]]) {
+    const leg = limb(horse, x, 1.0, z);
+    box(0.14, 0.92, 0.16, bay, 0, -0.46, 0, leg);
+    box(0.15, 0.1, 0.18, mane, 0, -0.95, 0, leg);
+    legs.push(leg);
+  }
+  box(0.6, 0.08, 0.55, tack, 0, 1.62, 0.05, horse); // saddle
+
+  // The rider in the saddle: coat to the knee, stockings, a cocked hat.
+  const rider = new THREE.Group();
+  rider.position.set(0, 0.74, 0);
+  horse.add(rider);
+  for (const x of [-0.13, 0.13]) {
+    const leg = limb(rider, x, 0.92);
+    leg.rotation.set(-0.7, 0, x < 0 ? -0.35 : 0.35); // astride, the thigh forward and out
     box(0.17, 0.42, 0.19, breeches, 0, -0.21, 0, leg);
     box(0.14, 0.44, 0.15, stockings, 0, -0.64, 0, leg);
     box(0.15, 0.08, 0.27, felt, 0, -0.88, 0.05, leg);
-    return leg;
-  });
-  // Long coat to the knee, a waistcoat line and the stock at the neck.
-  box(0.46, 0.6, 0.27, coat, 0, 1.23, 0);
-  box(0.52, 0.36, 0.31, coat, 0, 0.78, 0);
-  box(0.2, 0.5, 0.02, stockings, 0, 1.25, 0.14);
-  box(0.14, 0.08, 0.14, stockings, 0, 1.56, 0.03);
-  const arms = [-0.3, 0.3].map((x) => {
-    const arm = limb(x, 1.5);
+  }
+  box(0.46, 0.6, 0.27, coat, 0, 1.23, 0, rider);
+  box(0.2, 0.5, 0.02, stockings, 0, 1.25, 0.14, rider);
+  box(0.14, 0.08, 0.14, stockings, 0, 1.56, 0.03, rider);
+  for (const x of [-0.3, 0.3]) {
+    const arm = limb(rider, x, 1.5);
+    arm.rotation.x = -0.6; // the reins in hand
     box(0.13, 0.58, 0.15, coat, 0, -0.29, 0, arm);
     box(0.1, 0.1, 0.11, skin, 0, -0.62, 0, arm);
-    return arm;
-  });
-  box(0.22, 0.25, 0.22, skin, 0, 1.73, 0);
-  // A cocked hat: a wide brim and a low crown.
+  }
+  box(0.22, 0.25, 0.22, skin, 0, 1.73, 0, rider);
   const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.04, 3), felt);
   brim.position.set(0, 1.87, 0);
   brim.rotation.y = Math.PI;
   brim.castShadow = true;
-  figure.add(brim);
-  box(0.2, 0.09, 0.2, felt, 0, 1.92, 0);
-  figure.userData = { legs, arms };
-  return figure;
+  rider.add(brim);
+  box(0.2, 0.09, 0.2, felt, 0, 1.92, 0, rider);
+
+  group.userData = { horse, legs };
+  return group;
 }
 
 // Point in polygon, and the distance from a point to the polygon's outline.
@@ -117,39 +144,49 @@ export function createWalk(scene, layout, path, blocks) {
   const wall = layout.wall;
   const gates = layout.gates.map((gate) => wall[gate.vertex]);
 
-  // Where one can go ashore: every flight on the bridges, and the two on the banks.
-  const landings = bridgeStairs(layout, path).map((stair) => ({ ...stair }));
-  const steps = new THREE.Group();
-  {
-    const serrans = layout.bridges.find((bridge) => bridge.id === 'serrans') ?? layout.bridges[0];
-    const station = path.project(serrans.x, serrans.z).s + BANK_STEPS.after;
-    const stone = createSurface('masonry', 4, { color: COLORS.stone });
-    const tread = new THREE.BoxGeometry(1, 1, 1);
-    for (const side of [1, -1]) {
-      const along = (s, lateral) => {
-        const point = path.pointAt(s);
-        return [point.x + point.rx * lateral, point.z + point.rz * lateral, point];
-      };
-      // Treads against the river face of the parapet, going down with the stream.
-      for (let k = 0; k < BANK_STEPS.steps; k++) {
-        const t = k / (BANK_STEPS.steps - 1);
-        const [x, z, point] = along(station + t * BANK_STEPS.run, side * (PRETIL.offset - PRETIL.thickness / 2 - 0.75));
-        const top = BANK.height - t * (BANK.height - PRETIL.foot);
-        const mesh = new THREE.Mesh(tread, stone);
-        mesh.scale.set(BANK_STEPS.run / (BANK_STEPS.steps - 1) + 0.1, top, 1.5);
-        mesh.position.set(x, top / 2, z);
-        mesh.rotation.y = yawTowards(point.tx, point.tz);
-        mesh.receiveShadow = true;
-        steps.add(mesh);
+  // Where one can go ashore: every flight on the bridges and in the parapet.
+  const landings = [...bridgeStairs(layout, path), ...riverStairs(path, decks)].map((stair) => ({ ...stair }));
+
+  // A small ring on the water off the foot of each flight. Where it would
+  // touch a point of interest's ring it slides along the river until clear.
+  const rings = new THREE.Group();
+  const ringMaterial = (opacity) =>
+    new THREE.MeshBasicMaterial({ color: 0xe0a64a, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
+  const edgeGeometry = new THREE.RingGeometry(MARK.radius - MARK.edge, MARK.radius, 40).rotateX(-Math.PI / 2);
+  const fillGeometry = new THREE.CircleGeometry(MARK.radius - MARK.edge, 40).rotateX(-Math.PI / 2);
+  const edgeMaterial = ringMaterial(0.75);
+  const fillMaterial = ringMaterial(0.14);
+  function markLandings(points, pointRadius) {
+    rings.clear();
+    for (const landing of landings) {
+      const start = path.project(landing.footX, landing.footZ);
+      const clear = (x, z) => points.every((point) => Math.hypot(x - point.x, z - point.z) > pointRadius + MARK.radius + MARK.gap);
+      let x = landing.footX;
+      let z = landing.footZ;
+      // Sideways across the river, a little to one side and then the other,
+      // so it stays as far from the bridge as the foot of its steps and off
+      // the piers; never out of the water.
+      const point = path.pointAt(start.s);
+      const wet = RIVER.width / 2 - MARK.radius - 1;
+      for (let k = 1; k <= 40 && !clear(x, z); k++) {
+        const lateral = start.lateral + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 2;
+        if (Math.abs(lateral) > wet) continue;
+        x = point.x + point.rx * lateral;
+        z = point.z + point.rz * lateral;
       }
-      const [x, z, point] = along(station, side * (STREET + 1.2));
-      const [footX, footZ] = along(station + BANK_STEPS.run + 2, side * (PRETIL.offset - 10));
-      landings.push({ id: `bank${side}`, x, z, y: BANK.height, footX, footZ, inward: [point.rx * side, point.rz * side], away: [point.tx, point.tz] });
+      landing.markX = x;
+      landing.markZ = z;
+      const ring = new THREE.Group();
+      ring.add(new THREE.Mesh(fillGeometry, fillMaterial), new THREE.Mesh(edgeGeometry, edgeMaterial));
+      ring.position.set(x, MARK.height, z);
+      ring.renderOrder = 2;
+      rings.add(ring);
     }
   }
-  scene.add(steps);
+  markLandings([], 0);
+  scene.add(rings);
 
-  const figure = createFigure();
+  const figure = createRider();
   figure.visible = false;
   scene.add(figure);
 
@@ -183,7 +220,7 @@ export function createWalk(scene, layout, path, blocks) {
   }
 
   function blocked(x, z, fromX, fromZ) {
-    const r = WALK.radius;
+    const r = RIDE.radius;
     const deck = deckAt(x, z);
     if (deck == null) {
       const { lateral, s } = path.project(x, z);
@@ -192,7 +229,7 @@ export function createWalk(scene, layout, path, blocks) {
     }
     if (solid(x, z, r)) return true;
     // The wall: no standing in it and no crossing it, except through a gate.
-    if (!gates.some(([gx, gz]) => Math.hypot(x - gx, z - gz) < WALK.gate)) {
+    if (!gates.some(([gx, gz]) => Math.hypot(x - gx, z - gz) < RIDE.gate)) {
       for (let i = 0; i < wall.length; i++) {
         const [ax, az] = wall[i];
         const [bx, bz] = wall[(i + 1) % wall.length];
@@ -208,13 +245,13 @@ export function createWalk(scene, layout, path, blocks) {
     let best = null;
     let distance = Infinity;
     for (const landing of landings) {
-      const d = Math.hypot(boatState.x - landing.footX, boatState.z - landing.footZ);
+      const d = Math.hypot(boatState.x - landing.markX, boatState.z - landing.markZ);
       if (d < distance) {
         distance = d;
         best = landing;
       }
     }
-    return distance < REACH.ashore ? best : null;
+    return distance < MARK.radius ? best : null; // inside the ring
   }
 
   function nearestTop() {
@@ -252,19 +289,22 @@ export function createWalk(scene, layout, path, blocks) {
   function place() {
     figure.position.set(state.x, state.y, state.z);
     figure.rotation.y = state.heading;
-    const swing = Math.sin(state.phase) * Math.min(1, Math.abs(state.speed) / WALK.speed) * 0.6;
-    const { legs, arms } = figure.userData;
+    // A trot: the diagonal pairs of legs swing together, and the body bobs.
+    const pace = Math.min(1, Math.abs(state.speed) / RIDE.speed);
+    const swing = Math.sin(state.phase) * (0.15 + 0.45 * pace) * Math.min(1, Math.abs(state.speed) * 2);
+    const { horse, legs } = figure.userData;
     legs[0].rotation.x = swing;
+    legs[3].rotation.x = swing;
     legs[1].rotation.x = -swing;
-    arms[0].rotation.x = -swing * 0.8;
-    arms[1].rotation.x = swing * 0.8;
+    legs[2].rotation.x = -swing;
+    horse.position.y = Math.abs(Math.sin(state.phase)) * 0.06 * pace;
   }
 
   function update(dt, axes) {
     if (!state.on) return;
-    state.heading -= axes.steer * WALK.turn * dt;
-    const wanted = axes.throttle >= 0 ? axes.throttle * WALK.speed : axes.throttle * WALK.back;
-    state.speed += (wanted - state.speed) * Math.min(1, dt * 8);
+    state.heading -= axes.steer * RIDE.turn * dt;
+    const wanted = axes.throttle >= 0 ? axes.throttle * RIDE.speed : axes.throttle * RIDE.back;
+    state.speed += (wanted - state.speed) * Math.min(1, dt * 3);
     const step = state.speed * dt;
     const dx = Math.sin(state.heading) * step;
     const dz = Math.cos(state.heading) * step;
@@ -282,9 +322,9 @@ export function createWalk(scene, layout, path, blocks) {
     if (!moved) state.speed *= 0.5;
     const ground = deckAt(state.x, state.z) ?? BANK.height;
     state.y += (ground - state.y) * Math.min(1, dt * 12);
-    state.phase += Math.abs(state.speed) * dt * 3.6;
+    state.phase += (1.2 + Math.abs(state.speed) * 1.1) * dt * Math.min(1, Math.abs(state.speed) * 2);
     place();
   }
 
-  return { state, figure, landings, update, nearestFoot, nearestTop, goAshore, goAboard, blocked, solid };
+  return { state, figure, landings, update, nearestFoot, nearestTop, goAshore, goAboard, blocked, solid, markLandings };
 }

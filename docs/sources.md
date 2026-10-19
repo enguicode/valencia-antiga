@@ -285,3 +285,20 @@ La forma de la barraca sale de las que siguen en pie en el Palmar y en Alboraia 
 | --- | --- | --- |
 | Aparejo de la playa del Grau | Barcas varadas con puntales, redes y velas a secar, cabrestantes, anclas, nasas, toneles, leña, sombrajos y algunas figuras | El tipo, con las fuentes de arriba; el número y el sitio de cada pieza, esbozo. Los bueyes son el anacronismo leve ya anotado |
 | Arenal sur | La misma playa, más rala: dos barracas, dos barcas y matas en las dunas | Ambiente |
+
+## Monumentos añadidos de la búsqueda de cercanías (19-oct-2026)
+
+Diez sitios que existían hacia 1700 y aparecen enlazados desde los artículos de los monumentos de la escena. Cada uno tiene su ficha, con fecha, ubicación usada, fuentes y lo que es inventado o estimado, en [docs/extras/](extras/):
+
+| Monumento | Ficha |
+| --- | --- |
+| El Realet (s. XIII, derribado en 1809) | [realet.md](extras/realet.md) |
+| Jardines y huerta del Real | [jardins-real.md](extras/jardins-real.md) |
+| La Albereda (1677) y el Llano del Real | [albereda.md](extras/albereda.md) |
+| Casa de les Roques (1435) | [casa-roques.md](extras/casa-roques.md) |
+| El Temple antiguo: torre de Alí Bufat y casas de Montesa | [temple.md](extras/temple.md) |
+| Convento de Santa Úrsula (1605, iglesia de 1645) | [santa-ursula.md](extras/santa-ursula.md) |
+| Convento de Sant Josep i Santa Teresa | [sant-josep.md](extras/sant-josep.md) |
+| Iglesia de Sant Bartomeu (rehecha en 1666-1683) | [sant-bartomeu.md](extras/sant-bartomeu.md) |
+| Convento de Sant Francesc (derribado en 1891) | [sant-francesc.md](extras/sant-francesc.md) |
+| Casa de Armas y aduana vieja ante el Portal de la Mar | [casa-armes.md](extras/casa-armes.md) |

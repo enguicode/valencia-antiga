@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BANK, PRETIL, RIVER } from './config.js';
+import { BANK, PRETIL } from './config.js';
 import { bridgeDecks, bridgeStairs } from './bridges.js';
 import { riverStairs } from './riverside.js';
 
@@ -14,7 +14,7 @@ import { riverStairs } from './riverside.js';
 // Held on, the horse works up from a trot to a gallop: two and a half times
 // the trot in about five seconds. Let go, it slows down over a few seconds.
 const RIDE = { speed: 17.5, trot: 7, gallop: 10, back: 1.5, accel: 3.5, brake: 4, turn: 1.8, radius: 0.75, gate: 6 };
-const MARK = { radius: 5, edge: 1.1, height: 0.55, gap: 3 }; // the info rings are 18 m across the middle
+const MARK = { radius: 5, edge: 1.1, height: 0.55 }; // the info rings have a radius of 18 m
 const REACH = { aboard: 5 }; // metres from the top of the steps, ashore
 const STREET = PRETIL.offset + PRETIL.thickness + 0.3; // the river side of the street, from the centreline
 const OPEN = new Set(['albereda', 'jardins-real']); // planted ground, ridden through
@@ -149,8 +149,8 @@ export function createWalk(scene, layout, path, blocks) {
   // Where one can go ashore: every flight on the bridges and in the parapet.
   const landings = [...bridgeStairs(layout, path), ...riverStairs(path, decks)].map((stair) => ({ ...stair }));
 
-  // A small ring on the water off the foot of each flight. Where it would
-  // touch a point of interest's ring it slides along the river until clear.
+  // A small ring on the water right at the foot of each flight. The points
+  // of interest's rings are the ones that move to keep clear of these.
   const rings = new THREE.Group();
   const ringMaterial = (opacity) =>
     new THREE.MeshBasicMaterial({ color: 0xe0a64a, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
@@ -158,35 +158,15 @@ export function createWalk(scene, layout, path, blocks) {
   const fillGeometry = new THREE.CircleGeometry(MARK.radius - MARK.edge, 40).rotateX(-Math.PI / 2);
   const edgeMaterial = ringMaterial(0.75);
   const fillMaterial = ringMaterial(0.14);
-  function markLandings(points, pointRadius) {
-    rings.clear();
-    for (const landing of landings) {
-      const start = path.project(landing.footX, landing.footZ);
-      const clear = (x, z) => points.every((point) => Math.hypot(x - point.x, z - point.z) > pointRadius + MARK.radius + MARK.gap);
-      let x = landing.footX;
-      let z = landing.footZ;
-      // Sideways across the river, a little to one side and then the other,
-      // so it stays as far from the bridge as the foot of its steps and off
-      // the piers; never out of the water.
-      const point = path.pointAt(start.s);
-      const wet = RIVER.width / 2 - MARK.radius - 1;
-      for (let k = 1; k <= 40 && !clear(x, z); k++) {
-        const lateral = start.lateral + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 2;
-        if (Math.abs(lateral) > wet) continue;
-        x = point.x + point.rx * lateral;
-        z = point.z + point.rz * lateral;
-      }
-      landing.markX = x;
-      landing.markZ = z;
-      const ring = new THREE.Group();
-      ring.add(new THREE.Mesh(fillGeometry, fillMaterial), new THREE.Mesh(edgeGeometry, edgeMaterial));
-      ring.position.set(x, MARK.height, z);
-      ring.renderOrder = 2;
-      rings.add(ring);
-    }
+  for (const landing of landings) {
+    const ring = new THREE.Group();
+    ring.add(new THREE.Mesh(fillGeometry, fillMaterial), new THREE.Mesh(edgeGeometry, edgeMaterial));
+    ring.position.set(landing.footX, MARK.height, landing.footZ);
+    ring.renderOrder = 2;
+    rings.add(ring);
   }
-  markLandings([], 0);
   scene.add(rings);
+  const marks = landings.map((landing) => ({ x: landing.footX, z: landing.footZ, radius: MARK.radius }));
 
   const figure = createRider();
   figure.visible = false;
@@ -247,7 +227,7 @@ export function createWalk(scene, layout, path, blocks) {
     let best = null;
     let distance = Infinity;
     for (const landing of landings) {
-      const d = Math.hypot(boatState.x - landing.markX, boatState.z - landing.markZ);
+      const d = Math.hypot(boatState.x - landing.footX, boatState.z - landing.footZ);
       if (d < distance) {
         distance = d;
         best = landing;
@@ -337,5 +317,5 @@ export function createWalk(scene, layout, path, blocks) {
     place();
   }
 
-  return { state, figure, landings, update, nearestFoot, nearestTop, goAshore, goAboard, blocked, solid, markLandings };
+  return { state, figure, landings, update, nearestFoot, nearestTop, goAshore, goAboard, blocked, solid, marks };
 }

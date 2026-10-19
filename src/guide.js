@@ -10,12 +10,13 @@ import { t, localized, onLanguageChange } from './i18n.js';
 // found. Finding them all is the visitor's errand.
 
 const STORAGE_KEY = 'valencia-antiga.found';
-export const RING_RADIUS = 18;
+const RING_RADIUS = 18;
 // No ring sits upstream of this, measured from the head of the navigable
 // reach. Quart's nearest water is just beyond the weir.
 const EARLIEST_RING = 90;
 const RING_OFFSET = 14; // from the middle of the river, towards the place
 const RING_GAP = RING_RADIUS * 2 + 4; // between the centres of two rings, so they never overlap
+const KEEP_CLEAR = 10; // metres of open water between a ring and the ring at the foot of a flight of steps
 const CARD_STAYS_WITHIN = 75; // metres from the ring before the card goes
 const VISIBLE_WITHIN = 750;
 const PIN_SIZE = 0.05; // of the viewport's height
@@ -110,7 +111,7 @@ export const sourceLabel = (point) =>
   point.sourceName ? t('card.sourceNamed', { name: point.sourceName }) : t('card.source');
 
 export function createGuide(points, layout, path, camera, elements) {
-  const { card, counter, pointer, onEnter, onLeave, isShowing } = elements;
+  const { card, counter, pointer, onEnter, onLeave, isShowing, keepClear = [] } = elements;
   const found = readFound();
   const pins = {
     pending: new THREE.SpriteMaterial({ map: drawPin(false), sizeAttenuation: false, fog: false }),
@@ -220,7 +221,11 @@ export function createGuide(points, layout, path, camera, elements) {
   for (const i of spots.map((_, i) => i).sort((a, b) => isBridge(b) - isBridge(a) || spots[a].s - spots[b].s)) {
     const clash = () => {
       const [x, z] = ringAt(spots[i]);
-      return placed.some(([px, pz]) => Math.hypot(x - px, z - pz) < RING_GAP);
+      return (
+        placed.some(([px, pz]) => Math.hypot(x - px, z - pz) < RING_GAP) ||
+        // The rings at the foot of the steps stay put: these move off them, well clear.
+        keepClear.some((spot) => Math.hypot(x - spot.x, z - spot.z) < RING_RADIUS + spot.radius + KEEP_CLEAR)
+      );
     };
     for (let tries = 0; tries < 100 && clash(); tries++) spots[i].s += 2;
     placed.push(ringAt(spots[i]));

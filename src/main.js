@@ -14,7 +14,7 @@ import { createWalk } from './walk.js';
 import { createBoatPicker } from './boatpicker.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
-import { createGuide, createTour, sourceLabel, RING_RADIUS } from './guide.js';
+import { createGuide, createTour, sourceLabel } from './guide.js';
 import { createMinimap } from './minimap.js';
 import { createAtmosphere } from './atmosphere.js';
 import { createLife } from './life.js';
@@ -117,6 +117,7 @@ const helpPanel = document.getElementById('help');
 const debugPanel = document.getElementById('debug');
 const guide = createGuide(points, layout, path, camera, {
   card: document.getElementById('cinema'), // the guide writes the caption itself
+  keepClear: walk.marks, // the rings at the foot of the steps
   counter: document.getElementById('found'),
   pointer: document.getElementById('pointer'),
   // On entering a ring the camera turns to the place it is about.
@@ -166,8 +167,6 @@ const guide = createGuide(points, layout, path, camera, {
   onLeave: () => restoreBorrowedNight(),
   isShowing: () => focus.left > 0,
 });
-// The rings off the steps keep clear of the points of interest's rings.
-walk.markLandings(guide.markers, RING_RADIUS);
 scene.add(guide.group);
 
 // The logbook: tapping the tally lists every point. Those not yet found are

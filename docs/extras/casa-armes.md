@@ -56,3 +56,10 @@ El Portal de la Mar de la escena está en el vértice 4 de la muralla (808,9, 80
 - El paso de Des Essarts se ha tomado a 0,65 m, y aun así la sala no usa ese largo.
 - No consta en qué cara del portal iba la imagen; aquí está en la cara de río.
 - El año del derribo borbónico, pasado 1707, no consta.
+
+## Revisión del 19 de octubre de 2026
+
+- Quitado el «cuerpo exterior con cuatro cañones»: ninguna fuente le da esa forma y, con la aduana y el portal, tapaba el Portal de la Mar desde fuera.
+- El portal de la Bona Guia se rebaja a un muro de 12 × 6,5 m con un arco y la hornacina de la imagen encima, sin almenas. Su tamaño real no consta; se deja bajo para que la puerta de la ciudad se siga viendo detrás.
+- Las alas que cierran la placeta pasan a tapias de 3,2 m.
+- La torre redonda sube de 14 a 19 m hasta el adarve, con una corona volada. Los 14 m leídos del grabado la dejaban a la altura de los tejados de las salas; la nueva altura es una estimación.

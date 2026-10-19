@@ -47,3 +47,7 @@ Distancias desde el centro: Portal de la Trinitat (236, 106) 249 m, Portal del R
 - La iglesia entera. Ninguna fuente describe la de hacia 1700. Una nave con espadaña y ábside poligonal es una hipótesis, a propósito distinta de la fachada de 1770.
 - Número de casas, alturas, patio, pozo y ciprés.
 - El sitio fino dentro de la manzana: la torre, en la plaça del Poeta Llorente; iglesia y casas, un poco más adentro, hacia el solar del palacio posterior.
+
+## Revisión del 19 de octubre de 2026
+
+La torre y el tramo de muralla islámica pasan del tono de ladrillo a un ocre de tierra apisonada (tapial), más cercano a la fábrica real; el tono exacto es una estimación.

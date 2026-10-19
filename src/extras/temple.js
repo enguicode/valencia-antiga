@@ -14,6 +14,11 @@
 // two-towered church of 1770. The ranges are the encomienda's houses around a
 // yard. Measures are estimated.
 
+import * as THREE from 'three';
+
+// Rammed earth, the colour of the Islamic wall: an earthy ochre, not brick.
+const TAPIAL = new THREE.Color(0xbf9f72);
+
 export const landmark = {
   id: 'temple',
   name: 'el Temple de Montesa',
@@ -38,8 +43,8 @@ export function build(add, landmark, kit) {
   const HALF = 8;
   const WALK = 24;
   add('box', [TX, 0, TZ], [HALF * 2 + 0.7, 2.4, HALF * 2 + 0.7], STONE);
-  add('box', [TX, 2.4, TZ], [HALF * 2 + 0.15, 4.2, HALF * 2 + 0.15], BRICK);
-  add('box', [TX, 6.6, TZ], [HALF * 2 - 0.7, WALK - 7.2, HALF * 2 - 0.7], BRICK);
+  add('box', [TX, 2.4, TZ], [HALF * 2 + 0.15, 4.2, HALF * 2 + 0.15], TAPIAL);
+  add('box', [TX, 6.6, TZ], [HALF * 2 - 0.7, WALK - 7.2, HALF * 2 - 0.7], TAPIAL);
   add('box', [TX, WALK - 0.7, TZ], [HALF * 2 + 0.2, 0.7, HALF * 2 + 0.2], STONE);
   // Machicolation on the river face, and the pointed door on the city face.
   add('box', [TX, WALK - 1.5, TZ - HALF - 0.35], [5.2, 0.7, 1.15], STONE);
@@ -67,8 +72,8 @@ export function build(add, landmark, kit) {
   // with the pointed entrance in the gap between them.
   const WALL_Z = -13;
   add('box', [13, 0, WALL_Z], [36, 1.3, 2.7], STONE);
-  add('box', [13, 1.3, WALL_Z], [36, 5.9, 2.35], BRICK);
-  add('box', [-8.6, 5.4, WALL_Z], [6.8, 1.9, 2.5], BRICK);
+  add('box', [13, 1.3, WALL_Z], [36, 5.9, 2.35], TAPIAL);
+  add('box', [-8.6, 5.4, WALL_Z], [6.8, 1.9, 2.5], TAPIAL);
   add('pointed', [-8.6, 0, WALL_Z], [2.7, 5.6, 3.5], STONE, FACING_Z);
   add('pointed', [-8.6, 0.08, WALL_Z], [2.2, 4.8, 2.5], DARK, FACING_Z);
   for (let x = -3; x <= 29.5; x += 2.7) {

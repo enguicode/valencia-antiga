@@ -18,6 +18,11 @@
 // bed size, the northward limit, where the pool sat, the ditch, the gate,
 // and drawing the edge trees as cypresses. Oranges and lemons are one tree.
 
+import * as THREE from 'three';
+
+// Water in the basin, the pool and the ditch: dark blue-green, not black.
+const WATER = new THREE.Color(0x3f7487);
+
 export const landmark = {
   id: 'jardins-real',
   name: 'Jardins del Real',
@@ -111,6 +116,9 @@ export function build(add, landmark, kit) {
     hedge(x, z - sz / 2 + t / 2, sx, t);
     hedge(x + sx / 2 - t / 2, z, t, sz - t);
     hedge(x - sx / 2 + t / 2, z, t, sz - t);
+    // A cross of low box hedge inside, so each bed reads as a parterre.
+    hedge(x, z, sx - 3, t);
+    hedge(x, z, t, sz - 3);
   };
   // Two bands of four, west of the palace. Walks are the grass left between.
   for (const x of [-207, -177, -145, -115]) {
@@ -123,7 +131,7 @@ export function build(add, landmark, kit) {
   add('box', [-161, 0, -36], [3.2, 0.08, 78], PALE);
   add('box', [-160, 0, -34], [120, 0.08, 3.2], PALE);
   const basin = { x: -161, z: -34, r: 4.1 };
-  add('oct', [basin.x, 0, basin.z], [7.2, 0.14, 7.2], DARK);
+  add('oct', [basin.x, 0, basin.z], [7.2, 0.14, 7.2], WATER);
   kit.around(add, {
     x: basin.x, z: basin.z, sides: 8, radius: basin.r, y: 0,
     solid: 'box', height: 0.5, width: 3.4, depth: 0.55, color: STONE,
@@ -154,8 +162,8 @@ export function build(add, landmark, kit) {
     return false;
   };
   const orange = (x, z) => {
-    add('box', [x, 0, z], [0.28, 1.15, 0.28], DARK);
-    add('ball', [x, 1.15, z], [1.85, 1.55, 1.85], LEAF);
+    add('box', [x, 0, z], [0.35, 1.4, 0.35], DARK);
+    add('ball', [x, 1.2, z], [3.4, 3, 3.4], LEAF);
   };
   const row = (z, x0, x1, step) => {
     let run = null;
@@ -178,13 +186,13 @@ export function build(add, landmark, kit) {
     flush(run, prev);
   };
   // Across the north, one spacing, broken where a palace wall or the pool is.
-  for (const z of [-156, -148, -116, -108, -92]) row(z, -214, 124, 11);
+  for (let z = -160; z <= -88; z += 8) row(z, -214, 124, 8);
   // The court immediately behind the palace, inside its own north wall.
-  for (const z of [-80, -66, -52, -38]) row(z, -78, 40, 9);
+  for (const z of [-84, -74, -64, -54, -44, -34]) row(z, -78, 40, 8);
   // East huerto, the grid of plots beside the Real Vell.
-  for (const z of [-74, -56, -40]) row(z, 66, 122, 9);
+  for (const z of [-88, -78, -68, -58, -48, -38]) row(z, 64, 124, 8);
 
-  add('box', [POND.x, 0, POND.z], [POND.sx, 0.16, POND.sz], DARK);
+  add('box', [POND.x, 0, POND.z], [POND.sx, 0.16, POND.sz], WATER);
   add('box', [POND.x, 0, POND.z + POND.sz / 2], [POND.sx + 1.4, 0.42, 0.7], STONE);
   add('box', [POND.x, 0, POND.z - POND.sz / 2], [POND.sx + 1.4, 0.42, 0.7], STONE);
   add('box', [POND.x + POND.sx / 2, 0, POND.z], [0.7, 0.42, POND.sz], STONE);
@@ -197,7 +205,7 @@ export function build(add, landmark, kit) {
   const ditch = (x0, x1, z) => {
     const x = (x0 + x1) / 2;
     const len = Math.abs(x1 - x0);
-    add('box', [x, 0, z], [len, 0.1, 1.45], DARK);
+    add('box', [x, 0, z], [len, 0.1, 1.45], WATER);
     add('box', [x, 0, z + 0.85], [len, 0.22, 0.28], STONE);
     add('box', [x, 0, z - 0.85], [len, 0.22, 0.28], STONE);
   };

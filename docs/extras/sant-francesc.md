@@ -44,3 +44,9 @@ Desde la barca no se lee. El punto del río más cercano está a unos 960 m, al 
 - La sacristía, el tramo de la Obra Nova y el muro bajo delante del pórtico están donde el relato y el grabado de 1840 los sugieren. El largo de ese muro es inventado.
 - El jardín norte (cipreses, dos árboles de copa y la cruz de piedra) y el huerto sureste de cuadros. La huerta grande, al este de la plaza, no se ha llenado: al otro lado de la calle el modelo deja las casas. La tapia solo cierra el jardín y el huerto, no todo el recinto, aunque en 1700 el conjunto estaba murado.
 - La cuña noroeste de la plaza actual se deja libre, como dice el artículo.
+
+## Revisión del 19 de octubre de 2026
+
+- Las capillas de los Àngels y de la Concepció se unen a las capillas de la nave con un cuerpo bajo cada una (estimado): antes quedaban sueltas.
+- Se dibuja la cerca del convento, que estuvo en pie hasta 1806, desde el huerto de la entrada hasta el huerto de detrás; el trazado de los lados largos es estimado. Dentro, cuadros de huerta y frutales en el suelo que los edificios dejan libre.
+- La explanada que queda fuera de la cerca ya estaba vacía en la escena (es el hueco del recinto en el encaje del plano de Tosca) y hace de plaza ante el convento.

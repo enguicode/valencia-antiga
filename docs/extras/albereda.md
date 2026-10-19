@@ -56,3 +56,7 @@ El punto 39.47419, −0.36464 que da la ficha cae en este mismo tramo. El desví
 - El tamaño del óvalo, el número de bolas y de bancos, y que el suelo sea un rectángulo de tierra dentro del óvalo.
 - La acequia de Mestalla (brazo de los Molinos), que las fichas ponen por dentro del paseo, no está: no hay un trazado seguro para 1700 en este tramo.
 - Las copas salen con el color de hoja sobre la textura de sillería compartida. No hay una textura de follaje para estos extras.
+
+## Revisión del 19 de octubre de 2026
+
+El Llano del Real deja de ser un rectángulo de tierra oscura: ahora es un óvalo de tierra apisonada clara que llega hasta el anillo de bolas, y las bolas, algo mayores, van sobre peana. El tamaño del óvalo sigue siendo estimado.

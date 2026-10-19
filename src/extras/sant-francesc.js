@@ -206,4 +206,33 @@ export function build(add, landmark, kit) {
     }
   }
   for (const [x, z] of [[57, -22], [72, -22], [57, 10], [72, 10]]) add('pyramid', [x, 0, z], [1.4, 6, 1.4], CYPRESS);
+
+  // The two domed chapels joined to the church, not standing apart: a low
+  // body from each to the nave's chapels. The links are guessed.
+  add('box', [-33, 0, -14.5], [6, 10, 6.5], PALE);
+  add('gable', [-33, 10, -14.5], [6.5, 2.2, 6], ROOF, RIDGE_ALONG_X);
+  add('box', [hx, 0, -13.3], [10, 9, 4.2], PALE);
+  add('gable', [hx, 9, -13.3], [4.2, 1.8, 10], ROOF, RIDGE_ALONG_X);
+
+  // The precinct wall (it stood until 1806) closes the house from the entry
+  // garden to the orchard, so the convent reads as one walled block. Its line
+  // follows the gardens already walled above; the long sides are guessed.
+  const PRECINCT = { from: -64, to: 76, east: -30, west: 62, height: 3.6 };
+  const length = PRECINCT.to - PRECINCT.from;
+  const middle = (PRECINCT.from + PRECINCT.to) / 2;
+  add('box', [middle, 0, PRECINCT.east], [length, PRECINCT.height, 0.8], RENDER);
+  add('box', [middle, 0, PRECINCT.west], [length, PRECINCT.height, 0.8], RENDER);
+  add('box', [PRECINCT.from, 0, (PRECINCT.east - 16) / 2], [0.8, PRECINCT.height, PRECINCT.east + 16 > 0 ? 0.1 : -PRECINCT.east - 16], RENDER);
+  add('box', [PRECINCT.from, 0, (18 + PRECINCT.west) / 2], [0.8, PRECINCT.height, PRECINCT.west - 18], RENDER);
+  add('box', [PRECINCT.to, 0, (14 + PRECINCT.west) / 2], [0.8, PRECINCT.height, PRECINCT.west - 14], RENDER);
+  add('box', [PRECINCT.to, 0, (PRECINCT.east - 26) / 2], [0.8, PRECINCT.height, Math.max(0.1, -26 - PRECINCT.east)], RENDER);
+  // Kitchen garden and fruit trees in the walled ground the buildings leave free.
+  for (const [x0, x1, z0, z1] of [[-60, -40, 22, 58], [42, 72, 20, 58], [-28, 26, -28, -22]]) {
+    for (let x = x0 + 3; x <= x1 - 3; x += 7) {
+      for (let z = z0 + 3; z <= z1 - 3; z += 7) {
+        add('box', [x, 0, z], [5.6, 0.2, 5.6], SOIL);
+        if ((x + z) % 2 === 0 || z1 - z0 > 10) add('ball', [x, 0.3, z], [2.4, 2.3, 2.4], LEAF);
+      }
+    }
+  }
 }

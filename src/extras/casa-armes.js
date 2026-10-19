@@ -32,7 +32,6 @@ export const landmark = {
     { x: 785.9, z: 779.8, radius: 32 }, // court, halls and the round tower
     { x: 824.7, z: 817.3, radius: 16 }, // the closed square
     { x: 817.5, z: 825.9, radius: 14 }, // customs house
-    { x: 826.0, z: 808.4, radius: 12 }, // outer ward of the arms house
     { x: 832.4, z: 821.0, radius: 14 }, // portal of the Bona Guia, on the track
   ],
 };
@@ -90,35 +89,23 @@ export function build(add, _landmark, kit) {
   addG('box', [30, 0, -17.1], [28, 0.14, 12], PALE);
 
   // Round tower at the north end, octagonal because that is the round prism
-  // the kit has. 13 m across, 14 m to the walk, merlons above. Clear of the wall.
+  // the kit has. 13 m across. The engraving reads about 14 m, but at that
+  // height it sat level with the halls' ridges and read as a stump; it is
+  // raised to 19 m to the walk, an estimate, with a corbelled crown.
   const TX = 49;
   const TZ = -8.6;
-  addG('oct', [TX, 0, TZ], [13, 14, 13], STONE);
-  addG('oct', [TX, 13.5, TZ], [14, 0.5, 14], PALE);
-  around(addG, { x: TX, z: TZ, sides: 8, radius: 5.7, y: 14, solid: 'box', height: 1.15, width: 0.85, depth: 1.15, color: STONE });
-  ringOfOpenings(addG, { x: TX, y: 8.4, z: TZ, sides: 8, apothem: 6.15, width: 1.15, height: 2.5 });
+  const TOP = 19;
+  addG('oct', [TX, 0, TZ], [13, TOP, 13], STONE);
+  addG('oct', [TX, TOP - 1.2, TZ], [14.6, 1.2, 14.6], PALE); // the corbelled crown
+  addG('oct', [TX, TOP, TZ], [14.2, 1.2, 14.2], STONE); // parapet base
+  around(addG, { x: TX, z: TZ, sides: 12, radius: 6.6, y: TOP + 1.2, solid: 'box', height: 1.3, width: 1.2, depth: 0.9, color: STONE });
+  ringOfOpenings(addG, { x: TX, y: 13.4, z: TZ, sides: 8, apothem: 6.15, width: 1.15, height: 2.5 });
+  ringOfOpenings(addG, { x: TX, y: 8.4, z: TZ, sides: 8, apothem: 6.15, width: 0.9, height: 2.1 });
   ringOfOpenings(addG, { x: TX, y: 3.2, z: TZ, sides: 8, apothem: 6.15, width: 0.7, height: 1.6 });
   addG('arch', [TX, 0.1, TZ - 6.35], [0.45, 4, 2.2], DARK, kit.FACING_Z);
 
   // --- Forecourt, outside the gate. t is metres out along the approach,
   // s is metres to the right (the arms-house side). ---
-
-  // Outer ward of the arms house: the right-hand wall of the square. A flat
-  // terrace, not a bastion. 12 by 6.5 m, 9 m to the parapet.
-  {
-    const [x, z] = fore(15, 8.25);
-    addG('box', [x, 0, z], [12, 9, 6.5], STONE, yawOut);
-    addG('box', [x, 9, z], [12.6, 0.7, 7.1], PALE, yawOut);
-    for (const t of [11, 14, 17, 19.2]) opening(t, 4.85, 0.15, 2.1, 3.6, 'arch');
-    for (const t of [11.2, 15, 18.6]) opening(t, 4.85, 5.6, 1.2, 2.1);
-    for (const t of [11.2, 15, 18.6]) opening(t, 11.65, 5.4, 1.15, 2);
-    // Four guns on the terrace, a stand-in for the battery Gauna counted in 1599.
-    for (const t of [11.5, 14, 16.5, 19]) {
-      const [bx, bz] = fore(t, 9.4);
-      addG('box', [bx, 9.7, bz], [2.3, 0.38, 0.38], DARK, yawAcross);
-      addG('box', [bx, 9.35, bz], [0.9, 0.45, 0.7], PALE, yawAcross);
-    }
-  }
 
   // Old customs house, left as you enter. Limewashed over a stone ground
   // floor. 13 by 10.5 m. The size is estimated: no plan gives it.
@@ -139,33 +126,29 @@ export function build(add, _landmark, kit) {
     addG('box', [x, 0, z], [16, 0.14, 10.4], PALE, yawOut);
   }
 
-  // Low wings from each house to the portal, just outside the 8.35 m track,
-  // so the square reads as closed and the road has one way through.
+  // Low walls from the gate to the portal, just outside the 8.35 m track, so
+  // the square reads as closed without hiding the city gate behind it.
   for (const s of [7.4, -7.4]) {
-    const [x, z] = fore(23.6, s);
-    addG('box', [x, 0, z], [6.4, 7.2, 1.4], STONE, yawOut);
+    const [x, z] = fore(21, s);
+    addG('box', [x, 0, z], [11, 3.2, 0.9], STONE, yawOut);
+    addG('box', [x, 3.2, z], [11.2, 0.25, 1.1], PALE, yawOut);
   }
 
   // Outer portal on the beaten track from the Pont de la Mar, 26.5 m out
-  // from the gate along that approach. 18 m across, 12.6 m to the parapet,
-  // arch 5.4 m wide (height 1.67 times the width, so the head is a semicircle).
-  // The image over it is a pale block: the kit has no statue.
+  // from the gate along that approach: a plain wall with one arch and the
+  // image in a niche over it. Kept low (6.5 m) and uncrenellated so the
+  // Portal de la Mar, 15 m, still reads behind it; its real size is unknown.
   {
     const t = 26.5;
     const [x, z] = fore(t, 0);
-    addG('box', [x, 0, z], [18, 12.6, 2.8], STONE, yawAcross);
+    addG('box', [x, 0, z], [12, 6.5, 1.6], STONE, yawAcross);
+    addG('box', [x, 6.5, z], [12.4, 0.3, 1.9], PALE, yawAcross);
     const proud = (amount, y) => [x + OUT[0] * amount, y, z + OUT[1] * amount];
-    addG('arch', proud(1.55, 0.1), [0.55, 9, 5.4], DARK, yawOut);
-    addG('arch', proud(-1.55, 0.1), [0.55, 9, 5.4], DARK, yawOut + Math.PI);
-    addG('box', proud(1.6, 9.35), [2.2, 2.7, 0.45], STONE, yawOut);
-    addG('box', proud(1.95, 9.6), [1.05, 2.15, 0.4], ALABASTER, yawOut);
-    for (const side of [-3.6, 3.6]) {
-      const [wx, wz] = fore(t, side);
-      addG('box', [wx + OUT[0] * 1.55, 9.5, wz + OUT[1] * 1.55], [0.35, 2.1, 1.15], DARK, yawOut);
-    }
-    for (let s = -8; s <= 8.01; s += 2.3) {
-      const [mx, mz] = fore(t, s);
-      addG('box', [mx + OUT[0] * 1.2, 12.6, mz + OUT[1] * 1.2], [0.75, 1.1, 0.95], STONE, yawAcross);
-    }
+    addG('arch', proud(0.9, 0.1), [0.5, 5.2, 3.8], DARK, yawOut);
+    addG('arch', proud(-0.9, 0.1), [0.5, 5.2, 3.8], DARK, yawOut + Math.PI);
+    // The niche with the image of the Bona Guia rises over the arch.
+    addG('box', [x, 6.8, z], [2.6, 2.6, 1.6], STONE, yawAcross);
+    addG('gable', [x, 9.4, z], [2.9, 0.9, 1.8], ROOF, yawAcross + Math.PI / 2);
+    addG('box', proud(0.85, 7.1), [1, 1.9, 0.3], ALABASTER, yawOut);
   }
 }

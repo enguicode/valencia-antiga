@@ -47,3 +47,7 @@ Tapia de unos 2,35 m. Al oeste, ocho cuadros de 26 × 26 m en dos bandas, con se
 - Luis Arciniega, los jardines al norte y al oeste: los dos artículos citados en `docs/sources.md` ([Austrias](https://www.uv.es/arcinieg/pdfs/palacio_del_real_valencia_austrias.pdf), [Borbones](https://www.uv.es/arcinieg/pdfs/palacio_del_real_valencia_borbones.pdf)).
 - [Acequia de Mestalla](https://es.wikipedia.org/wiki/Acequia_de_Mestalla). Brazo de los Molinos.
 - Plano del padre Tosca (1704) y grabado de Fortea (1738), publicados en [puentesvalencia.com](https://puentesvalencia.com/plano-cartografico-valencia-en-1704-del-padre-tosca/). Norte hacia abajo. Parterres al oeste, cuadros al este, palacio cortado por el marco.
+
+## Revisión del 19 de octubre de 2026
+
+El agua de la alberca, el estanque del Viver y la acequia pasa de negro a azul verdoso. Los naranjos son más grandes (copa de 3,4 m) y las filas más juntas (8 m), y cada parterre lleva un crucero de seto. Los tamaños siguen siendo estimados.

@@ -14,6 +14,10 @@
 // Ermita de la Soledad (1714) and the column of 1716 are left out. The Llano
 // is beaten earth, not a paving anyone drew.
 
+import * as THREE from 'three';
+
+const EARTH = new THREE.Color(0xc4ad82); // the beaten earth of the Llano
+
 const PALACE = { x: 725.9, z: 128.2, tx: 0.699249, tz: 0.714878 };
 
 // River centreline in scene metres, every 50 m, from just below the Pont del
@@ -113,16 +117,17 @@ export function build(add, landmark, kit) {
 
   // Beaten-earth oval in front of the facade, balls and benches on its rim.
   const [padX, padZ] = palaceWorld(LLANO.x, LLANO.z);
-  // Inscribed in the ball ellipse, so the corners do not stick out past the ring.
-  put('box', padX, 0, padZ, [LLANO.along * 1.35, 0.16, LLANO.deep * 1.35], SOIL, yawOf(PALACE.tx, PALACE.tz));
+  // A true oval out to the ring of balls: a flattened dome is the only round
+  // flat piece the kit has. Light beaten earth, not the dark soil of a bed.
+  put('dome', padX, 0, padZ, [LLANO.along * 2 + 2, 0.3, LLANO.deep * 2 + 2], EARTH, yawOf(PALACE.tx, PALACE.tz));
   const balls = 22;
   for (let i = 0; i < balls; i++) {
     const angle = (i / balls) * Math.PI * 2;
     const lx = LLANO.x + Math.cos(angle) * LLANO.along;
     const lz = LLANO.z + Math.sin(angle) * LLANO.deep;
     const [x, z] = palaceWorld(lx, lz);
-    put('box', x, 0, z, [1.05, 0.55, 1.05], STONE);
-    put('ball', x, 0.55, z, [0.9, 0.9, 0.9], STONE);
+    put('box', x, 0, z, [1.3, 0.9, 1.3], STONE);
+    put('ball', x, 0.9, z, [1.15, 1.15, 1.15], STONE);
   }
   for (let i = 0; i < 8; i++) {
     const angle = Math.PI * (i + 0.5) / 8;

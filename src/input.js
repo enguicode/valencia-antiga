@@ -73,8 +73,8 @@ export function createInput(surface, joystickElement, { moveStick, lookStick, on
   const pressed = new Set();
   const drag = { id: null, originX: 0, originY: 0, throttle: 0, steer: 0 };
   const knob = joystickElement.querySelector('.knob');
-  const look = { id: null, lastX: 0, lastY: 0, dx: 0, dy: 0 };
-  const input = { throttle: 0, steer: 0, lookX: 0, lookY: 0, looking: false, lookStarted: false, used: false };
+  const look = { id: null, lastX: 0, lastY: 0, dx: 0, dy: 0, mouse: false };
+  const input = { throttle: 0, steer: 0, lookX: 0, lookY: 0, looking: false, lookStarted: false, lookMouse: false, used: false };
   let lookOnly = false; // while set, every drag looks around and none steers
   let lookStarted = false;
 
@@ -99,6 +99,7 @@ export function createInput(surface, joystickElement, { moveStick, lookStick, on
       if (look.id !== null) return;
       lookStarted = true;
       look.id = event.pointerId;
+      look.mouse = event.pointerType === 'mouse';
       look.lastX = event.clientX;
       look.lastY = event.clientY;
       surface.setPointerCapture(event.pointerId);
@@ -175,6 +176,7 @@ export function createInput(surface, joystickElement, { moveStick, lookStick, on
     input.lookY = look.dy - gaze.y * STICK_LOOK_SPEED * dt;
     input.looking = look.id !== null || gaze.held;
     input.lookStarted = lookStarted;
+    input.lookMouse = look.mouse; // the camera turns the other way under a mouse than under a finger
     lookStarted = false;
     look.dx = 0;
     look.dy = 0;

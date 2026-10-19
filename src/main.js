@@ -1010,6 +1010,12 @@ function frame() {
   input.setLookOnly(tour.active);
   const axes = input.update(dt);
   if (invertSelect.value === 'on') axes.lookY = -axes.lookY;
+  // A mouse drags the view the other way round from a finger: across for the
+  // boat, and across and up and down for the drone.
+  if (axes.lookMouse) {
+    axes.lookX = -axes.lookX;
+    if (drone.on) axes.lookY = -axes.lookY;
+  }
   if (!started) {
     axes.throttle = 0;
     axes.steer = 0;

@@ -128,6 +128,9 @@ const STRINGS = {
     'save': 'Guardar',
     'stick.move': 'Mover la barca',
     'stick.look': 'Mirar alrededor',
+    'walk.ashore': 'Bajar a tierra',
+    'walk.aboard': 'Subir a la barca',
+    'help.walk': '<strong>A pie:</strong> junto a las escaleras de los puentes, y en las dos de los pretiles junto a Serrans, aparece una bota para bajar a tierra. El muñeco se lleva con los mismos mandos que la barca y no atraviesa casas ni muralla: se sale por las puertas. Junto a cualquier escalera, el botón del barco te devuelve a bordo.',
   },
 
   ca: {
@@ -251,6 +254,9 @@ const STRINGS = {
     'save': 'Guardar',
     'stick.move': 'Moure la barca',
     'stick.look': 'Mirar al voltant',
+    'walk.ashore': 'Baixar a terra',
+    'walk.aboard': 'Pujar a la barca',
+    'help.walk': '<strong>A peu:</strong> al costat de les escales dels ponts, i en les dues dels pretils prop de Serrans, apareix una bota per a baixar a terra. El ninot es porta amb els mateixos comandaments que la barca i no travessa cases ni muralla: s’ix per les portes. Al costat de qualsevol escala, el botó de la barca et torna a bord.',
   },
 
   en: {
@@ -374,6 +380,9 @@ const STRINGS = {
     'save': 'Save',
     'stick.move': 'Steer the boat',
     'stick.look': 'Look around',
+    'walk.ashore': 'Go ashore',
+    'walk.aboard': 'Back aboard',
+    'help.walk': '<strong>On foot:</strong> by the steps on the bridges, and the two in the river walls near Serrans, a boot appears to go ashore. The figure moves with the same controls as the boat and cannot pass through houses or the city wall: leave by the gates. By any flight of steps, the boat button takes you back aboard.',
   },
 };
 

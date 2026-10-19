@@ -302,3 +302,10 @@ Diez sitios que existían hacia 1700 y aparecen enlazados desde los artículos d
 | Iglesia de Sant Bartomeu (rehecha en 1666-1683) | [sant-bartomeu.md](extras/sant-bartomeu.md) |
 | Convento de Sant Francesc (derribado en 1891) | [sant-francesc.md](extras/sant-francesc.md) |
 | Casa de Armas y aduana vieja ante el Portal de la Mar | [casa-armes.md](extras/casa-armes.md) |
+
+## Paseo a pie (19-oct-2026)
+
+- **Dónde se baja:** en las escaleras que los puentes ya tenían, aguas abajo (las documentadas de la Trinitat y del Real, y la inventada junto a las capillas en los demás), y en dos escaleras **inventadas** adosadas al pretil, una en cada orilla, unos 45 m aguas abajo del Pont dels Serrans, para entrar por la puerta principal. Que hubiera escaleras al cauce en los pretiles consta; el sitio de estas dos no.
+- **El muñeco:** un hombre de hacia 1700, de casaca larga, calzas, medias y tricornio, en piezas sencillas. Es un esbozo de la moda de la época, no un personaje documentado.
+- **Por dónde se anda:** calles y plazas a la altura de la calle, y los tableros de los puentes. Las manzanas del encaje de Tosca y los monumentos no se atraviesan; la muralla solo se cruza por las puertas. Al subir a bordo en otra escalera, la barca aparece al pie de esa escalera: es una licencia del juego.
+

@@ -755,6 +755,33 @@
 
     #drone[hidden] { display: none; }
 
+    /* Going ashore (the boot) and back aboard (the boat): shown only by a
+       flight of steps, above the drone's corner. */
+    #ashore,
+    #aboard {
+      position: fixed;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 56px);
+      width: 52px;
+      height: 52px;
+    }
+
+    body.touch #ashore,
+    body.touch #aboard {
+      right: calc(max(4px, env(safe-area-inset-right) - 10px) + 1vw);
+      bottom: calc(max(22px, env(safe-area-inset-bottom)) + 156px + 2.5vh);
+    }
+
+    #ashore[hidden],
+    #aboard[hidden],
+    #tour[hidden] { display: none; }
+
+    #ashore svg,
+    #aboard svg {
+      width: 28px;
+      height: 28px;
+    }
+
     /* Nothing of the cockpit shows until the visitor sets off. */
     body:not(.started) .panel,
     body:not(.started) .quick,
@@ -1499,6 +1526,7 @@
       <li data-i18n-html="help.bridges"><strong>Puentes:</strong> al acercarte, la barca se encauza sola hacia el arco más cercano y abate la vela para pasar por debajo.</li>
       <li data-i18n-html="help.menu"><strong>Menú:</strong> el botón que hay arriba a la izquierda, bajo la cuenta de puntos, despliega los ajustes, estos controles, los créditos y el reinicio de los puntos. El botón redondo de la hora, abajo en el centro, pasa por el alba, el mediodía, la tarde y la noche. Al lado está el del sonido.</li>
       <li data-i18n-html="help.tour"><strong>Recorrido guiado:</strong> la barca baja sola por el centro del río y arrastrar solo mueve la cámara. Para volver a manejarla, toca otra vez el botón de la brújula, abajo a la izquierda.</li>
+      <li data-i18n-html="help.walk"><strong>A pie:</strong> junto a las escaleras de los puentes, y en las dos de los pretiles junto a Serrans, aparece una bota para bajar a tierra. El muñeco se lleva con los mismos mandos que la barca y no atraviesa casas ni muralla: se sale por las puertas. Junto a cualquier escalera, el botón del barco te devuelve a bordo.</li>
       <li data-i18n-html="help.sea"><strong>Hasta el mar:</strong> al acabar el paseo hay una línea clara sobre el agua. Al cruzarla, el mapa y los puntos pasan a lo que viene: la huerta, Natzaret, el Grau y la playa. No cuentan para los dieciocho. Si vuelves aguas arriba, regresan los de la ciudad. Mar adentro, un banco de niebla devuelve al principio.</li>
     </ul>
     <p data-i18n-html="help.donate">Si te apetece, <a href="https://www.paypal.me/ananen" target="_blank" rel="noopener">donar</a>. El importe lo eliges tú.</p>
@@ -1631,6 +1659,12 @@
   </button>
   <button id="drone" class="quick" type="button" aria-label="Drone" aria-pressed="false" hidden>
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8 8l8 8M16 8l-8 8"/></svg>
+  </button>
+  <button id="ashore" class="quick active" type="button" aria-label="Bajar a tierra" title="Bajar a tierra" data-i18n-label="walk.ashore" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h5v8.5l5.2 2.6A2.5 2.5 0 0 1 20 16.3V19H5V3z"/><path d="M5 15.5h15M8 7h5"/></svg>
+  </button>
+  <button id="aboard" class="quick active" type="button" aria-label="Subir a la barca" title="Subir a la barca" data-i18n-label="walk.aboard" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15h18l-3 4H6z"/><path d="M12 3v12"/><path d="M12 4.5l6 8.5h-6z"/></svg>
   </button>
   <div id="quick">
     <button id="sky" class="quick" type="button"></button>

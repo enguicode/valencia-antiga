@@ -32,6 +32,7 @@ Es una reconstrucción aproximada. Los sitios están donde estaban; las formas s
 | **Teclado** | `W` `S` o las flechas de arriba y abajo, para avanzar y ciar. `A` `D` o izquierda y derecha, para el timón. | — |
 | **Ratón** | — (se lleva con el teclado). | Arrastrar con cualquier botón; la rueda acerca y aleja. Al avanzar o ciar, vuelve sola detrás de la barca. |
 | **Pantalla** | El mando de abajo a la izquierda. | El mando de abajo a la derecha, el del ojo. |
+| **A pie** | Junto a una escalera de los puentes, o a las dos de los pretiles junto a Serrans, el botón de la bota baja a tierra; el muñeco se lleva con los mismos mandos. Junto a cualquier escalera, el botón del barco devuelve a bordo. | La misma. |
 
 En el móvil, el primer dedo lleva la barca y el segundo gira la cámara, también fuera de los mandos.
 

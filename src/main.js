@@ -10,6 +10,7 @@ import { createBridges, createBridgeGuide, bridgeDecks } from './bridges.js';
 import { addExtraLandmarks, createLandmarks, landmarkClearings } from './landmarks.js';
 import { createRiverside } from './riverside.js';
 import { createBoat, boatPace, DRAW_ORDER } from './boat.js';
+import { createWalk } from './walk.js';
 import { createBoatPicker } from './boatpicker.js';
 import { createInput } from './input.js';
 import { cullInstances } from './instancing.js';
@@ -90,6 +91,7 @@ scene.add(
   createRiverside(layout, path),
   boat.mesh,
 );
+const walk = createWalk(scene, layout, path, blocks);
 
 const input = createInput(canvas, document.getElementById('joystick'), {
   moveStick: document.getElementById('move-stick'),
@@ -534,6 +536,8 @@ for (const card of hourCards.children) card.addEventListener('click', () => cent
 // Third-person camera: sits behind and above the boat and eases towards that spot.
 const CAMERA_BACK = 15;
 const CAMERA_UP = 6.5;
+// On foot: metres behind, above the feet, of the eyes, and how much of the drag's lift to take.
+const WALK_CAMERA = { back: 4.6, nearest: 1.2, up: 2.6, eye: 1.6, lift: 0.25 };
 const ORBIT = { yawPerPixel: 0.006, liftPerPixel: 0.06, maxLift: 30, holdSeconds: 2, returnRate: 2, nearest: 0.45, farthest: 3, zoomPerPixel: 0.0015 };
 const cameraGoal = new THREE.Vector3();
 const lookGoal = new THREE.Vector3();
@@ -837,16 +841,29 @@ function updateCamera(dt, snap = false) {
     caption = captionShare();
   }
 
-  // Where the camera would be if it were simply following the boat.
-  const tucked = THREE.MathUtils.smoothstep(boat.state.underBridge, 0.3, 0.75);
-  const angle = boat.state.heading + orbit.yaw * (1 - tucked);
-  viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
-  chasePosition
-    .copy(boat.mesh.position)
-    .addScaledVector(viewDirection, -THREE.MathUtils.lerp(CAMERA_BACK * orbit.zoom, UNDER_BRIDGE.back, tucked));
-  chasePosition.y = THREE.MathUtils.lerp(CAMERA_UP * orbit.zoom + orbit.lift, UNDER_BRIDGE.up, tucked);
-  chaseLook.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
-  chaseLook.y = 2;
+  // Where the camera would be if it were simply following the boat, or the
+  // figure on foot: behind and a little above its head.
+  if (walk.state.on) {
+    const { x, y, z, heading } = walk.state;
+    const angle = heading + orbit.yaw;
+    viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
+    // In a narrow street the camera comes in closer rather than into a house.
+    let back = WALK_CAMERA.back * orbit.zoom;
+    while (back > WALK_CAMERA.nearest && walk.solid(x - viewDirection.x * back, z - viewDirection.z * back, 0.6)) back -= 0.3;
+    chasePosition.set(x, y, z).addScaledVector(viewDirection, -back);
+    chasePosition.y = y + WALK_CAMERA.up * Math.max(0.6, back / WALK_CAMERA.back) + orbit.lift * WALK_CAMERA.lift;
+    chaseLook.set(x, y + WALK_CAMERA.eye, z).addScaledVector(viewDirection, 3);
+  } else {
+    const tucked = THREE.MathUtils.smoothstep(boat.state.underBridge, 0.3, 0.75);
+    const angle = boat.state.heading + orbit.yaw * (1 - tucked);
+    viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
+    chasePosition
+      .copy(boat.mesh.position)
+      .addScaledVector(viewDirection, -THREE.MathUtils.lerp(CAMERA_BACK * orbit.zoom, UNDER_BRIDGE.back, tucked));
+    chasePosition.y = THREE.MathUtils.lerp(CAMERA_UP * orbit.zoom + orbit.lift, UNDER_BRIDGE.up, tucked);
+    chaseLook.copy(boat.mesh.position).addScaledVector(viewDirection, 8);
+    chaseLook.y = 2;
+  }
 
   if (cinema.active) {
     const u = stillShots ? 0.5 : cinema.time / CINEMA.shot;
@@ -929,6 +946,46 @@ function updateCamera(dt, snap = false) {
     }
   }
   sky.position.copy(camera.position);
+}
+
+// Going ashore at a flight of steps (the boot) and back aboard (the boat).
+// Back aboard at another flight, the boat is found waiting at its foot.
+const ashoreButton = document.getElementById('ashore');
+const tourButton = document.getElementById('tour');
+const aboardButton = document.getElementById('aboard');
+ashoreButton.addEventListener('click', () => {
+  const landing = walk.nearestFoot(boat.state);
+  if (!landing) return;
+  walk.goAshore(landing);
+  orbit.yaw = 0;
+  orbit.lift = 0;
+  orbit.idle = ORBIT.holdSeconds;
+});
+aboardButton.addEventListener('click', () => {
+  const landing = walk.nearestTop();
+  if (!landing) return;
+  // A few lengths off the foot of the steps, bow away from the bridge, so the
+  // camera astern of it stays clear of the piers.
+  const { sample, lateral } = path.project(landing.footX, landing.footZ);
+  const inward = -Math.sign(lateral) || 1; // towards the middle of the river
+  const [awayX, awayZ] = landing.away;
+  Object.assign(boat.state, {
+    x: landing.footX + awayX * 9 + sample.rx * inward * 3,
+    z: landing.footZ + awayZ * 9 + sample.rz * inward * 3,
+    heading: Math.atan2(awayX, awayZ),
+    speed: 0,
+  });
+  walk.goAboard();
+  orbit.yaw = 0;
+  orbit.lift = 0;
+  orbit.idle = ORBIT.holdSeconds;
+});
+function updateWalkButtons() {
+  const free = started && !drone.on && !tour.active && !cinema.active && !cinema.pending && focus.left <= 0;
+  ashoreButton.hidden = !(free && !walk.state.on && walk.nearestFoot(boat.state));
+  aboardButton.hidden = !(free && walk.state.on && walk.nearestTop());
+  // The guided tour would sail the boat off and leave the figure ashore.
+  tourButton.hidden = walk.state.on;
 }
 
 const tourNotice = document.getElementById('tour-notice');
@@ -1068,14 +1125,19 @@ function frame() {
   if (shownMist > 0) mistVeil.style.backgroundColor = `#${scene.fog.color.getHexString()}`;
   mistBank.material.color.copy(scene.fog.color);
   // While the camera is showing a place off, the boat idles along.
-  boat.update(dt, axes, time, focus.left > 0 ? FOCUS.speed : Infinity);
+  // On foot, the controls move the figure and the boat stays moored.
+  if (walk.state.on) {
+    walk.update(dt, axes);
+    boat.state.speed = 0;
+  }
+  boat.update(dt, walk.state.on ? { ...axes, throttle: 0, steer: 0 } : axes, time, focus.left > 0 ? FOCUS.speed : Infinity);
   // On a flight the water is animated and drawn around the camera, not the
   // boat, and the shadows fall where the camera is looking.
   const flying = drone.on || (focus.left > 0 && focus.flight);
-  const lit = flying ? lookAt : boat.mesh.position;
+  const lit = flying ? lookAt : walk.state.on ? walk.figure.position : boat.mesh.position;
   sun.target.position.copy(lit);
   sun.position.copy(lit).addScaledVector(atmosphere.state.sunDirection, SHADOW.distance);
-  const waterRow = flying ? path.project(camera.position.x, camera.position.z).index : boat.state.row;
+  const waterRow = flying || walk.state.on ? path.project(camera.position.x, camera.position.z).index : boat.state.row;
   water.update(time, waterRow);
   sea.update(time, waterRow);
   life.update(dt, time, boat.state, atmosphere.state);
@@ -1087,6 +1149,7 @@ function frame() {
   if (started) updateOrbit(dt, axes);
   if (axes.looking) focus.left = 0; // looking around by hand takes the camera back
   if (!drone.on) updateCamera(dt, returned);
+  updateWalkButtons();
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
   renderer.render(scene, camera);
@@ -1141,5 +1204,5 @@ window.__valenciaReady = true;
 
 if (debug) {
   debugPanel.hidden = false;
-  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus, cinema, drone };
+  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus, cinema, drone, walk };
 }

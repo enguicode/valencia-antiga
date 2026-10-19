@@ -111,6 +111,24 @@ const deckHeight = (spec, x) => {
   const t = Math.min(1, Math.abs(x) / spec.landing[x > 0 ? 1 : -1]);
   return LANDED + (DECK_TOP + (spec.hump ?? 0) - LANDED) * (1 - t * t);
 };
+// The piers, counted from the far bank, with a flight of steps down to the
+// water on their downstream side: the documented ones, or for a bridge with
+// none one modest flight beside its shrines.
+const FLIGHT = { run: 10.5, foot: 0.55 };
+function flightPiers(spec) {
+  const { arches } = spec;
+  const occupied = new Set([...(spec.stairPiers ?? []), spec.shrinePier, spec.statuePier].filter((n) => n != null));
+  let extraPier = null;
+  if (!(spec.stairPiers ?? []).length) {
+    extraPier = 4;
+    while (occupied.has(extraPier) && extraPier < arches) extraPier += 1;
+    if (extraPier >= arches) extraPier = null;
+  }
+  const flights = new Set((spec.stairPiers ?? []).map((n) => arches - n));
+  if (extraPier != null) flights.add(arches - extraPier);
+  return flights;
+}
+
 // The arches by the banks pay for it: they are lower, to keep stone over them.
 const riseOf = (spec, i) =>
   Math.min(ARCH.rise, (deckHeight(spec, archCentre(spec, i)) - ARCH.spring - COVER) / CROWN[spec.arch]);
@@ -355,19 +373,11 @@ export function createBridges(layout, path) {
     // refuges, a hair under it so the two tops do not fight; on the Trinitat
     // they end in stepped caps.
     const cutwater = createCutwaterGeometry(width, CUTWATER.top);
-    const occupied = new Set([...(spec.stairPiers ?? []), spec.shrinePier, spec.statuePier].filter((n) => n != null));
-    let extraPier = null;
-    if (!(spec.stairPiers ?? []).length) {
-      extraPier = 4;
-      while (occupied.has(extraPier) && extraPier < arches) extraPier += 1;
-      if (extraPier >= arches) extraPier = null;
-    }
-    const flights = new Set((spec.stairPiers ?? []).map((n) => arches - n));
-    if (extraPier != null) flights.add(arches - extraPier);
+    const flights = flightPiers(spec);
     const addFlight = (pierX) => {
       const fromY = deckHeight(spec, pierX);
-      const toY = 0.55;
-      const run = 10.5;
+      const toY = FLIGHT.foot;
+      const run = FLIGHT.run;
       const steps = 20;
       for (let s = 0; s < steps; s++) {
         const t = s / (steps - 1);
@@ -554,6 +564,26 @@ export function bridgeDecks(layout, path) {
       farStation: bankStation(-1),
       mouths: { [1]: mouth(1), [-1]: mouth(-1) },
     };
+  });
+}
+
+// Where each flight of steps leaves the deck and where it reaches the water,
+// for going ashore from a boat. `top` is on the deck just inside the
+// downstream parapet, `foot` the last tread; `inward` is the way to face on
+// landing and `away` points from the bridge out over the water.
+export function bridgeStairs(layout, path) {
+  return layout.bridges.flatMap((bridge) => {
+    const spec = specOf(bridge, path);
+    const { ax, az, width, span } = spec;
+    // The model's local +Z is (-az, ax) in the world; the steps go down its -Z side.
+    const across = (u, v) => [spec.x + ax * u - az * v, spec.z + az * u + ax * v];
+    return [...flightPiers(spec)].map((i) => {
+      const u = -span / 2 + PIER / 2 + i * (openingOf(spec) + PIER);
+      const [x, z] = across(u, -(width / 2 - PARAPET.thickness - 0.6));
+      const [footX, footZ] = across(u, -(width / 2 + 0.8 + FLIGHT.run));
+      // Ashore, one faces along the deck towards the city, so the parapet is not in the way.
+      return { id: `${bridge.id}-${i}`, bridge: bridge.id, x, z, y: deckHeight(spec, u), footX, footZ, inward: [ax, az], away: [az, -ax] };
+    });
   });
 }
 

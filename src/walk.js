@@ -6,14 +6,14 @@ import { riverStairs } from './riverside.js';
 // Going ashore. At any flight of steps down to the water (on the bridges and
 // in the riverside parapet) the boat can be left moored and a rider of about
 // 1700 goes on horseback through the streets: the same controls steer the
-// horse, the camera follows close behind, and it runs into the blocks of
+// horse, the camera follows close behind, and it runs into the
 // houses, the monuments, the city wall (passable only at its gates), the
 // river and the bridges' parapets. Back at any flight it can take to the boat
 // again. Each flight is marked on the water with a small ring of its own.
 
-// Held on, the horse works up from a trot to a gallop: two and a half times
-// the trot in about five seconds. Let go, it slows down over a few seconds.
-const RIDE = { speed: 17.5, trot: 7, gallop: 10, back: 1.5, accel: 3.5, brake: 4, turn: 1.8, radius: 0.75, gate: 6 };
+// Held on, the horse works up from a trot to a flat-out gallop: four times
+// the trot in five and a half seconds. Let go, it slows down over a few seconds.
+const RIDE = { speed: 28, trot: 7, gallop: 10, back: 1.5, accel: 5, brake: 6, turn: 1.8, radius: 0.75, gate: 6 };
 const MARK = { radius: 5, edge: 1.1, height: 0.55 }; // the info rings have a radius of 18 m
 const REACH = { aboard: 5 }; // metres from the top of the steps, ashore
 const STREET = PRETIL.offset + PRETIL.thickness + 0.3; // the river side of the street, from the centreline
@@ -101,17 +101,7 @@ function createRider() {
   return group;
 }
 
-// Point in polygon, and the distance from a point to the polygon's outline.
-function inside(polygon, x, z) {
-  let hit = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, zi] = polygon[i];
-    const [xj, zj] = polygon[j];
-    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) hit = !hit;
-  }
-  return hit;
-}
-
+// The distance from a point to a segment.
 function segmentDistance(x, z, ax, az, bx, bz) {
   const dx = bx - ax;
   const dz = bz - az;
@@ -119,15 +109,24 @@ function segmentDistance(x, z, ax, az, bx, bz) {
   return Math.hypot(x - ax - dx * t, z - az - dz * t);
 }
 
-export function createWalk(scene, layout, path, blocks) {
+export function createWalk(scene, layout, path, houses) {
   const decks = bridgeDecks(layout, path);
 
-  // Blocks of houses, each with its bounding box to skip the far ones.
-  const solids = blocks.map((polygon) => {
-    const xs = polygon.map(([x]) => x);
-    const zs = polygon.map(([, z]) => z);
-    return { polygon, minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
-  });
+  // The houses as city.js draws them, each a rectangle on the ground, filed
+  // in a grid so only the few nearby are looked at.
+  const GRID = 24;
+  const cellKey = (x, z) => `${Math.floor(x / GRID)},${Math.floor(z / GRID)}`;
+  const grid = new Map();
+  for (const house of houses) {
+    const reach = Math.hypot(house.along, house.across);
+    for (let gx = Math.floor((house.x - reach) / GRID); gx <= Math.floor((house.x + reach) / GRID); gx++) {
+      for (let gz = Math.floor((house.z - reach) / GRID); gz <= Math.floor((house.z + reach) / GRID); gz++) {
+        const key = `${gx},${gz}`;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key).push(house);
+      }
+    }
+  }
   // Monuments as rectangles along their axis; those without a size as a circle.
   const monuments = layout.landmarks
     .filter((landmark) => !OPEN.has(landmark.kind))
@@ -186,12 +185,13 @@ export function createWalk(scene, layout, path, blocks) {
     return null;
   }
 
-  // Whether a point is inside a block of houses or a monument: the solid
-  // part only, for keeping the camera out of the houses.
+  // Whether a point is inside a house or a monument: the solid part only,
+  // also used to keep the camera out of the houses.
   function solid(x, z, r = 0) {
-    for (const block of solids) {
-      if (x < block.minX - r || x > block.maxX + r || z < block.minZ - r || z > block.maxZ + r) continue;
-      if (inside(block.polygon, x, z)) return true;
+    for (const house of grid.get(cellKey(x, z)) ?? []) {
+      const dx = x - house.x;
+      const dz = z - house.z;
+      if (Math.abs(dx * house.tx + dz * house.tz) < house.along + r && Math.abs(-dx * house.tz + dz * house.tx) < house.across + r) return true;
     }
     for (const m of monuments) {
       const dx = x - m.x;

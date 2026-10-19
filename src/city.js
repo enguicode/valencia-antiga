@@ -57,6 +57,7 @@ export function createCity(layout, blocks) {
   const roofGeometry = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4);
   roofGeometry.rotateY(Math.PI / 4);
   const bodies = [];
+  const footprints = []; // each house's ground plan, for riding into it
   const roofs = [];
   const chimneys = [];
 
@@ -133,6 +134,7 @@ export function createCity(layout, blocks) {
         if (!houseCells.has(key)) houseCells.set(key, []);
         houseCells.get(key).push({ x, z, radius });
 
+        footprints.push({ x, z, tx, tz, along: width / 2, across: depth / 2 });
         dummy.rotation.set(0, yawTowards(tx, tz), 0);
         dummy.position.set(x, BANK.height + height / 2, z);
         dummy.scale.set(width, height, depth);
@@ -215,5 +217,6 @@ export function createCity(layout, blocks) {
   );
   group.userData.chimneys = chimneys;
   group.userData.facades = facades;
+  group.userData.houses = footprints;
   return group;
 }

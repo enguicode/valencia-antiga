@@ -91,7 +91,7 @@ scene.add(
   createRiverside(layout, path),
   boat.mesh,
 );
-const walk = createWalk(scene, layout, path, blocks);
+const walk = createWalk(scene, layout, path, city.userData.houses);
 
 const input = createInput(canvas, document.getElementById('joystick'), {
   moveStick: document.getElementById('move-stick'),
@@ -851,7 +851,13 @@ function updateCamera(dt, snap = false) {
     viewDirection.set(Math.sin(angle), 0, Math.cos(angle));
     // In a narrow street the camera comes in closer rather than into a house.
     let back = WALK_CAMERA.back * orbit.zoom;
-    while (back > WALK_CAMERA.nearest && walk.solid(x - viewDirection.x * back, z - viewDirection.z * back, 0.6)) back -= 0.3;
+    // Every metre of the line back to it is looked at, so no house wall
+    // comes between the camera and the rider.
+    const clear = (reach) => {
+      for (let d = 1; d <= reach; d += 1) if (walk.solid(x - viewDirection.x * d, z - viewDirection.z * d, 0.6)) return false;
+      return !walk.solid(x - viewDirection.x * reach, z - viewDirection.z * reach, 0.6);
+    };
+    while (back > WALK_CAMERA.nearest && !clear(back)) back -= 0.3;
     chasePosition.set(x, y, z).addScaledVector(viewDirection, -back);
     chasePosition.y = y + WALK_CAMERA.up * Math.max(0.6, back / WALK_CAMERA.back) + orbit.lift * WALK_CAMERA.lift;
     chaseLook.set(x, y + WALK_CAMERA.eye, z).addScaledVector(viewDirection, 3);

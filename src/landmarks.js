@@ -952,8 +952,13 @@ export function addExtraLandmarks(layout) {
   layout.landmarks.push(...EXTRAS.map(({ landmark }) => landmark));
 }
 
+// Pieces that stand on the ground at least this tall are solid to a rider;
+// paving, beds, low kerbs and anything up in the air are not.
+const SOLID = { base: 3, height: 2 };
+
 export function createLandmarks(layout, path) {
   const parts = {};
+  const footprints = [];
   const local = new THREE.Object3D();
 
   for (const landmark of layout.landmarks) {
@@ -976,7 +981,15 @@ export function createLandmarks(layout, path) {
       local.scale.set(...scale);
       local.updateMatrix();
       const surface = color === ROOF || color === TILE_BLUE ? 'tiles' : 'masonry';
-      (parts[`${solid}|${surface}`] ??= []).push({ matrix: frame.clone().multiply(local.matrix), color });
+      const matrix = frame.clone().multiply(local.matrix);
+      (parts[`${solid}|${surface}`] ??= []).push({ matrix, color });
+      // Its ground plan, a rectangle along the piece's own axes.
+      if (position[1] < SOLID.base && scale[1] >= SOLID.height) {
+        const e = matrix.elements;
+        const along = Math.hypot(e[0], e[2]);
+        const across = Math.hypot(e[8], e[10]);
+        footprints.push({ x: e[12], z: e[14], tx: e[0] / along, tz: e[2] / along, along: along / 2, across: across / 2 });
+      }
     }, landmark);
   }
 
@@ -987,6 +1000,7 @@ export function createLandmarks(layout, path) {
     const [solid, surface] = key.split('|');
     group.add(createInstances(solids[solid], surfaces[surface], items));
   }
+  group.userData.footprints = footprints;
   return group;
 }
 

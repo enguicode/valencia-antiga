@@ -19,7 +19,6 @@ const MARK = { radius: 5, edge: 1.1, height: 0.55 }; // the info rings have a ra
 const SLIDE = [0, ...Array.from({ length: 8 }, (_, i) => [1, -1].map((side) => (side * (i + 1) * Math.PI) / 18)).flat()];
 const REACH = { aboard: 5 }; // metres from the top of the steps, ashore
 const STREET = PRETIL.offset + PRETIL.thickness + 0.3; // the river side of the street, from the centreline
-const OPEN = new Set(['albereda', 'jardins-real']); // planted ground, ridden through
 
 function createRider() {
   const group = new THREE.Group();
@@ -111,15 +110,17 @@ function segmentDistance(x, z, ax, az, bx, bz) {
   return Math.hypot(x - ax - dx * t, z - az - dz * t);
 }
 
-export function createWalk(scene, layout, path, houses) {
+export function createWalk(scene, layout, path, houses, monuments) {
   const decks = bridgeDecks(layout, path);
 
-  // The houses as city.js draws them, each a rectangle on the ground, filed
-  // in a grid so only the few nearby are looked at.
+  // The houses as city.js draws them and the standing pieces of the
+  // monuments as landmarks.js builds them, each a rectangle on the ground,
+  // filed in a grid so only the few nearby are looked at. What is drawn is
+  // what stops a rider: no wider box round a monument, its yards and gardens.
   const GRID = 24;
   const cellKey = (x, z) => `${Math.floor(x / GRID)},${Math.floor(z / GRID)}`;
   const grid = new Map();
-  for (const house of houses) {
+  for (const house of [...houses, ...monuments]) {
     const reach = Math.hypot(house.along, house.across);
     for (let gx = Math.floor((house.x - reach) / GRID); gx <= Math.floor((house.x + reach) / GRID); gx++) {
       for (let gz = Math.floor((house.z - reach) / GRID); gz <= Math.floor((house.z + reach) / GRID); gz++) {
@@ -129,21 +130,6 @@ export function createWalk(scene, layout, path, houses) {
       }
     }
   }
-  // Monuments as rectangles along their axis; those without a size as a circle.
-  const monuments = layout.landmarks
-    .filter((landmark) => !OPEN.has(landmark.kind))
-    .map((landmark) => {
-      const [ax, az] = landmark.axis ?? [1, 0];
-      const norm = Math.hypot(ax, az) || 1;
-      return {
-        x: landmark.x,
-        z: landmark.z,
-        ax: ax / norm,
-        az: az / norm,
-        half: (landmark.length ?? 40) / 2,
-        side: (landmark.width ?? 40) / 2,
-      };
-    });
   const wall = layout.wall;
   const gates = layout.gates.map((gate) => wall[gate.vertex]);
 
@@ -194,11 +180,6 @@ export function createWalk(scene, layout, path, houses) {
       const dx = x - house.x;
       const dz = z - house.z;
       if (Math.abs(dx * house.tx + dz * house.tz) < house.along + r && Math.abs(-dx * house.tz + dz * house.tx) < house.across + r) return true;
-    }
-    for (const m of monuments) {
-      const dx = x - m.x;
-      const dz = z - m.z;
-      if (Math.abs(dx * m.ax + dz * m.az) < m.half + r && Math.abs(-dx * m.az + dz * m.ax) < m.side + r) return true;
     }
     return false;
   }

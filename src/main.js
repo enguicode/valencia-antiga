@@ -80,6 +80,7 @@ const city = createCity(layout, blocks);
 const life = createLife(layout, path, city.userData.chimneys, bridgeGuide);
 const nightLights = createNightLights(layout, path);
 const sea = createSea(scene, path, layout, water.material);
+const landmarks = createLandmarks(layout, path);
 scene.add(
   water.mesh,
   createWalls(layout, path),
@@ -87,11 +88,11 @@ scene.add(
   life.group,
   nightLights.points,
   createBridges(layout, path),
-  createLandmarks(layout, path),
+  landmarks,
   createRiverside(layout, path),
   boat.mesh,
 );
-const walk = createWalk(scene, layout, path, city.userData.houses);
+const walk = createWalk(scene, layout, path, city.userData.houses, landmarks.userData.footprints);
 
 const input = createInput(canvas, document.getElementById('joystick'), {
   moveStick: document.getElementById('move-stick'),

@@ -15,6 +15,8 @@ import { riverStairs } from './riverside.js';
 // the trot in five and a half seconds. Let go, it slows down over a few seconds.
 const RIDE = { speed: 28, trot: 7, gallop: 10, back: 1.5, accel: 5, brake: 6, turn: 1.8, radius: 0.75, gate: 6 };
 const MARK = { radius: 5, edge: 1.1, height: 0.55 }; // the info rings have a radius of 18 m
+// How far aside the horse may turn to slide along an obstacle: 10° at a time, either way, up to 80°.
+const SLIDE = [0, ...Array.from({ length: 8 }, (_, i) => [1, -1].map((side) => (side * (i + 1) * Math.PI) / 18)).flat()];
 const REACH = { aboard: 5 }; // metres from the top of the steps, ashore
 const STREET = PRETIL.offset + PRETIL.thickness + 0.3; // the river side of the street, from the centreline
 const OPEN = new Set(['albereda', 'jardins-real']); // planted ground, ridden through
@@ -296,17 +298,22 @@ export function createWalk(scene, layout, path, houses) {
     const rate = (faster ? RIDE.accel : RIDE.brake) * dt;
     state.speed += Math.max(-rate, Math.min(rate, wanted - state.speed));
     const step = state.speed * dt;
-    const dx = Math.sin(state.heading) * step;
-    const dz = Math.cos(state.heading) * step;
-    // Slide along whatever is in the way rather than stopping dead.
-    let moved = false;
-    for (const [mx, mz] of [[dx, dz], [dx, 0], [0, dz]]) {
-      if (mx === 0 && mz === 0) continue;
+    // Against a house, the wall or the river it does not stop dead: it turns
+    // aside as little as it must and runs on along the obstacle, slower the
+    // more head-on it came. Only square on does it pull up.
+    let moved = step === 0;
+    for (const turn of SLIDE) {
+      if (moved) break;
+      const angle = state.heading + turn;
+      const reach = step * Math.sqrt(Math.cos(turn));
+      const mx = Math.sin(angle) * reach;
+      const mz = Math.cos(angle) * reach;
       if (!blocked(state.x + mx, state.z + mz, state.x, state.z)) {
         state.x += mx;
         state.z += mz;
         moved = true;
-        break;
+        // And the horse comes round to run along it, so it faces where it goes.
+        state.heading += turn * Math.min(1, dt * 4);
       }
     }
     if (!moved) state.speed *= 0.5;

@@ -170,7 +170,27 @@ export function createMinimap(canvas, layout, path, guide) {
   }
   resize();
 
-  function update(state, beyond = false) {
+  // An arrow at a place on the sheet, pointing the way it heads.
+  function arrow(x, z, heading, fill) {
+    context.save();
+    context.translate(px(x), py(z));
+    context.rotate(-heading + Math.PI);
+    context.scale(detail, detail);
+    context.beginPath();
+    context.moveTo(0, -6 * ratio);
+    context.lineTo(4 * ratio, 5 * ratio);
+    context.lineTo(-4 * ratio, 5 * ratio);
+    context.closePath();
+    context.fillStyle = fill;
+    context.strokeStyle = '#fff8e8';
+    context.lineWidth = ratio;
+    context.fill();
+    context.stroke();
+    context.restore();
+  }
+
+  // `rider`, when ashore, gets an arrow of its own beside the moored boat's.
+  function update(state, beyond = false, rider = null) {
     const next = beyond ? 'sea' : 'city';
     if (next !== mode) {
       mode = next;
@@ -193,21 +213,8 @@ export function createMinimap(canvas, layout, path, guide) {
     }
     // On the city sheet the boat stays at the line once the tour is behind it.
     const pinned = mode === 'city' && state.s > path.end ? path.pointAt(path.end) : state;
-    context.save();
-    context.translate(px(pinned.x), py(pinned.z));
-    context.rotate(-state.heading + Math.PI);
-    context.scale(detail, detail);
-    context.beginPath();
-    context.moveTo(0, -6 * ratio);
-    context.lineTo(4 * ratio, 5 * ratio);
-    context.lineTo(-4 * ratio, 5 * ratio);
-    context.closePath();
-    context.fillStyle = '#c0392b';
-    context.strokeStyle = '#fff8e8';
-    context.lineWidth = ratio;
-    context.fill();
-    context.stroke();
-    context.restore();
+    arrow(pinned.x, pinned.z, state.heading, '#c0392b');
+    if (rider?.on) arrow(rider.x, rider.z, rider.heading, '#2f6690');
     // On top of the boat, so the join stays visible when the mark sits on it.
     paintLimit(context);
   }

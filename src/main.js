@@ -1170,7 +1170,7 @@ function frame() {
   if (onSea && started && !cinema.active && !cinema.pending) offerFaster();
   guide.setBeyond(onSea);
   if (started) guide.update(time, boat.state);
-  minimap.update(boat.state, onSea);
+  minimap.update(boat.state, onSea, walk.state);
 
   // In the city the metres are the tour. Past the line they start again,
   // from there to the mist at the end of the river.

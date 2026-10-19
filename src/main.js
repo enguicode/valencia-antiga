@@ -918,7 +918,8 @@ function updateCamera(dt, snap = false) {
   // A fast craft would leave the camera far astern: it keeps up the faster it goes.
   // A shot is where it is: no easing into it, or a cut would be a swerve.
   const hard = snap || (cinema.active && !focus.subject.moon && (cinema.shot > 0 || cinema.rounds > 0 || cinema.time > 1.5));
-  const ease = hard ? 1 : 1 - Math.exp(-dt * (quick ? 9 : Math.max(3, boat.state.speed / 7)));
+  const followed = walk.state.on ? Math.abs(walk.state.speed) : boat.state.speed;
+  const ease = hard ? 1 : 1 - Math.exp(-dt * (quick ? 9 : Math.max(3, followed / 7)));
   camera.position.lerp(cameraGoal, ease);
   lookAt.lerp(lookGoal, ease);
   // The camera never whips round: when the place a card is about lies astern,

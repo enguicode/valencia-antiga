@@ -11,7 +11,9 @@ import { riverStairs } from './riverside.js';
 // river and the bridges' parapets. Back at any flight it can take to the boat
 // again. Each flight is marked on the water with a small ring of its own.
 
-const RIDE = { speed: 7, back: 1.5, turn: 1.8, radius: 0.75, gate: 6 };
+// Held on, the horse works up from a trot to a gallop: two and a half times
+// the trot in about five seconds. Let go, it slows down over a few seconds.
+const RIDE = { speed: 17.5, trot: 7, gallop: 10, back: 1.5, accel: 3.5, brake: 4, turn: 1.8, radius: 0.75, gate: 6 };
 const MARK = { radius: 5, edge: 1.1, height: 0.55, gap: 3 }; // the info rings are 18 m across the middle
 const REACH = { aboard: 5 }; // metres from the top of the steps, ashore
 const STREET = PRETIL.offset + PRETIL.thickness + 0.3; // the river side of the street, from the centreline
@@ -289,22 +291,30 @@ export function createWalk(scene, layout, path, blocks) {
   function place() {
     figure.position.set(state.x, state.y, state.z);
     figure.rotation.y = state.heading;
-    // A trot: the diagonal pairs of legs swing together, and the body bobs.
-    const pace = Math.min(1, Math.abs(state.speed) / RIDE.speed);
-    const swing = Math.sin(state.phase) * (0.15 + 0.45 * pace) * Math.min(1, Math.abs(state.speed) * 2);
+    // At a trot the diagonal pairs of legs swing together; at a gallop the
+    // forelegs go together and the hind legs together, and the body rocks.
+    const speed = Math.abs(state.speed);
+    const pace = Math.min(1, speed / RIDE.trot);
+    const swing = Math.sin(state.phase) * (0.15 + 0.45 * pace) * Math.min(1, speed * 2);
     const { horse, legs } = figure.userData;
+    const gallop = speed > RIDE.gallop;
     legs[0].rotation.x = swing;
-    legs[3].rotation.x = swing;
-    legs[1].rotation.x = -swing;
+    legs[1].rotation.x = gallop ? swing : -swing;
     legs[2].rotation.x = -swing;
-    horse.position.y = Math.abs(Math.sin(state.phase)) * 0.06 * pace;
+    legs[3].rotation.x = gallop ? -swing : swing;
+    horse.position.y = Math.abs(Math.sin(state.phase)) * (gallop ? 0.12 : 0.06) * pace;
+    horse.rotation.x = gallop ? Math.sin(state.phase) * 0.05 : 0;
   }
 
   function update(dt, axes) {
     if (!state.on) return;
     state.heading -= axes.steer * RIDE.turn * dt;
     const wanted = axes.throttle >= 0 ? axes.throttle * RIDE.speed : axes.throttle * RIDE.back;
-    state.speed += (wanted - state.speed) * Math.min(1, dt * 3);
+    // Speeding up in the way it is already going takes a while; easing off,
+    // or turning about, slows it at the braking rate.
+    const faster = Math.abs(wanted) > Math.abs(state.speed) && (state.speed === 0 || Math.sign(wanted) === Math.sign(state.speed));
+    const rate = (faster ? RIDE.accel : RIDE.brake) * dt;
+    state.speed += Math.max(-rate, Math.min(rate, wanted - state.speed));
     const step = state.speed * dt;
     const dx = Math.sin(state.heading) * step;
     const dz = Math.cos(state.heading) * step;
@@ -322,7 +332,8 @@ export function createWalk(scene, layout, path, blocks) {
     if (!moved) state.speed *= 0.5;
     const ground = deckAt(state.x, state.z) ?? BANK.height;
     state.y += (ground - state.y) * Math.min(1, dt * 12);
-    state.phase += (1.2 + Math.abs(state.speed) * 1.1) * dt * Math.min(1, Math.abs(state.speed) * 2);
+    // Strides lengthen at speed, so their rate grows more slowly than the speed.
+    state.phase += (1.2 + Math.min(Math.abs(state.speed), RIDE.trot) * 1.1 + Math.max(0, Math.abs(state.speed) - RIDE.trot) * 0.35) * dt * Math.min(1, Math.abs(state.speed) * 2);
     place();
   }
 

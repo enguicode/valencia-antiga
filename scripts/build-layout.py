@@ -104,7 +104,9 @@ LANDMARKS = [
     ("Reial Església del Santíssim Crist del Salvador", "salvador", "church", {}),
     ("Iglesia de San Juan del Hospital", "sant-joan-hospital", "church", {}),
     ("Sant Joan de la Creu", "sant-andreu", "church", {}),
-    ("Església de Sant Agustí i Santa Caterina", "sant-agusti", "church", {}),
+    # The footprint, with the low rooms of 1940, is nearly square and its long
+    # axis comes out north; the nave runs along the edges at 29 degrees.
+    ("Església de Sant Agustí i Santa Caterina", "sant-agusti", "church", {"axis": [0.485, -0.875]}),
     ("Església de la Santíssima Creu", "carme", "church", {}),
     ("Església de la Companyia de Jesús", "companyia", "church", {}),
     # Outside the wall, almost opposite the Corona gate: no `inside`.

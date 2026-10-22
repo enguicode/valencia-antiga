@@ -64,6 +64,25 @@ function cloister(add, { x, z, width, depth, height, color }) {
   }
 }
 
+// A portal of about 1600-1630 in a church's flank, its face at `z`: paired
+// Doric columns on pedestals, a broken curved pediment, and over it a niche
+// for the saint between volutes under a broken triangular one.
+function sidePortal(add, { x, z }) {
+  add('arch', [x, 0, z + 0.3], [0.4, 4.6, 2.2], DARK, FACING_Z);
+  for (const side of [-1, 1]) {
+    for (const k of [1.6, 2.4]) {
+      add('box', [x + side * k, 0, z + 0.45], [0.75, 1.4, 0.75], STONE);
+      add('oct', [x + side * k, 1.4, z + 0.45], [0.5, 4.2, 0.5], STONE);
+    }
+    add('ball', [x + side * 1.5, 6.6, z + 0.35], [0.6, 1.1, 0.5], STONE);
+  }
+  add('box', [x, 5.6, z + 0.45], [6, 0.8, 1], STONE);
+  add('disk', [x, 4.8, z + 0.2], [0.3, 3.2, 5.4], STONE, FACING_Z); // the lower half hides behind the entablature
+  add('box', [x, 6.4, z + 0.35], [2.4, 3, 0.7], PALE);
+  add('arch', [x, 6.8, z + 0.72], [0.3, 2.2, 1.1], DARK, FACING_Z);
+  add('gable', [x, 9.4, z + 0.35], [3, 1, 0.7], STONE);
+}
+
 // One piece on each flat of a prism. `radius` is the distance from the axis
 // to the piece's centre; the piece's local +X, its thickness, points outward.
 function around(add, { x = 0, z = 0, sides, radius, y, solid, height, width, depth, color, skip }) {
@@ -300,6 +319,8 @@ const FRONTS = {
 // [fraction of the length, side] of a domed chapel against the flank. `turn`
 // lays the nave across the layout axis, where the footprint is nearly square.
 // `classical` drops the Gothic apse, pinnacles, pointed windows and rose.
+// `sidePortal` puts a portal in the right-hand flank at that fraction of the
+// length, and `cloisters` are a convent's courts in the church's own frame.
 const CHURCHES = {
   'santa-caterina': { apse: 1, towerAt: [1, 1] },
   'sants-joans': { apse: 1, towerAt: [-1, 1], chapelDome: [0.15, -1] },
@@ -310,7 +331,7 @@ const CHURCHES = {
   salvador: { apse: 1, towerAt: [1, 1] },
   'sant-joan-hospital': { apse: 1, tower: false, chapelDome: [0.4, 1] },
   'sant-andreu': { turn: true, apse: 1, towerAt: [-1, -1] },
-  'sant-agusti': { apse: 1, tower: false },
+  'sant-agusti': { apse: 1, towerAt: [-1, -1], sidePortal: -0.168, cloisters: [{ x: 2, z: -32.5, size: 40 }, { x: 2, z: -73, size: 40 }] },
   carme: { apse: 1, towerAt: [-1, -1], towerTop: 'lantern' },
   companyia: { apse: 1, classical: true, tower: false },
   'santa-monica': { tower: false },
@@ -884,6 +905,8 @@ const MODELS = {
       add('wheel', [front - apse * 0.12, 10.2, 0], [0.3, 4.2, 4.2], STONE);
     }
     FRONTS[landmark.id]?.(add, { apse, naveLength, naveWidth, flank, NAVE });
+    if (spec.sidePortal !== undefined) sidePortal(add, { x: spec.sidePortal * naveLength, z: flank });
+    for (const { x, z, size } of spec.cloisters ?? []) cloister(add, { x, z, width: size, depth: size, height: 12, color: PALE });
     if (spec.tower ?? tower) {
       const x = towerAt[0] * (naveLength / 2 - 3);
       const z = towerAt[1] * (flank + 3);
@@ -1013,8 +1036,9 @@ export function landmarkClearings(layout) {
     const { x, z, length, width } = landmark;
     const clearings = [{ x, z, radius: Math.max(length ?? 40, width ?? 20, 30) / 2 + 8 }];
     if (landmark.kind !== 'church' || !landmark.axis) return clearings;
-    const { apse = -1, turn } = CHURCHES[landmark.id] ?? {};
+    const { apse = -1, turn, cloisters = [] } = CHURCHES[landmark.id] ?? {};
     const [ax, az] = turn ? [landmark.axis[1], -landmark.axis[0]] : landmark.axis;
+    for (const c of cloisters) clearings.push({ x: x + ax * c.x - az * c.z, z: z + az * c.x + ax * c.z, radius: c.size * 0.72 });
     const reach = clamp(length ?? 40, 30, 50) / 2 + 18;
     for (const end of landmark.id in FRONTS ? [-1, 1] : [-apse]) {
       clearings.push({ x: x + ax * end * reach, z: z + az * end * reach, radius: 17 });

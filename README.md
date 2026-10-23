@@ -59,6 +59,7 @@ valencia-antiga/
 ├── index.html          página, estilos e interfaz
 ├── og.jpg              imagen de la tarjeta al compartir el enlace
 ├── src/                la escena, un módulo por cosa
+│   └── extras/         monumentos de cerca del río añadidos después, uno por fichero
 ├── data/
 │   ├── layout.json     río, muralla, puentes y edificios, en metros
 │   └── points.json     las fichas, en los tres idiomas
@@ -68,6 +69,7 @@ valencia-antiga/
 ├── docs/
 │   ├── sources.md      de dónde sale cada dato y cuánto fiarse
 │   ├── sea-plan.md     el tramo del río hasta el mar
+│   ├── extras/         de dónde sale cada monumento de src/extras/
 │   └── multiplayer-plan.md
 ├── LICENSE             CC BY-NC-SA 4.0
 └── AGENTS.md           reglas para quien toque el código, persona o asistente
@@ -83,6 +85,8 @@ valencia-antiga/
 | `walls.js`, `bridges.js`, `city.js`, `landmarks.js` | Muralla y puertas; puentes; casas; edificios singulares |
 | `materials.js` | Texturas pintadas por código |
 | `boat.js` | Las diez embarcaciones, su manejo y su animación |
+| `boatpicker.js` | El escaparate en 3D de los ajustes para elegir barca |
+| `extras/` | Un módulo por monumento añadido después (Temple, Sant Josep, Albereda…); `index.js` los junta con los de `layout.json` |
 | `guide.js` | Aros, fichas, cuenta y recorrido guiado |
 | `atmosphere.js`, `lights.js`, `life.js`, `sound.js` | Hora del día; luces de noche; barcas, lavanderas, humo y pájaros; sonido |
 | `input.js`, `minimap.js`, `quality.js`, `i18n.js` | Controles; mapa; calidad; idiomas |

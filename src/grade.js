@@ -1,17 +1,12 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-// Final look, like a film grade: the scene is drawn into a linear buffer,
-// given a glow around the brightest light (bloom), and a last full-screen pass
-// tone-maps it, warms the lights, cools the shades, adds a gentle S-curve, a
-// vignette, a faint lens fringe and moving grain.
+// Final look, like a film grade: the scene is drawn into a linear buffer and
+// a single full-screen pass tone-maps it, warms the lights, cools the shades,
+// adds a gentle S-curve, a vignette, a faint lens fringe and moving grain.
 // Off (scene straight to the screen) on the low quality level.
 
 const fragmentShader = /* glsl */ `
-  uniform sampler2D tDiffuse;
+  uniform sampler2D tScene;
   uniform float uFrame;
   uniform float uNight;
   varying vec2 vUv;
@@ -27,9 +22,9 @@ const fragmentShader = /* glsl */ `
     vec2 cc = vUv - 0.5;
     vec2 ca = cc * dot(cc, cc) * 0.006;
     vec3 col = vec3(
-      texture2D(tDiffuse, vUv - ca).r,
-      texture2D(tDiffuse, vUv).g,
-      texture2D(tDiffuse, vUv + ca).b
+      texture2D(tScene, vUv - ca).r,
+      texture2D(tScene, vUv).g,
+      texture2D(tScene, vUv + ca).b
     );
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
@@ -56,52 +51,45 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-export function createGrade(renderer, scene, camera, antialias) {
+export function createGrade(renderer, antialias) {
   const target = new THREE.WebGLRenderTarget(1, 1, {
     type: THREE.HalfFloatType,
     samples: antialias ? 4 : 0,
   });
-  const composer = new EffectComposer(renderer, target);
-  const scenePass = new RenderPass(scene, camera);
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.3, 0.5, 1.0); // strength, radius, threshold
-  const finish = new ShaderPass(
-    new THREE.ShaderMaterial({
-      uniforms: { tDiffuse: { value: null }, uFrame: { value: 0 }, uNight: { value: 0 } },
-      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
-      fragmentShader,
-    }),
-  );
-  for (const pass of [scenePass, bloom, finish]) composer.addPass(pass);
+  const material = new THREE.ShaderMaterial({
+    uniforms: { tScene: { value: target.texture }, uFrame: { value: 0 }, uNight: { value: 0 } },
+    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  quad.frustumCulled = false;
+  const post = new THREE.Scene();
+  post.add(quad);
+  const postCamera = new THREE.Camera();
   const size = new THREE.Vector2();
-  const drawn = new THREE.Vector2();
   let on = true;
-  renderer.info.autoReset = false; // so ?debug counts every pass, not just the last
-  let frame = 0;
+  renderer.info.autoReset = false; // so ?debug counts the scene, not just the last pass
 
   return {
-    setLevel(level) {
-      on = level.grade;
-      bloom.enabled = level.bloom;
+    setEnabled(value) {
+      on = value;
     },
-    // `view` lets a capture draw through a camera of its own.
-    render(view = camera, night = 0) {
+    render(scene, camera, night = 0) {
       renderer.info.reset();
       if (!on) {
-        renderer.render(scene, view);
+        renderer.render(scene, camera);
         return;
       }
       renderer.getDrawingBufferSize(size);
-      if (!size.equals(drawn)) {
-        drawn.copy(size);
-        composer.setPixelRatio(renderer.getPixelRatio());
-        renderer.getSize(size);
-        composer.setSize(size.x, size.y);
-      }
-      scenePass.camera = view;
-      frame = (frame + 1) % 1000;
-      finish.uniforms.uFrame.value = frame;
-      finish.uniforms.uNight.value = night;
-      composer.render();
+      if (target.width !== size.x || target.height !== size.y) target.setSize(size.x, size.y);
+      renderer.setRenderTarget(target);
+      renderer.render(scene, camera);
+      renderer.setRenderTarget(null);
+      material.uniforms.uFrame.value = (material.uniforms.uFrame.value + 1) % 1000;
+      material.uniforms.uNight.value = night;
+      renderer.render(post, postCamera);
     },
   };
 }

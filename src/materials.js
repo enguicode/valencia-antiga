@@ -1,11 +1,9 @@
 import * as THREE from 'three';
 import { COLORS, createRandom } from './config.js';
 
-// Surfaces. Most textures are painted here on a canvas; stone, roof tiles and
-// earth are scanned photos (Poly Haven, CC0) turned to neutral grey, and those
-// plus the plaster and rammed earth carry a scanned normal map for relief.
-// All are neutral (light greys) and take their hue from the material or
-// instance colour.
+// Surfaces. Every texture is painted here on a canvas, so the page still
+// ships no image files. Most are neutral (light greys) and take their hue
+// from the material or instance colour.
 
 const SIZE = 256;
 
@@ -18,16 +16,6 @@ function paint(draw, { repeat = true } = {}) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   if (repeat) texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  return texture;
-}
-
-const loader = new THREE.TextureLoader();
-
-function photo(name, colour = true) {
-  const texture = loader.load(`textures/${name}.webp`);
-  texture.colorSpace = colour ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.anisotropy = 4;
   return texture;
 }
 
@@ -60,6 +48,65 @@ function blotches(context, random, amount, radius, strength) {
       }
     }
   }
+}
+
+function paintMasonry(context) {
+  const random = createRandom(11);
+  context.fillStyle = grey(150);
+  context.fillRect(0, 0, SIZE, SIZE);
+  const course = SIZE / 8;
+  for (let row = 0; row < 8; row++) {
+    let x = -random() * 50;
+    while (x < SIZE) {
+      const width = 34 + random() * 46;
+      context.fillStyle = grey(200 + Math.floor(random() * 50));
+      context.fillRect(x + 1.5, row * course + 1.5, width - 3, course - 3);
+      // the same block again past the right edge, so the course tiles
+      context.fillRect(x + 1.5 - SIZE, row * course + 1.5, width - 3, course - 3);
+      x += width;
+    }
+  }
+  blotches(context, random, 26, 34, 0.16);
+  speckle(context, random, 5000, 0.14);
+}
+
+// Curved roof tiles. Channels run across U and the overlaps run down V,
+// which is how the roof mapping lays the texture on a slope.
+function paintTiles(context) {
+  const random = createRandom(12);
+  const channels = 8;
+  const courses = 8;
+  const pitch = SIZE / channels;
+  const course = SIZE / courses;
+  context.fillStyle = grey(120);
+  context.fillRect(0, 0, SIZE, SIZE);
+  for (let i = 0; i < channels; i++) {
+    const left = i * pitch;
+    const crown = context.createLinearGradient(left, 0, left + pitch, 0);
+    crown.addColorStop(0, grey(55));
+    crown.addColorStop(0.18, grey(110));
+    crown.addColorStop(0.5, grey(235));
+    crown.addColorStop(0.82, grey(110));
+    crown.addColorStop(1, grey(55));
+    context.fillStyle = crown;
+    context.fillRect(left, 0, pitch, SIZE);
+    // the valley where two channels meet
+    context.fillStyle = grey(0, 0.35);
+    context.fillRect(left, 0, 1.5, SIZE);
+  }
+  for (let r = 0; r < courses; r++) {
+    const y = r * course;
+    const lip = context.createLinearGradient(0, y, 0, y + course * 0.28);
+    lip.addColorStop(0, grey(0, 0.55));
+    lip.addColorStop(0.45, grey(0, 0.12));
+    lip.addColorStop(1, grey(0, 0));
+    context.fillStyle = lip;
+    context.fillRect(0, y, SIZE, course * 0.28);
+    context.fillStyle = grey(255, 0.16);
+    context.fillRect(0, y + 2, SIZE, 1);
+  }
+  blotches(context, random, 10, 36, 0.08);
+  speckle(context, random, 1800, 0.08);
 }
 
 // Rammed-earth lifts: horizontal pours, not ashlar. One copy is four lifts.
@@ -130,6 +177,21 @@ function paintCloth(context) {
     context.fillRect((seam * SIZE) / 6, 0, 1.5, SIZE);
   }
   blotches(context, random, 18, 50, 0.1);
+}
+
+// Packed earth with grit and small stones, for the streets seen on foot.
+function paintEarth(context) {
+  const random = createRandom(19);
+  context.fillStyle = grey(205);
+  context.fillRect(0, 0, SIZE, SIZE);
+  blotches(context, random, 70, 34, 0.26);
+  speckle(context, random, 16000, 0.3);
+  for (let i = 0; i < 420; i++) {
+    context.fillStyle = grey(random() < 0.6 ? 90 : 245, 0.25 + random() * 0.35);
+    context.beginPath();
+    context.ellipse(random() * SIZE, random() * SIZE, 1.5 + random() * 2.5, 1 + random() * 2, random() * 3, 0, Math.PI * 2);
+    context.fill();
+  }
 }
 
 // A house front, two bays by two floors, on plaster: a door and a window
@@ -223,11 +285,11 @@ function createRippleNormals() {
 }
 
 export const TEXTURES = {
-  masonry: photo('masonry'),
-  tiles: photo('tiles'),
+  masonry: paint(paintMasonry),
+  tiles: paint(paintTiles),
   tapial: paint(paintTapial),
   mottle: paint(paintMottle),
-  earth: photo('earth'),
+  earth: paint(paintEarth),
   planks: paint(paintPlanks),
   cloth: paint(paintCloth),
   facade: paint(paintFacade),
@@ -235,58 +297,36 @@ export const TEXTURES = {
   ripples: createRippleNormals(),
 };
 
-const NORMALS = Object.fromEntries(
-  ['masonry', 'tiles', 'tapial', 'mottle', 'earth'].map((name) => [name, photo(`${name}-normal`, false)]),
-);
-
 // Maps the texture by position instead of by UVs, in the object's own axes
 // and in metres, so nothing stretches however a box or a wall is scaled.
 // `metres` is how much surface one copy of the texture covers.
 // `roof` lays tiles across the slope and down it, instead of blending three
 // planes, so the channels are not smeared on a pitch.
-// `normals`, when given, is a tangent-space normal map projected the same way
-// (whiteout blend), turned into view space with the object's own axes.
-function projectByPosition(material, metres, roof = false, normals = null) {
+function projectByPosition(material, metres, roof = false) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.surfaceScale = { value: 1 / metres };
-    shader.uniforms.surfaceNormalMap = { value: normals };
     shader.vertexShader = shader.vertexShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-        varying vec3 vSurfacePosition;
-        varying vec3 vSurfaceNormal;
-        varying mat3 vSurfaceAxes;`,
-      )
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSurfacePosition;\nvarying vec3 vSurfaceNormal;')
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
         vec3 surfaceStretch = vec3(1.0);
-        mat3 surfaceAxes = mat3(modelViewMatrix);
         #ifdef USE_INSTANCING
           surfaceStretch = vec3(
             length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
-          surfaceAxes = surfaceAxes * mat3(instanceMatrix);
         #endif
-        vSurfaceAxes = mat3(normalize(surfaceAxes[0]), normalize(surfaceAxes[1]), normalize(surfaceAxes[2]));
         vSurfacePosition = position * surfaceStretch;
         vSurfaceNormal = normal;`,
       );
-    // Each projection: the texture coordinates, and how a sampled normal
-    // (t) maps back onto the object's axes around the surface normal (n).
     const sample = roof
       ? `vec3 surfacePoint = vSurfacePosition * surfaceScale;
         vec3 surfaceAbs = abs(vSurfaceNormal);
         vec2 surfaceUv;
-        int surfacePlane;
         if (surfaceAbs.y >= surfaceAbs.x && surfaceAbs.y >= surfaceAbs.z) {
-          surfacePlane = surfaceAbs.x > surfaceAbs.z ? 1 : 2;
-          surfaceUv = surfacePlane == 1 ? surfacePoint.zx : surfacePoint.xz;
+          surfaceUv = surfaceAbs.x > surfaceAbs.z ? surfacePoint.zx : surfacePoint.xz;
         } else if (surfaceAbs.x >= surfaceAbs.z) {
-          surfacePlane = 0;
           surfaceUv = surfacePoint.zy;
         } else {
-          surfacePlane = 3;
           surfaceUv = surfacePoint.xy;
         }
         diffuseColor *= texture2D(map, surfaceUv);`
@@ -297,40 +337,14 @@ function projectByPosition(material, metres, roof = false, normals = null) {
           texture2D(map, surfacePoint.zy) * surfaceWeight.x +
           texture2D(map, surfacePoint.xz) * surfaceWeight.y +
           texture2D(map, surfacePoint.xy) * surfaceWeight.z;`;
-    const unpack = (uv) => `(texture2D(surfaceNormalMap, ${uv}).xyz * 2.0 - 1.0)`;
-    const bump = roof
-      ? `vec3 n = normalize(vSurfaceNormal);
-        vec3 t = ${unpack('surfaceUv')};
-        vec3 o;
-        if (surfacePlane == 0) o = vec3(abs(t.z) * n.x, t.y + n.y, t.x + n.z);
-        else if (surfacePlane == 1) o = vec3(t.y + n.x, abs(t.z) * n.y, t.x + n.z);
-        else if (surfacePlane == 2) o = vec3(t.x + n.x, abs(t.z) * n.y, t.y + n.z);
-        else o = vec3(t.x + n.x, t.y + n.y, abs(t.z) * n.z);`
-      : `vec3 n = normalize(vSurfaceNormal);
-        vec3 tx = ${unpack('surfacePoint.zy')};
-        vec3 ty = ${unpack('surfacePoint.xz')};
-        vec3 tz = ${unpack('surfacePoint.xy')};
-        vec3 o =
-          vec3(abs(tx.z) * n.x, tx.y + n.y, tx.x + n.z) * surfaceWeight.x +
-          vec3(ty.x + n.x, abs(ty.z) * n.y, ty.y + n.z) * surfaceWeight.y +
-          vec3(tz.x + n.x, tz.y + n.y, abs(tz.z) * n.z) * surfaceWeight.z;`;
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
-        `#include <common>
-        uniform float surfaceScale;
-        uniform sampler2D surfaceNormalMap;
-        varying vec3 vSurfacePosition;
-        varying vec3 vSurfaceNormal;
-        varying mat3 vSurfaceAxes;`,
+        '#include <common>\nuniform float surfaceScale;\nvarying vec3 vSurfacePosition;\nvarying vec3 vSurfaceNormal;',
       )
-      .replace('#include <map_fragment>', sample)
-      .replace(
-        '#include <normal_fragment_maps>',
-        normals ? `{ ${bump} normal = normalize(vSurfaceAxes * normalize(o)) * faceDirection; }` : '',
-      );
+      .replace('#include <map_fragment>', sample);
   };
-  material.customProgramCacheKey = () => `surface-${metres}${roof ? '-roof' : ''}${normals ? '-relief' : ''}`;
+  material.customProgramCacheKey = () => `surface-${metres}${roof ? '-roof' : ''}`;
   return material;
 }
 
@@ -341,7 +355,6 @@ export function createSurface(texture, metres, options = {}) {
     new THREE.MeshStandardMaterial({ map: TEXTURES[texture], roughness: 0.95, ...options }),
     metres,
     texture === 'tiles',
-    NORMALS[texture] ?? null,
   );
 }
 

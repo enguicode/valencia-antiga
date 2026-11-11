@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 
 dist="$(mktemp -d)"
 trap 'rm -rf "$dist"' EXIT
-cp -r index.html og.jpg src data textures "$dist/"
+cp -r index.html og.jpg src data "$dist/"
 
 if [ "${1:-}" = preview ]; then
   npx --yes wrangler pages deploy "$dist" --project-name=valencia-antiga --branch=preview --commit-dirty=true

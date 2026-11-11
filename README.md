@@ -51,7 +51,7 @@ La pantalla se deja casi libre. Arriba, una tira fina con el avance por el río,
 
 Empezó como una prueba del modelo Claude Opus 5.5. Después se ha usado también Grok 4.7. La idea, el diseño, la elección de las fuentes y cada decisión de qué se hace y qué no son del autor.
 
-Una página estática. [three.js](https://threejs.org/) llega de una CDN. No hay servidor ni compilación. La piedra, las tejas y la tierra son fotos escaneadas de [Poly Haven](https://polyhaven.com/) (CC0) pasadas a gris, en `textures/`, con su relieve (mapas de normales) también para el enlucido y el tapial; el resto de texturas se pinta al arrancar y el sonido se genera en el navegador. La portada usa Cinzel y Cormorant Garamond; si no cargan, queda la letra con serifa del sistema.
+Una página estática. [three.js](https://threejs.org/) llega de una CDN. No hay servidor, ni compilación, ni ficheros de imagen o de sonido dentro de la escena: las texturas se pintan al arrancar y el sonido se genera en el navegador. La portada usa Cinzel y Cormorant Garamond; si no cargan, queda la letra con serifa del sistema.
 
 El texto que se lee está en el HTML, no solo en el JavaScript, para que un buscador vea la explicación. Al compartir el enlace, la tarjeta usa `og.jpg`.
 
@@ -59,7 +59,6 @@ El texto que se lee está en el HTML, no solo en el JavaScript, para que un busc
 valencia-antiga/
 ├── index.html          página, estilos e interfaz
 ├── og.jpg              imagen de la tarjeta al compartir el enlace
-├── textures/           piedra, tejas y tierra (Poly Haven, CC0) y sus mapas de normales
 ├── src/                la escena, un módulo por cosa
 │   └── extras/         monumentos de cerca del río añadidos después, uno por fichero
 ├── data/
@@ -92,7 +91,7 @@ valencia-antiga/
 | `extras/` | Un módulo por monumento añadido después (Temple, Sant Josep, Albereda…); `index.js` los junta con los de `layout.json` |
 | `guide.js` | Aros, fichas, cuenta y recorrido guiado |
 | `atmosphere.js`, `lights.js`, `life.js`, `sound.js` | Hora del día; luces de noche; barcas, lavanderas, humo y pájaros; sonido |
-| `grade.js` | Retoque final de la imagen: brillo de las luces fuertes, color, curva, viñeta y grano; en calidad alta y media |
+| `grade.js` | Retoque final de la imagen (color, curva, viñeta y grano), en calidad alta y media |
 | `input.js`, `minimap.js`, `quality.js`, `i18n.js` | Controles; mapa; calidad; idiomas |
 | `instancing.js` | Agrupa lo repetido para no dibujar lo que tapa la niebla |
 

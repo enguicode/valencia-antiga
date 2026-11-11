@@ -91,6 +91,7 @@ valencia-antiga/
 | `extras/` | Un módulo por monumento añadido después (Temple, Sant Josep, Albereda…); `index.js` los junta con los de `layout.json` |
 | `guide.js` | Aros, fichas, cuenta y recorrido guiado |
 | `atmosphere.js`, `lights.js`, `life.js`, `sound.js` | Hora del día; luces de noche; barcas, lavanderas, humo y pájaros; sonido |
+| `grade.js` | Retoque final de la imagen (color, curva, viñeta y grano), en calidad alta y media |
 | `input.js`, `minimap.js`, `quality.js`, `i18n.js` | Controles; mapa; calidad; idiomas |
 | `instancing.js` | Agrupa lo repetido para no dibujar lo que tapa la niebla |
 

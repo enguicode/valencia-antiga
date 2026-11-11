@@ -20,6 +20,7 @@ import { createAtmosphere } from './atmosphere.js';
 import { createLife } from './life.js';
 import { createSound } from './sound.js';
 import { createQuality } from './quality.js';
+import { createGrade } from './grade.js';
 import { createNightLights } from './lights.js';
 import { t, localized, getLanguage, setLanguage, onLanguageChange } from './i18n.js';
 
@@ -42,6 +43,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const grade = createGrade(renderer, window.devicePixelRatio < 2);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
@@ -293,6 +295,7 @@ const quality = createQuality(document.getElementById('quality'), (level) => {
   }
   atmosphere.state.fogScale = level.fogScale;
   life.setExtras(level.extras);
+  grade.setEnabled(level.grade);
   resize();
 });
 
@@ -1162,7 +1165,7 @@ function frame() {
   updateWalkButtons();
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
-  renderer.render(scene, camera);
+  grade.render(scene, camera, atmosphere.state.night);
   // The pale line is the join. A few metres of slack, the same as the notice,
   // so the sheet does not flicker while the boat sits on it.
   if (onSea) {
@@ -1214,5 +1217,5 @@ window.__valenciaReady = true;
 
 if (debug) {
   debugPanel.hidden = false;
-  window.__valencia = { boat, renderer, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus, cinema, drone, walk };
+  window.__valencia = { boat, renderer, grade, scene, camera, path, layout, orbit, guide, tour, atmosphere, sound, focus, cinema, drone, walk };
 }

@@ -121,9 +121,8 @@ export function createGuide(points, layout, path, camera, elements) {
   const flat = (color, opacity) =>
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
   const rings = {
-    // blended in linear light (see grade.js), so a little opacity goes a long way
-    pending: { edge: flat(PALE, 0.6), fill: flat(PALE, 0.035) },
-    found: { edge: flat(GREEN, 0.4), fill: flat(GREEN, 0.02) },
+    pending: { edge: flat(PALE, 0.6), fill: flat(PALE, 0.1) },
+    found: { edge: flat(GREEN, 0.4), fill: flat(GREEN, 0.06) },
   };
   const edgeGeometry = new THREE.RingGeometry(RING_RADIUS - 2.4, RING_RADIUS, 48).rotateX(-Math.PI / 2);
   const fillGeometry = new THREE.CircleGeometry(RING_RADIUS - 2.4, 48).rotateX(-Math.PI / 2);

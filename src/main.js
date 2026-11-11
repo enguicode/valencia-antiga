@@ -43,10 +43,10 @@ const renderer = new THREE.WebGLRenderer({
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-const grade = createGrade(renderer, window.devicePixelRatio < 2);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 2000);
+const grade = createGrade(renderer, scene, camera, window.devicePixelRatio < 2);
 
 // No orchard where a bridge comes ashore on the far bank.
 const bridgeLandings = bridgeDecks(layout, path).map((deck) => ({
@@ -295,7 +295,7 @@ const quality = createQuality(document.getElementById('quality'), (level) => {
   }
   atmosphere.state.fogScale = level.fogScale;
   life.setExtras(level.extras);
-  grade.setEnabled(level.grade);
+  grade.setLevel(level);
   resize();
 });
 
@@ -1165,7 +1165,7 @@ function frame() {
   updateWalkButtons();
   cullInstances(camera, scene.fog.far);
   quality.update(dt);
-  grade.render(scene, camera, atmosphere.state.night);
+  grade.render(camera, atmosphere.state.night);
   // The pale line is the join. A few metres of slack, the same as the notice,
   // so the sheet does not flicker while the boat sits on it.
   if (onSea) {

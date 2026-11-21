@@ -4,6 +4,7 @@ Paseo 3D en three.js (0.170.0, import map desde CDN) por el Turia y la València
 
 ## Reglas
 
+- **Specs primero (SDD)**: antes de tocar código, actualizar la spec en [specs/](specs/README.md); el commit nombra la spec que cumple. Principio rector: cada cosa donde estaba, lo inventado se dice, y el paseo va suave en un móvil.
 - Página estática: **sin build, sin bundler, sin imágenes ni audio dentro de la escena**. Texturas pintadas por código (`src/materials.js`), sonido sintetizado (`src/sound.js`).
 - Código e identificadores en **inglés**; lo que lee el usuario, en `src/i18n.js` y `data/points.json` (castellano, valenciano, inglés). El texto visible debe estar también en el HTML.
 - Todo lo que la escena o una ficha afirma necesita fuente en `docs/sources.md`. Donde no hay documentación se inventa con criterio **y se dice**.
